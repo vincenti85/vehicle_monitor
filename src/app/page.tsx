@@ -806,6 +806,7 @@ export default function FleetGuardCockpitPage() {
             bleBeaconUuid: row.bleBeaconUuid,
             status: 'IDLE',
             speedKmh: 0,
+            headingDeg: 0,
             currentGForce: 1.0,
             rssiDbm: -95,
             currentDriverId: null,
