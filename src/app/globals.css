@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #0B0D10;
+  color: #F4F6F8;
+  font-feature-settings: "liga" 1, "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom sleek dark scrollbar for cockpit panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0B0D10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262E3D;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3E6AE1;
+}
