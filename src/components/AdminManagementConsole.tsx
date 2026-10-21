@@ -9,18 +9,22 @@ import {
   BookOpen,
   Car,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Compass,
   Download,
   FileSpreadsheet,
   Gauge,
   Lock,
   Plus,
+  QrCode,
   Save,
   Search,
   Settings,
   ShieldAlert,
   ShieldCheck,
   Smartphone,
+  Sparkles,
   Unlock,
   Upload,
   UserCheck,
@@ -118,31 +122,127 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   // Incident resolution note state
   const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
 
-  // Policy draft state
+  // Policy draft state & 1-Click Preset state
   const [draftPolicy, setDraftPolicy] = useState<SystemPolicyConfig>(policyConfig);
   const [policySavedBanner, setPolicySavedBanner] = useState<boolean>(false);
+  const [showAdvancedPolicy, setShowAdvancedPolicy] = useState<boolean>(false);
+  const [activePreset, setActivePreset] = useState<'AUTONOMOUS' | 'STANDARD' | 'STRICT'>(
+    policyConfig.autoApproveWhenManagerAway ? 'AUTONOMOUS' : 'STANDARD'
+  );
+
+  const handleApplyPreset = (preset: 'AUTONOMOUS' | 'STANDARD' | 'STRICT') => {
+    setActivePreset(preset);
+    let nextCfg: SystemPolicyConfig;
+    if (preset === 'AUTONOMOUS') {
+      nextCfg = {
+        hqAddress: '4400 Northpark Dr, Opelika, AL 36801',
+        garageGeofenceRadiusM: 150,
+        keyboxBleRadiusM: 3,
+        unauthorizedSpeedThresholdKmh: 15,
+        crashGForceThreshold: 2.5,
+        crashGyroThresholdDeg: 28,
+        autoApproveWhenManagerAway: true,
+        blockDispatchWhenPermissionOff: true,
+        afterHoursAlertEnabled: true,
+        autoReturnIdleMinutes: 3,
+      };
+    } else if (preset === 'STANDARD') {
+      nextCfg = {
+        hqAddress: '4400 Northpark Dr, Opelika, AL 36801',
+        garageGeofenceRadiusM: 150,
+        keyboxBleRadiusM: 3,
+        unauthorizedSpeedThresholdKmh: 15,
+        crashGForceThreshold: 2.5,
+        crashGyroThresholdDeg: 28,
+        autoApproveWhenManagerAway: false,
+        blockDispatchWhenPermissionOff: true,
+        afterHoursAlertEnabled: true,
+        autoReturnIdleMinutes: 3,
+      };
+    } else {
+      nextCfg = {
+        hqAddress: '4400 Northpark Dr, Opelika, AL 36801',
+        garageGeofenceRadiusM: 120,
+        keyboxBleRadiusM: 2,
+        unauthorizedSpeedThresholdKmh: 10,
+        crashGForceThreshold: 2.0,
+        crashGyroThresholdDeg: 22,
+        autoApproveWhenManagerAway: false,
+        blockDispatchWhenPermissionOff: true,
+        afterHoursAlertEnabled: true,
+        autoReturnIdleMinutes: 1,
+      };
+    }
+    setDraftPolicy(nextCfg);
+    onUpdatePolicyConfig(nextCfg);
+    setPolicySavedBanner(true);
+    setTimeout(() => setPolicySavedBanner(false), 3500);
+  };
+
+  const handleDownloadPrintableQrSheet = () => {
+    const cardsHtml = vehicles
+      .map(
+        (v) => `
+      <div class="qr-card">
+        <div class="qr-top">FLEETGUARD 30 · OPELIKA AL</div>
+        <div class="qr-num">#${v.fleetNumber.toString().padStart(2, '0')}호차 · ${v.plateNumber}</div>
+        <div class="qr-model">${v.modelName}</div>
+        <div class="qr-box">
+          [QR / NFC 태그 #${v.fleetNumber.toString().padStart(2, '0')}]<br/>
+          <span>스마트폰 카메라 스캔 시<br/>블루투스 설정 없이 즉시 배차·매칭</span>
+        </div>
+        <div class="qr-meta">자동인식 ID: ${v.bleBeaconUuid} | ${v.parkingZone}</div>
+      </div>`
+      )
+      .join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>법인차량 30대 키고리·대시보드 원터치 QR 태그 시트 (4400 Northpark Dr, Opelika, AL)</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; padding: 24px; background: #fff; color: #111; }
+    h1 { font-size: 18px; margin-bottom: 4px; }
+    p { font-size: 12px; color: #555; margin-top: 0; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .qr-card { border: 2px solid #111; border-radius: 10px; padding: 12px; text-align: center; page-break-inside: avoid; }
+    .qr-top { font-size: 10px; font-weight: 700; color: #3E6AE1; }
+    .qr-num { font-size: 14px; font-weight: 800; margin-top: 2px; }
+    .qr-model { font-size: 11px; color: #444; margin-bottom: 8px; }
+    .qr-box { border: 1px dashed #666; border-radius: 8px; padding: 14px 8px; font-size: 11px; font-weight: 700; background: #F8FAFC; }
+    .qr-box span { font-weight: 400; font-size: 10px; color: #555; }
+    .qr-meta { font-size: 9px; color: #666; margin-top: 6px; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>법인차량 30대 키고리 · 대시보드 무설정 QR/NFC 태그 시트 (4400 Northpark Dr, Opelika, AL 36801)</h1>
+  <p>블루투스 MAC 주소를 입력하거나 페어링할 필요 없이, 아래 카드를 인쇄해 자동차키 고리 또는 대시보드에 부착하면 운전자가 스마트폰 스캔 1초 만에 차량과 자동 매칭됩니다.</p>
+  <div class="grid">${cardsHtml}</div>
+</body>
+</html>`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '법인차량30대_무설정_QR키고리시트_Opelika_AL.html';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleDownloadVehicleCsvTemplate = () => {
-    const headers = [
-      'fleetNumber',
-      'plateNumber',
-      'modelName',
-      'btMacAddress',
-      'bleBeaconUuid',
-      'cumulativeGpsKm',
-      'parkingZone',
-    ];
+    const headers = ['fleetNumber', 'plateNumber', 'modelName'];
     const sampleRows = [
-      ['1', 'AL 41A-2237', 'Hyundai IONIQ 5 AWD', 'A4:C1:38:90:01:11', 'BLE-KEY-01', '14820.5', 'Northpark Lot A #01'],
-      ['2', 'AL 41B-5104', 'Kia EV6 GT-Line', 'A4:C1:38:90:02:22', 'BLE-KEY-02', '21340.0', 'Northpark Lot A #02'],
-      ['31', 'AL 41G-7788', 'Genesis GV70 Electrified', 'A4:C1:38:90:31:99', 'BLE-KEY-31', '1250.0', 'Northpark Lot B #31'],
+      ['1', 'AL 41A-2237', 'Hyundai IONIQ 5 AWD'],
+      ['2', 'AL 41B-5104', 'Kia EV6 GT-Line'],
+      ['31', 'AL 41G-7788', 'Genesis GV70 Electrified'],
     ];
     const csv = '\uFEFF' + [headers.join(','), ...sampleRows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = '차량정보_일괄등록_양식_Opelika_AL.csv';
+    a.download = '차량정보_3항목_간편등록_양식_Opelika_AL.csv';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -377,11 +477,19 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
+                onClick={handleDownloadPrintableQrSheet}
+                className="px-2.5 py-1.5 rounded-lg bg-[#12B76A]/20 hover:bg-[#12B76A]/35 border border-[#12B76A]/40 text-xs font-semibold text-[#32D583] flex items-center gap-1.5 transition"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                30대 무설정 QR 키고리 시트 인쇄
+              </button>
+              <button
+                type="button"
                 onClick={handleDownloadVehicleCsvTemplate}
                 className="px-2.5 py-1.5 rounded-lg bg-[#191E2A] hover:bg-white/10 border border-white/15 text-xs text-[#F4F6F8] flex items-center gap-1.5 transition"
               >
                 <Download className="w-3.5 h-3.5 text-[#7EA0FF]" />
-                차량 CSV 양식 다운로드
+                간편 CSV 양식(번호판·차종만)
               </button>
               <button
                 type="button"
@@ -882,200 +990,315 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
         </div>
       )}
 
-      {/* SECTION 4: Geofence, Sensor Sensitivity & Auto-Approve Policy Settings */}
+      {/* SECTION 4: 1-Click Zero-Config Preset Mode + Collapsible Advanced Settings */}
       {section === 'SYSTEM_POLICY' && (
-        <div className="rounded-2xl bg-[#131720] p-5 border border-white/10 space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="rounded-2xl bg-[#131720] p-5 border border-white/10 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/10">
             <div>
-              <h3 className="text-sm font-semibold text-[#F4F6F8] flex items-center gap-2">
-                <Settings className="w-4 h-4 text-[#3E6AE1]" />
-                솔루션 운영 정책 및 센서 임계치 설정 (Opelika AL HQ)
-              </h3>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#32D583]" />
+                <h3 className="text-sm font-semibold text-[#F4F6F8]">
+                  원클릭 초간단 초기 설정 (1-Click Zero-Config 프리셋)
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#12B76A]/15 text-[#32D583] border border-[#12B76A]/30">
+                  슬라이더 조작 불필요 · 클릭 1번으로 30대 즉시 세팅 완료
+                </span>
+              </div>
               <p className="text-xs text-[#9BA3B0] mt-0.5">
-                본사 차고지 지오펜스 반경, 키보관함 BLE 감지 거리, 무단 운행 판단 속도, 무블랙박스 G-센서 사고 민감도, 관리자 부재 시 자동 승인 규칙을 설정합니다.
+                복잡한 센서 수치나 지오펜스 반경을 직접 입력할 필요 없이, 우리 회사 운영 방식에 맞는 카드 1개만 클릭하면 9가지 세부 설정이 자동으로 최적화됩니다.
               </p>
             </div>
             {policySavedBanner && (
               <span className="px-3 py-1 rounded-full bg-[#12B76A]/20 text-[#32D583] text-xs font-mono">
-                ✅ 정책 설정이 즉시 적용되었습니다
+                ✅ 선택한 프리셋 정책이 30대 전체에 즉시 적용되었습니다
               </span>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-            <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-              <label className="font-mono text-[#9BA3B0] block">
-                본사 차고지 지오펜스 기준 주소
-              </label>
-              <input
-                type="text"
-                value={draftPolicy.hqAddress}
-                onChange={(e) =>
-                  setDraftPolicy({ ...draftPolicy, hqAddress: e.target.value })
-                }
-                className="w-full rounded-lg bg-[#0B0D10] border border-white/10 px-2.5 py-2 text-[#F4F6F8]"
-              />
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-              <label className="font-mono text-[#9BA3B0] block">
-                차고지 지오펜스 반경 (m) — 현재 {draftPolicy.garageGeofenceRadiusM}m
-              </label>
-              <input
-                type="range"
-                min={80}
-                max={300}
-                step={10}
-                value={draftPolicy.garageGeofenceRadiusM}
-                onChange={(e) =>
-                  setDraftPolicy({
-                    ...draftPolicy,
-                    garageGeofenceRadiusM: Number(e.target.value),
-                  })
-                }
-                className="w-full"
-              />
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-              <label className="font-mono text-[#9BA3B0] block">
-                키 보관함 BLE 근접 판별 반경 (m) — 현재 {draftPolicy.keyboxBleRadiusM}m
-              </label>
-              <input
-                type="range"
-                min={1}
-                max={10}
-                step={1}
-                value={draftPolicy.keyboxBleRadiusM}
-                onChange={(e) =>
-                  setDraftPolicy({
-                    ...draftPolicy,
-                    keyboxBleRadiusM: Number(e.target.value),
-                  })
-                }
-                className="w-full"
-              />
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-              <label className="font-mono text-[#9BA3B0] block">
-                미승인 출발 감지 임계 속도 — {draftPolicy.unauthorizedSpeedThresholdKmh} km/h
-              </label>
-              <input
-                type="range"
-                min={10}
-                max={30}
-                step={5}
-                value={draftPolicy.unauthorizedSpeedThresholdKmh}
-                onChange={(e) =>
-                  setDraftPolicy({
-                    ...draftPolicy,
-                    unauthorizedSpeedThresholdKmh: Number(e.target.value),
-                  })
-                }
-                className="w-full"
-              />
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-              <label className="font-mono text-[#9BA3B0] block">
-                무블랙박스 사고 감지 충격 임계치 — {draftPolicy.crashGForceThreshold.toFixed(1)} G
-              </label>
-              <input
-                type="range"
-                min={1.8}
-                max={4.0}
-                step={0.1}
-                value={draftPolicy.crashGForceThreshold}
-                onChange={(e) =>
-                  setDraftPolicy({
-                    ...draftPolicy,
-                    crashGForceThreshold: Number(e.target.value),
-                  })
-                }
-                className="w-full"
-              />
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-              <label className="font-mono text-[#9BA3B0] block">
-                차고지 복귀 후 자동 반납 대기 시간 — {draftPolicy.autoReturnIdleMinutes}분
-              </label>
-              <input
-                type="range"
-                min={1}
-                max={10}
-                step={1}
-                value={draftPolicy.autoReturnIdleMinutes}
-                onChange={(e) =>
-                  setDraftPolicy({
-                    ...draftPolicy,
-                    autoReturnIdleMinutes: Number(e.target.value),
-                  })
-                }
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
-            <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
-              <span>관리자 부재 시 배차 신청 자동 승인</span>
-              <input
-                type="checkbox"
-                checked={draftPolicy.autoApproveWhenManagerAway}
-                onChange={(e) =>
-                  setDraftPolicy({
-                    ...draftPolicy,
-                    autoApproveWhenManagerAway: e.target.checked,
-                  })
-                }
-              />
-            </label>
-
-            <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
-              <span>블루투스/GPS 권한 꺼진 직원 배차 자동 차단</span>
-              <input
-                type="checkbox"
-                checked={draftPolicy.blockDispatchWhenPermissionOff}
-                onChange={(e) =>
-                  setDraftPolicy({
-                    ...draftPolicy,
-                    blockDispatchWhenPermissionOff: e.target.checked,
-                  })
-                }
-              />
-            </label>
-
-            <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
-              <span>심야/주말(업무시간 외) 키 반출 시 즉시 최고경보</span>
-              <input
-                type="checkbox"
-                checked={draftPolicy.afterHoursAlertEnabled}
-                onChange={(e) =>
-                  setDraftPolicy({
-                    ...draftPolicy,
-                    afterHoursAlertEnabled: e.target.checked,
-                  })
-                }
-              />
-            </label>
-          </div>
-
-          <div className="flex justify-end pt-2">
+          {/* 3 One-Click Preset Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
               type="button"
-              onClick={() => {
-                onUpdatePolicyConfig(draftPolicy);
-                setPolicySavedBanner(true);
-                setTimeout(() => setPolicySavedBanner(false), 3000);
-              }}
-              className="px-4 py-2 rounded-xl bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-[#3E6AE1]/25"
+              onClick={() => handleApplyPreset('AUTONOMOUS')}
+              className={`text-left p-4 rounded-2xl border transition space-y-2 ${
+                activePreset === 'AUTONOMOUS'
+                  ? 'bg-[#12B76A]/15 border-[#12B76A] shadow-lg shadow-[#12B76A]/10'
+                  : 'bg-[#191E2A] border-white/10 hover:border-white/25'
+              }`}
             >
-              <Save className="w-3.5 h-3.5" />
-              관리자 정책 설정 저장 및 전체 30대 적용
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#12B76A] text-white">
+                  추천 기본값 · 1클릭 적용
+                </span>
+                {activePreset === 'AUTONOMOUS' && (
+                  <CheckCircle2 className="w-4 h-4 text-[#32D583]" />
+                )}
+              </div>
+              <h4 className="text-sm font-semibold text-[#F4F6F8]">
+                🟢 모드 A: 관리자 부재 시 자율 운행 모드
+              </h4>
+              <p className="text-xs text-[#9BA3B0] leading-relaxed">
+                키 관리자가 상주하지 않는 환경에 최적화. 직원이 신청하면 <strong>즉시 자동 승인</strong>되며, 앱 미신청 출발(<code>15km/h+</code>)만 골라내어 경보를 울립니다.
+              </p>
+              <div className="pt-1 text-[10px] font-mono text-[#32D583]">
+                자동승인 ON · 무단감지 15km/h · 충격 2.5G · 차고지 150m 자동반납
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleApplyPreset('STANDARD')}
+              className={`text-left p-4 rounded-2xl border transition space-y-2 ${
+                activePreset === 'STANDARD'
+                  ? 'bg-[#3E6AE1]/15 border-[#3E6AE1] shadow-lg shadow-[#3E6AE1]/10'
+                  : 'bg-[#191E2A] border-white/10 hover:border-white/25'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#3E6AE1]/30 text-[#9BC1FF]">
+                  표준 관리형 · 1클릭 적용
+                </span>
+                {activePreset === 'STANDARD' && (
+                  <CheckCircle2 className="w-4 h-4 text-[#7EA0FF]" />
+                )}
+              </div>
+              <h4 className="text-sm font-semibold text-[#F4F6F8]">
+                🔵 모드 B: 관리자 사전 승인 표준 모드
+              </h4>
+              <p className="text-xs text-[#9BA3B0] leading-relaxed">
+                직원이 차량을 신청하면 관리자가 원클릭 승인한 후 키를 수령해 출발하는 표준 기업 배차 모드입니다.
+              </p>
+              <div className="pt-1 text-[10px] font-mono text-[#9BC1FF]">
+                사전승인 필수 · 무단감지 15km/h · 충격 2.5G · 차고지 150m 자동반납
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleApplyPreset('STRICT')}
+              className={`text-left p-4 rounded-2xl border transition space-y-2 ${
+                activePreset === 'STRICT'
+                  ? 'bg-[#E82127]/15 border-[#E82127] shadow-lg shadow-[#E82127]/10'
+                  : 'bg-[#191E2A] border-white/10 hover:border-white/25'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#E82127]/30 text-[#FF8080]">
+                  고보안 통제형 · 1클릭 적용
+                </span>
+                {activePreset === 'STRICT' && (
+                  <CheckCircle2 className="w-4 h-4 text-[#FF8080]" />
+                )}
+              </div>
+              <h4 className="text-sm font-semibold text-[#F4F6F8]">
+                🔴 모드 C: 무관용 고보안 감사 모드
+              </h4>
+              <p className="text-xs text-[#9BA3B0] leading-relaxed">
+                무단 반출이 빈번할 때 사용. 주차장 이동(<code>10km/h+</code>) 및 경미한 접촉(<code>2.0G+</code>)까지 즉시 포착하고 심야/주말 최고경보를 발령합니다.
+              </p>
+              <div className="pt-1 text-[10px] font-mono text-[#FF8080]">
+                사전승인 필수 · 민감감지 10km/h · 충격 2.0G · 복귀 1분 자동반납
+              </div>
             </button>
           </div>
+
+          {/* Collapsible Advanced Sliders Toggle */}
+          <div className="pt-2 border-t border-white/10">
+            <button
+              type="button"
+              onClick={() => setShowAdvancedPolicy((p) => !p)}
+              className="px-3.5 py-2 rounded-xl bg-[#0B0D10] hover:bg-white/5 border border-white/10 text-xs font-medium text-[#9BA3B0] hover:text-white flex items-center gap-2 transition"
+            >
+              <Settings className="w-3.5 h-3.5 text-[#3E6AE1]" />
+              {showAdvancedPolicy
+                ? '세부 센서 · 지오펜스 수치 직접 조정 접기 (고급 설정)'
+                : '세부 센서 · 지오펜스 수치 직접 조정 펼치기 (고급 설정 — 건드리지 않아도 작동함)'}
+              {showAdvancedPolicy ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+
+          {showAdvancedPolicy && (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
+                  <label className="font-mono text-[#9BA3B0] block">
+                    본사 차고지 지오펜스 기준 주소
+                  </label>
+                  <input
+                    type="text"
+                    value={draftPolicy.hqAddress}
+                    onChange={(e) =>
+                      setDraftPolicy({ ...draftPolicy, hqAddress: e.target.value })
+                    }
+                    className="w-full rounded-lg bg-[#0B0D10] border border-white/10 px-2.5 py-2 text-[#F4F6F8]"
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
+                  <label className="font-mono text-[#9BA3B0] block">
+                    차고지 지오펜스 반경 (m) — 현재 {draftPolicy.garageGeofenceRadiusM}m
+                  </label>
+                  <input
+                    type="range"
+                    min={80}
+                    max={300}
+                    step={10}
+                    value={draftPolicy.garageGeofenceRadiusM}
+                    onChange={(e) =>
+                      setDraftPolicy({
+                        ...draftPolicy,
+                        garageGeofenceRadiusM: Number(e.target.value),
+                      })
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
+                  <label className="font-mono text-[#9BA3B0] block">
+                    키 보관함 BLE 근접 판별 반경 (m) — 현재 {draftPolicy.keyboxBleRadiusM}m
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={draftPolicy.keyboxBleRadiusM}
+                    onChange={(e) =>
+                      setDraftPolicy({
+                        ...draftPolicy,
+                        keyboxBleRadiusM: Number(e.target.value),
+                      })
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
+                  <label className="font-mono text-[#9BA3B0] block">
+                    미승인 출발 감지 임계 속도 — {draftPolicy.unauthorizedSpeedThresholdKmh} km/h
+                  </label>
+                  <input
+                    type="range"
+                    min={10}
+                    max={30}
+                    step={5}
+                    value={draftPolicy.unauthorizedSpeedThresholdKmh}
+                    onChange={(e) =>
+                      setDraftPolicy({
+                        ...draftPolicy,
+                        unauthorizedSpeedThresholdKmh: Number(e.target.value),
+                      })
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
+                  <label className="font-mono text-[#9BA3B0] block">
+                    무블랙박스 사고 감지 충격 임계치 — {draftPolicy.crashGForceThreshold.toFixed(1)} G
+                  </label>
+                  <input
+                    type="range"
+                    min={1.8}
+                    max={4.0}
+                    step={0.1}
+                    value={draftPolicy.crashGForceThreshold}
+                    onChange={(e) =>
+                      setDraftPolicy({
+                        ...draftPolicy,
+                        crashGForceThreshold: Number(e.target.value),
+                      })
+                    }
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
+                  <label className="font-mono text-[#9BA3B0] block">
+                    차고지 복귀 후 자동 반납 대기 시간 — {draftPolicy.autoReturnIdleMinutes}분
+                  </label>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={draftPolicy.autoReturnIdleMinutes}
+                    onChange={(e) =>
+                      setDraftPolicy({
+                        ...draftPolicy,
+                        autoReturnIdleMinutes: Number(e.target.value),
+                      })
+                    }
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
+                <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
+                  <span>관리자 부재 시 배차 신청 자동 승인</span>
+                  <input
+                    type="checkbox"
+                    checked={draftPolicy.autoApproveWhenManagerAway}
+                    onChange={(e) =>
+                      setDraftPolicy({
+                        ...draftPolicy,
+                        autoApproveWhenManagerAway: e.target.checked,
+                      })
+                    }
+                  />
+                </label>
+
+                <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
+                  <span>블루투스/GPS 권한 꺼진 직원 배차 자동 차단</span>
+                  <input
+                    type="checkbox"
+                    checked={draftPolicy.blockDispatchWhenPermissionOff}
+                    onChange={(e) =>
+                      setDraftPolicy({
+                        ...draftPolicy,
+                        blockDispatchWhenPermissionOff: e.target.checked,
+                      })
+                    }
+                  />
+                </label>
+
+                <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
+                  <span>심야/주말(업무시간 외) 키 반출 시 즉시 최고경보</span>
+                  <input
+                    type="checkbox"
+                    checked={draftPolicy.afterHoursAlertEnabled}
+                    onChange={(e) =>
+                      setDraftPolicy({
+                        ...draftPolicy,
+                        afterHoursAlertEnabled: e.target.checked,
+                      })
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdatePolicyConfig(draftPolicy);
+                    setPolicySavedBanner(true);
+                    setTimeout(() => setPolicySavedBanner(false), 3000);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-[#3E6AE1]/25"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  세부 커스텀 설정 저장 및 적용
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

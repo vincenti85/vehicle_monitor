@@ -12,6 +12,7 @@ import {
   KeyRound,
   Lock,
   Play,
+  QrCode,
   Radio,
   RotateCcw,
   Send,
@@ -175,8 +176,22 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
           </span>
         </div>
 
-        {/* Real Smartphone Sensor Bridge Bar */}
+        {/* Real Smartphone Sensor Bridge & 1-Click Zero-Config QR Boarding Bar */}
         <div className="mt-2.5 p-2.5 rounded-xl bg-[#0B0D10] border border-white/10 space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose);
+              setSimFeedback(
+                `📷 [무설정 QR 스캔 탑승 완료] 블루투스 수동 페어링 없이 #${currentVeh.fleetNumber}호차(${currentVeh.plateNumber}) 키고리 QR을 스캔하여 배차 승인 + 센서 연동 + 운행 시작이 1초 만에 완료되었습니다!`
+              );
+            }}
+            className="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-[#3E6AE1] to-[#12B76A] hover:opacity-95 text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+            ⚡ 무설정 1초 탑승: 자동차키 QR 스캔으로 바로 출발
+          </button>
+
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
