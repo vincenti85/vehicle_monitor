@@ -322,16 +322,28 @@
         <strong>초간단 무설정 QR 탑승, 4단계 정식 배차, 무단 반출 색출, 무블랙박스 6축 사고 재구성, 계기판 실사 유령주행 적발</strong>을 즉시 검증할 수 있는 7대 실전 시나리오입니다.
       </p>
 
-      <div class="toolbar">
+      <div class="toolbar" style="flex-wrap: wrap; gap: 10px;">
         <span style="font-size:12px; color:#9BC1FF; font-family:monospace;">
-          💡 각 시나리오 우측의 체크박스를 클릭하며 테스트 진행률을 직접 체크할 수 있습니다.
+          💡 각 시나리오 우측 체크박스로 진행률을 체크하거나, <strong>Notion(노션)</strong>으로 즉시 내보낼 수 있습니다.
         </span>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <a class="btn btn-secondary" href="/notion-export/FleetGuard30_Notion_통합문서.md" download="FleetGuard30_Notion_통합문서.md" style="text-decoration:none;">
+            📝 Notion 마크다운(.md) 다운로드
+          </a>
+          <a class="btn btn-secondary" href="/notion-export/FleetGuard30_QA_테스트시나리오_DB.csv" download="FleetGuard30_QA_테스트시나리오_DB.csv" style="text-decoration:none;">
+            📊 Notion DB 테이블(.csv) 다운로드
+          </a>
+          <a class="btn btn-secondary" href="/notion-export/FleetGuard30_Notion_Export_Bundle.zip" download="FleetGuard30_Notion_Export_Bundle.zip" style="text-decoration:none;">
+            📦 Notion 통합 번들(.zip)
+          </a>
+          <button id="copyNotionBtn" class="btn btn-secondary" onclick="copyNotionMarkdown()">
+            📋 Notion 붙여넣기용 원클릭 복사
+          </button>
           <button class="btn btn-secondary" onclick="document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false)">
-            체크박스 전체 초기화
+            체크박스 초기화
           </button>
           <button class="btn btn-primary" onclick="window.print()">
-            🖨️ PDF / 종이로 인쇄하기
+            🖨️ PDF / 인쇄
           </button>
         </div>
       </div>
@@ -608,5 +620,28 @@
       </div>
     </article>
   </div>
+  <script>
+    async function copyNotionMarkdown() {
+      const btn = document.getElementById('copyNotionBtn');
+      try {
+        const res = await fetch('/notion-export/FleetGuard30_Notion_통합문서.md');
+        const text = await res.text();
+        await navigator.clipboard.writeText(text);
+        if (btn) {
+          const orig = btn.innerText;
+          btn.innerText = '✅ 복사 완료! Notion 빈 페이지에 Ctrl+V 하세요';
+          btn.style.borderColor = '#12B76A';
+          btn.style.color = '#32D583';
+          setTimeout(() => {
+            btn.innerText = orig;
+            btn.style.borderColor = '';
+            btn.style.color = '';
+          }, 3000);
+        }
+      } catch (e) {
+        alert('Notion 마크다운 파일(/notion-export/FleetGuard30_Notion_통합문서.md)을 다운로드하여 Notion에 붙여넣거나 Import 해주세요.');
+      }
+    }
+  </script>
 </body>
 </html>
