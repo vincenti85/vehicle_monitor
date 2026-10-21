@@ -1510,7 +1510,7 @@ export default function FleetGuardCockpitPage() {
             </button>
 
             <a
-              href="/FleetGuard30_실전_테스트_시나리오_가이드.html"
+              href="/test-scenarios.html"
               target="_blank"
               rel="noopener noreferrer"
               className="px-3 py-1.5 rounded-lg bg-[#12B76A]/20 hover:bg-[#12B76A]/35 border border-[#12B76A]/40 text-xs font-semibold text-[#32D583] flex items-center gap-1.5 transition"
