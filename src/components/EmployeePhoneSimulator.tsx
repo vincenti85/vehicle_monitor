@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   AlertOctagon,
   Bluetooth,
@@ -12,6 +12,7 @@ import {
   KeyRound,
   Lock,
   Play,
+  Radio,
   RotateCcw,
   Send,
   Smartphone,
@@ -19,6 +20,11 @@ import {
   Zap,
 } from 'lucide-react';
 import { Employee, TripPurpose, Vehicle, VehicleReservation } from '@/types/fleet';
+import {
+  RealDeviceTelemetrySnapshot,
+  scanRealVehicleBluetooth,
+  startRealDeviceSensors,
+} from '@/utils/realDeviceSensors';
 
 interface EmployeePhoneSimulatorProps {
   vehicles: Vehicle[];
@@ -80,6 +86,58 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   const [simFeedback, setSimFeedback] = useState<string>(
     '직원 스마트폰에서 [차량 신청 → 승인 확인 → 사용 시작 → 반납] 전 과정을 바로 실행할 수 있습니다.'
   );
+  const [realSensorActive, setRealSensorActive] = useState<boolean>(false);
+  const [liveSnapshot, setLiveSnapshot] =
+    useState<RealDeviceTelemetrySnapshot | null>(null);
+  const stopSensorRef = useRef<(() => void) | null>(null);
+
+  const handleToggleRealSensors = async () => {
+    if (realSensorActive) {
+      stopSensorRef.current?.();
+      stopSensorRef.current = null;
+      setRealSensorActive(false);
+      setSimFeedback('🛑 실제 스마트폰 센서(GPS · 6축 IMU) 스트리밍을 중지했습니다.');
+      return;
+    }
+
+    const cleanup = await startRealDeviceSensors((snap) => {
+      setLiveSnapshot(snap);
+      if (snap.gForce > 2.5) {
+        fetch('/api/fleet/telemetry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vehicleId: selectedVehId,
+            employeeId: selectedEmpId,
+            lat: snap.lat ?? 32.6912,
+            lng: snap.lng ?? -85.3298,
+            speedKmh: snap.speedKmh,
+            gForce: snap.gForce,
+            gyroYawDegPerSec: snap.gyroYawDegPerSec,
+            deltaSpeedKmh: -30,
+            persistToDb: true,
+          }),
+        }).catch(() => {});
+      }
+    });
+
+    stopSensorRef.current = cleanup;
+    setRealSensorActive(true);
+    setSimFeedback(
+      '📡 실제 스마트폰 GPS 및 6축 IMU(가속도·자이로) 센서 연동이 시작되었습니다!'
+    );
+  };
+
+  const handleBluetoothPairing = async () => {
+    const deviceName = await scanRealVehicleBluetooth();
+    if (deviceName) {
+      setSimFeedback(`🔵 실제 차량 블루투스 기기 [${deviceName}] 페어링이 확인되었습니다.`);
+    } else {
+      setSimFeedback(
+        'ℹ️ 브라우저 블루투스 스캔이 취소되었거나 모바일 Chrome/Edge 환경이 아닙니다.'
+      );
+    }
+  };
 
   const currentEmp = employees.find((e) => e.id === selectedEmpId) || employees[0];
   const currentVeh = vehicles.find((v) => v.id === selectedVehId) || vehicles[0];
@@ -115,6 +173,47 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
           <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#191E2A] text-[#9BA3B0] border border-white/10">
             MOBILE APP
           </span>
+        </div>
+
+        {/* Real Smartphone Sensor Bridge Bar */}
+        <div className="mt-2.5 p-2.5 rounded-xl bg-[#0B0D10] border border-white/10 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={handleToggleRealSensors}
+              className={`flex-1 py-1.5 px-2.5 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition ${
+                realSensorActive
+                  ? 'bg-[#12B76A] text-white'
+                  : 'bg-[#191E2A] hover:bg-white/10 text-[#9BC1FF] border border-[#3E6AE1]/40'
+              }`}
+            >
+              <Radio className={`w-3.5 h-3.5 ${realSensorActive ? 'animate-ping' : ''}`} />
+              {realSensorActive
+                ? '실제 휴대폰 센서 연동중 (클릭시 중지)'
+                : '실제 휴대폰 센서(GPS·6축 IMU) 연결'}
+            </button>
+            <button
+              type="button"
+              onClick={handleBluetoothPairing}
+              className="py-1.5 px-2.5 rounded-lg bg-[#191E2A] hover:bg-white/10 border border-white/10 text-[11px] text-[#F4F6F8] flex items-center gap-1 transition"
+            >
+              <Bluetooth className="w-3.5 h-3.5 text-[#3E6AE1]" />
+              블루투스 연결
+            </button>
+          </div>
+          {realSensorActive && liveSnapshot && (
+            <div className="grid grid-cols-3 gap-1.5 pt-1 text-[10px] font-mono text-center">
+              <div className="p-1 rounded bg-[#131720] text-[#32D583]">
+                속도: {liveSnapshot.speedKmh} km/h
+              </div>
+              <div className="p-1 rounded bg-[#131720] text-[#FDB022]">
+                충격: {liveSnapshot.gForce} G
+              </div>
+              <div className="p-1 rounded bg-[#131720] text-[#9BC1FF]">
+                회전: {liveSnapshot.gyroYawDegPerSec}°/s
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Mode Switch Tabs inside Employee Phone */}
