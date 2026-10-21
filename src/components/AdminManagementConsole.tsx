@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   AlertTriangle,
   Ban,
   Bell,
   Bluetooth,
+  BookOpen,
   Car,
   CheckCircle2,
   Compass,
+  Download,
+  FileSpreadsheet,
   Gauge,
   Lock,
   Plus,
@@ -19,6 +22,7 @@ import {
   ShieldCheck,
   Smartphone,
   Unlock,
+  Upload,
   UserCheck,
   UserPlus,
   Users,
@@ -31,6 +35,24 @@ import {
   Vehicle,
 } from '@/types/fleet';
 
+export interface VehicleCsvRow {
+  fleetNumber: number;
+  plateNumber: string;
+  modelName: string;
+  btMacAddress: string;
+  bleBeaconUuid: string;
+  cumulativeGpsKm: number;
+  parkingZone: string;
+}
+
+export interface EmployeeCsvRow {
+  name: string;
+  role: string;
+  department: string;
+  phone: string;
+  dispatchAllowed: boolean;
+}
+
 interface AdminManagementConsoleProps {
   vehicles: Vehicle[];
   employees: Employee[];
@@ -42,8 +64,12 @@ interface AdminManagementConsoleProps {
   onToggleEmployeeDispatch: (employeeId: string) => void;
   onSendPermissionWarningPush: (employeeId: string) => void;
   onAddEmployee: (emp: { name: string; role: string; department: string; phone: string }) => void;
+  onBulkImportVehicles: (rows: VehicleCsvRow[]) => void;
+  onBulkImportEmployees: (rows: EmployeeCsvRow[]) => void;
   onResolveIncident: (incidentId: string, resolutionNote: string, suspendDriver: boolean) => void;
   onUpdatePolicyConfig: (nextConfig: SystemPolicyConfig) => void;
+  onLockAdminConsole: () => void;
+  onOpenManual: () => void;
 }
 
 type AdminSection =
@@ -63,8 +89,12 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   onToggleEmployeeDispatch,
   onSendPermissionWarningPush,
   onAddEmployee,
+  onBulkImportVehicles,
+  onBulkImportEmployees,
   onResolveIncident,
   onUpdatePolicyConfig,
+  onLockAdminConsole,
+  onOpenManual,
 }) => {
   const [section, setSection] = useState<AdminSection>('VEHICLE_MASTER');
   const [vehSearch, setVehSearch] = useState<string>('');
@@ -72,6 +102,11 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   const [macInput, setMacInput] = useState<string>('');
   const [bleInput, setBleInput] = useState<string>('');
   const [odometerInputs, setOdometerInputs] = useState<Record<string, string>>({});
+
+  // CSV Upload Refs & Status Banner
+  const vehicleCsvInputRef = useRef<HTMLInputElement | null>(null);
+  const employeeCsvInputRef = useRef<HTMLInputElement | null>(null);
+  const [csvFeedback, setCsvFeedback] = useState<string | null>(null);
 
   // New Employee Form State
   const [showAddEmp, setShowAddEmp] = useState<boolean>(false);
@@ -87,6 +122,122 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   const [draftPolicy, setDraftPolicy] = useState<SystemPolicyConfig>(policyConfig);
   const [policySavedBanner, setPolicySavedBanner] = useState<boolean>(false);
 
+  const handleDownloadVehicleCsvTemplate = () => {
+    const headers = [
+      'fleetNumber',
+      'plateNumber',
+      'modelName',
+      'btMacAddress',
+      'bleBeaconUuid',
+      'cumulativeGpsKm',
+      'parkingZone',
+    ];
+    const sampleRows = [
+      ['1', 'AL 41A-2237', 'Hyundai IONIQ 5 AWD', 'A4:C1:38:90:01:11', 'BLE-KEY-01', '14820.5', 'Northpark Lot A #01'],
+      ['2', 'AL 41B-5104', 'Kia EV6 GT-Line', 'A4:C1:38:90:02:22', 'BLE-KEY-02', '21340.0', 'Northpark Lot A #02'],
+      ['31', 'AL 41G-7788', 'Genesis GV70 Electrified', 'A4:C1:38:90:31:99', 'BLE-KEY-31', '1250.0', 'Northpark Lot B #31'],
+    ];
+    const csv = '\uFEFF' + [headers.join(','), ...sampleRows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '차량정보_일괄등록_양식_Opelika_AL.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadEmployeeCsvTemplate = () => {
+    const headers = ['name', 'role', 'department', 'phone', 'dispatchAllowed'];
+    const sampleRows = [
+      ['김태호 과장 (T.H. Kim)', '과장', '북미부품영업1팀 (Opelika Sales)', '(334) 550-0191', 'Y'],
+      ['최유진 대리 (Y.J. Choi)', '대리', '품질보증팀 (QA Engineering)', '(334) 550-0192', 'Y'],
+      ['정현우 사원 (H.W. Jung)', '사원', '생산기술팀 (Manufacturing)', '(334) 550-0193', 'Y'],
+    ];
+    const csv = '\uFEFF' + [headers.join(','), ...sampleRows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '사용자_임직원_일괄등록_양식_Opelika_AL.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleVehicleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = String(evt.target?.result || '').replace(/^\uFEFF/, '');
+      const lines = text
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      if (lines.length <= 1) return;
+
+      const parsed: VehicleCsvRow[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map((c) => c.trim());
+        if (cols.length < 3) continue;
+        const fleetNum = parseInt(cols[0].replace(/[^0-9]/g, ''), 10) || i;
+        parsed.push({
+          fleetNumber: fleetNum,
+          plateNumber: cols[1] || `AL 41Z-${1000 + fleetNum}`,
+          modelName: cols[2] || 'Hyundai Santa Fe (AL Built)',
+          btMacAddress: cols[3] || `A4:C1:38:99:${fleetNum.toString(16).padStart(2, '0').toUpperCase()}:01`,
+          bleBeaconUuid: cols[4] || `BLE-KEY-${fleetNum.toString().padStart(2, '0')}`,
+          cumulativeGpsKm: parseFloat(cols[5]) || 10000,
+          parkingZone: cols[6] || `Northpark Lot A #${fleetNum.toString().padStart(2, '0')}`,
+        });
+      }
+
+      if (parsed.length > 0) {
+        onBulkImportVehicles(parsed);
+        setCsvFeedback(`✅ 차량 CSV 파일(${file.name})에서 총 ${parsed.length}대의 차량 정보를 일괄 등록/업데이트했습니다.`);
+        setTimeout(() => setCsvFeedback(null), 6000);
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+
+  const handleEmployeeCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = String(evt.target?.result || '').replace(/^\uFEFF/, '');
+      const lines = text
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      if (lines.length <= 1) return;
+
+      const parsed: EmployeeCsvRow[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map((c) => c.trim());
+        if (!cols[0]) continue;
+        const allowRaw = (cols[4] || 'Y').toUpperCase();
+        parsed.push({
+          name: cols[0],
+          role: cols[1] || '사원',
+          department: cols[2] || '일반업무팀 (Opelika HQ)',
+          phone: cols[3] || '(334) 550-0100',
+          dispatchAllowed: allowRaw !== 'N' && allowRaw !== 'FALSE' && allowRaw !== '0',
+        });
+      }
+
+      if (parsed.length > 0) {
+        onBulkImportEmployees(parsed);
+        setCsvFeedback(`✅ 사용자 CSV 파일(${file.name})에서 총 ${parsed.length}명의 임직원(운전자) 정보를 일괄 등록/업데이트했습니다.`);
+        setTimeout(() => setCsvFeedback(null), 6000);
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+
   const filteredVehicles = vehicles.filter(
     (v) =>
       v.plateNumber.toLowerCase().includes(vehSearch.toLowerCase()) ||
@@ -96,6 +247,35 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
 
   return (
     <div className="space-y-5">
+      {/* Hidden File Inputs for Vehicle & Employee CSV Import */}
+      <input
+        ref={vehicleCsvInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        onChange={handleVehicleCsvFileChange}
+        className="hidden"
+      />
+      <input
+        ref={employeeCsvInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        onChange={handleEmployeeCsvFileChange}
+        className="hidden"
+      />
+
+      {csvFeedback && (
+        <div className="p-3.5 rounded-xl bg-[#12B76A]/15 border border-[#12B76A]/40 text-xs text-[#32D583] flex items-center justify-between">
+          <span className="font-medium">{csvFeedback}</span>
+          <button
+            type="button"
+            onClick={() => setCsvFeedback(null)}
+            className="text-[11px] underline text-white/80 hover:text-white"
+          >
+            닫기
+          </button>
+        </div>
+      )}
+
       {/* Top Admin Console Banner: Explaining No-Dashcam + Smartphone-Only Management */}
       <div
         className="rounded-2xl bg-[#131720] p-5 border border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
@@ -106,17 +286,33 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#3E6AE1]/20 text-[#9BC1FF] border border-[#3E6AE1]/40">
-              FLEET ADMIN CONSOLE
+              FLEET ADMIN CONSOLE (PIN 4400 인증됨)
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#12B76A]/15 text-[#32D583] border border-[#12B76A]/30">
               차량 내 블랙박스·OBD 단말기 0대 (100% 스마트폰 센서 재구성)
             </span>
+            <button
+              type="button"
+              onClick={onOpenManual}
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#191E2A] hover:bg-white/10 text-[#F4F6F8] border border-white/15 inline-flex items-center gap-1 transition"
+            >
+              <BookOpen className="w-3 h-3 text-[#7EA0FF]" />
+              신청·승인 매뉴얼 보기/다운로드
+            </button>
+            <button
+              type="button"
+              onClick={onLockAdminConsole}
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-[#E82127]/20 hover:bg-[#E82127]/35 text-[#FF8080] border border-[#E82127]/40 inline-flex items-center gap-1 transition"
+            >
+              <Lock className="w-3 h-3" />
+              관리자 화면 잠금
+            </button>
           </div>
           <h2 className="text-lg font-semibold text-[#F4F6F8]">
             법인차량 30대 통합 관리자 운영 콘솔 (4400 Northpark Dr, Opelika, AL 36801)
           </h2>
           <p className="text-xs text-[#9BA3B0]">
-            차량 순정 블루투스 등록·실사 계기판 대조(유령 주행 적발), 임직원 운전 자격 및 권한 통제, 무블랙박스 스마트폰 6축 센서 사고 재구성 및 행정 처분, 지오펜스·자동승인 정책을 한 화면에서 관리합니다.
+            차량·사용자 CSV 일괄 입력, 순정 블루투스 등록·실사 계기판 대조(유령 주행 적발), 임직원 운전 자격 통제, 무블랙박스 스마트폰 6축 센서 사고 처분 및 정책을 관리합니다.
           </p>
         </div>
 
@@ -178,15 +374,33 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               </p>
             </div>
 
-            <div className="relative w-full md:w-72">
-              <Search className="w-3.5 h-3.5 text-[#9BA3B0] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={vehSearch}
-                onChange={(e) => setVehSearch(e.target.value)}
-                placeholder="호차, 번호판(AL 41...), 차종 검색"
-                className="w-full rounded-lg bg-[#0B0D10] border border-white/10 pl-8 pr-3 py-1.5 text-xs text-[#F4F6F8]"
-              />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadVehicleCsvTemplate}
+                className="px-2.5 py-1.5 rounded-lg bg-[#191E2A] hover:bg-white/10 border border-white/15 text-xs text-[#F4F6F8] flex items-center gap-1.5 transition"
+              >
+                <Download className="w-3.5 h-3.5 text-[#7EA0FF]" />
+                차량 CSV 양식 다운로드
+              </button>
+              <button
+                type="button"
+                onClick={() => vehicleCsvInputRef.current?.click()}
+                className="px-3 py-1.5 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-semibold flex items-center gap-1.5 transition"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                차량 CSV 일괄 업로드
+              </button>
+              <div className="relative w-full md:w-60">
+                <Search className="w-3.5 h-3.5 text-[#9BA3B0] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={vehSearch}
+                  onChange={(e) => setVehSearch(e.target.value)}
+                  placeholder="호차, 번호판(AL 41...), 차종 검색"
+                  className="w-full rounded-lg bg-[#0B0D10] border border-white/10 pl-8 pr-3 py-1.5 text-xs text-[#F4F6F8]"
+                />
+              </div>
             </div>
           </div>
 
@@ -361,14 +575,32 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowAddEmp((p) => !p)}
-              className="px-3 py-1.5 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-medium flex items-center gap-1.5"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              + 신규 임직원(운전자) 등록
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadEmployeeCsvTemplate}
+                className="px-2.5 py-1.5 rounded-lg bg-[#191E2A] hover:bg-white/10 border border-white/15 text-xs text-[#F4F6F8] flex items-center gap-1.5 transition"
+              >
+                <Download className="w-3.5 h-3.5 text-[#32D583]" />
+                사용자 CSV 양식 다운로드
+              </button>
+              <button
+                type="button"
+                onClick={() => employeeCsvInputRef.current?.click()}
+                className="px-3 py-1.5 rounded-lg bg-[#12B76A] hover:bg-[#0E9F5C] text-white text-xs font-semibold flex items-center gap-1.5 transition"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                사용자 CSV 일괄 업로드
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddEmp((p) => !p)}
+                className="px-3 py-1.5 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-medium flex items-center gap-1.5"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                + 신규 임직원 개별 등록
+              </button>
+            </div>
           </div>
 
           {showAddEmp && (

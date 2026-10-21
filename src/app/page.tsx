@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   BellRing,
   Bluetooth,
+  BookOpen,
   Car,
   CheckCircle,
   ClipboardList,
@@ -13,7 +14,9 @@ import {
   Download,
   FileSpreadsheet,
   Filter,
+  KeyRound,
   LayoutDashboard,
+  Lock,
   Radar,
   RefreshCw,
   Settings2,
@@ -47,7 +50,12 @@ import {
 import { TeslaTelemetryMap } from '@/components/TeslaTelemetryMap';
 import { EmployeePhoneSimulator } from '@/components/EmployeePhoneSimulator';
 import { ReservationWorkflowPanel } from '@/components/ReservationWorkflowPanel';
-import { AdminManagementConsole } from '@/components/AdminManagementConsole';
+import {
+  AdminManagementConsole,
+  EmployeeCsvRow,
+  VehicleCsvRow,
+} from '@/components/AdminManagementConsole';
+import { UserApprovalManualModal } from '@/components/UserApprovalManualModal';
 
 type TopViewMode = 'LIVE_MONITOR' | 'ADMIN_CONSOLE';
 
@@ -75,6 +83,54 @@ export default function FleetGuardCockpitPage() {
   const [activeTab, setActiveTab] = useState<CockpitTab>('DISPATCH_WORKFLOW');
   const [statusFilter, setStatusFilter] = useState<'ALL' | VehicleStatus>('ALL');
   const [liveTelemetryTick, setLiveTelemetryTick] = useState<boolean>(true);
+
+  // Admin PIN 4400 Gate & Manual Modal State
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(false);
+  const [showPinModal, setShowPinModal] = useState<boolean>(false);
+  const [pinInput, setPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [isManualOpen, setIsManualOpen] = useState<boolean>(false);
+
+  const handleOpenAdminConsole = () => {
+    if (isAdminUnlocked) {
+      setViewMode('ADMIN_CONSOLE');
+    } else {
+      setPinInput('');
+      setPinError(null);
+      setShowPinModal(true);
+    }
+  };
+
+  const handleVerifyAdminPin = (candidatePin?: string) => {
+    const code = (candidatePin ?? pinInput).trim();
+    if (code === '4400') {
+      setIsAdminUnlocked(true);
+      setShowPinModal(false);
+      setPinInput('');
+      setPinError(null);
+      setViewMode('ADMIN_CONSOLE');
+    } else {
+      setPinError('보안 PIN 번호가 일치하지 않습니다. (관리자 PIN: 4400)');
+      setPinInput('');
+    }
+  };
+
+  const handleDigitClick = (digit: string) => {
+    setPinError(null);
+    const next = (pinInput + digit).slice(0, 4);
+    setPinInput(next);
+    if (next.length === 4) {
+      if (next === '4400') {
+        setIsAdminUnlocked(true);
+        setShowPinModal(false);
+        setPinInput('');
+        setViewMode('ADMIN_CONSOLE');
+      } else {
+        setPinError('보안 PIN 번호가 일치하지 않습니다. (관리자 PIN: 4400)');
+        setTimeout(() => setPinInput(''), 350);
+      }
+    }
+  };
 
   const [pushStream, setPushStream] = useState<
     {
@@ -719,6 +775,119 @@ export default function FleetGuardCockpitPage() {
     setEmployees((prev) => [newEmp, ...prev]);
   };
 
+  const handleBulkImportVehicles = (rows: VehicleCsvRow[]) => {
+    const timestamp = nowTimeStr();
+    setVehicles((prev) => {
+      const next = [...prev];
+      rows.forEach((row) => {
+        const idx = next.findIndex(
+          (v) =>
+            v.fleetNumber === row.fleetNumber ||
+            v.plateNumber.toLowerCase() === row.plateNumber.toLowerCase()
+        );
+        if (idx >= 0) {
+          next[idx] = {
+            ...next[idx],
+            plateNumber: row.plateNumber,
+            modelName: row.modelName,
+            btMacAddress: row.btMacAddress,
+            bleBeaconUuid: row.bleBeaconUuid,
+            cumulativeGpsKm: row.cumulativeGpsKm,
+            lastVerifiedOdometerKm: row.cumulativeGpsKm,
+            parkingZone: row.parkingZone,
+          };
+        } else {
+          next.push({
+            id: `veh-csv-${Date.now()}-${row.fleetNumber}`,
+            fleetNumber: row.fleetNumber,
+            plateNumber: row.plateNumber,
+            modelName: row.modelName,
+            btMacAddress: row.btMacAddress,
+            bleBeaconUuid: row.bleBeaconUuid,
+            status: 'IDLE',
+            speedKmh: 0,
+            currentGForce: 1.0,
+            rssiDbm: -95,
+            currentDriverId: null,
+            coPassengerIds: [],
+            driverSelectionReason: null,
+            tripPurpose: null,
+            tripStartedAt: null,
+            cumulativeGpsKm: row.cumulativeGpsKm,
+            lastVerifiedOdometerKm: row.cumulativeGpsKm,
+            parkingZone: row.parkingZone,
+            lat: 32.6912 + ((row.fleetNumber % 6) - 2.5) * 0.0012,
+            lng: -85.3298 + (Math.floor(row.fleetNumber / 6) - 2.5) * 0.0014,
+            isLockedByAdmin: false,
+            lastOdometerAuditAt: timestamp,
+          });
+        }
+      });
+      return next.sort((a, b) => a.fleetNumber - b.fleetNumber);
+    });
+
+    setPushStream((prev) => [
+      {
+        id: `push-vcsv-${Date.now()}`,
+        time: timestamp,
+        target: 'MANAGER',
+        message: `📥 [차량 CSV 일괄 등록] 관리자가 CSV 업로드로 차량 ${rows.length}대 정보를 일괄 등록/업데이트했습니다.`,
+        level: 'INFO',
+      },
+      ...prev,
+    ]);
+  };
+
+  const handleBulkImportEmployees = (rows: EmployeeCsvRow[]) => {
+    const timestamp = nowTimeStr();
+    setEmployees((prev) => {
+      const next = [...prev];
+      rows.forEach((row, index) => {
+        const idx = next.findIndex(
+          (e) =>
+            e.name.toLowerCase() === row.name.toLowerCase() ||
+            e.phone === row.phone
+        );
+        if (idx >= 0) {
+          next[idx] = {
+            ...next[idx],
+            name: row.name,
+            role: row.role,
+            department: row.department,
+            phone: row.phone,
+            dispatchAllowed: row.dispatchAllowed,
+          };
+        } else {
+          next.push({
+            id: `emp-csv-${Date.now()}-${index}`,
+            name: row.name,
+            role: row.role,
+            department: row.department,
+            phone: row.phone,
+            permissionStatus: 'OK',
+            lastHeartbeatAt: '방금 전 (CSV 일괄등록)',
+            inGarageGeofence: true,
+            lastKeyboxAccessAt: null,
+            dispatchAllowed: row.dispatchAllowed,
+            violationCount: 0,
+          });
+        }
+      });
+      return next;
+    });
+
+    setPushStream((prev) => [
+      {
+        id: `push-ecsv-${Date.now()}`,
+        time: timestamp,
+        target: 'MANAGER',
+        message: `📥 [사용자 CSV 일괄 등록] 관리자가 CSV 업로드로 임직원(운전자) ${rows.length}명 정보를 일괄 등록/업데이트했습니다.`,
+        level: 'INFO',
+      },
+      ...prev,
+    ]);
+  };
+
   const handleResolveIncident = (
     incidentId: string,
     resolutionNote: string,
@@ -1265,15 +1434,19 @@ export default function FleetGuardCockpitPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode('ADMIN_CONSOLE')}
+                onClick={handleOpenAdminConsole}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
                   viewMode === 'ADMIN_CONSOLE'
                     ? 'bg-[#E82127] text-white shadow'
                     : 'text-[#9BA3B0] hover:text-white'
                 }`}
               >
-                <Settings2 className="w-3.5 h-3.5" />
-                솔루션 관리자 화면 (Admin Console)
+                {isAdminUnlocked ? (
+                  <Settings2 className="w-3.5 h-3.5" />
+                ) : (
+                  <Lock className="w-3.5 h-3.5 text-[#F79009]" />
+                )}
+                솔루션 관리자 화면 {isAdminUnlocked ? '(Admin Console)' : '(PIN 4400 잠금)'}
               </button>
             </div>
 
@@ -1312,6 +1485,15 @@ export default function FleetGuardCockpitPage() {
             >
               <Activity className="w-3.5 h-3.5" />
               {liveTelemetryTick ? '텔레메트리 ON' : '일시정지'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsManualOpen(true)}
+              className="px-3 py-1.5 rounded-lg bg-[#3E6AE1]/20 hover:bg-[#3E6AE1]/35 border border-[#3E6AE1]/40 text-xs font-semibold text-[#9BC1FF] flex items-center gap-1.5 transition"
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              신청·승인 매뉴얼 다운로드
             </button>
 
             <button
@@ -1357,9 +1539,7 @@ export default function FleetGuardCockpitPage() {
 
           <button
             type="button"
-            onClick={() => {
-              setViewMode('ADMIN_CONSOLE');
-            }}
+            onClick={handleOpenAdminConsole}
             className="text-left rounded-xl bg-[#131720] p-4 border border-[#F79009]/40 hover:border-[#F79009] transition"
           >
             <div className="flex items-center justify-between">
@@ -1377,7 +1557,7 @@ export default function FleetGuardCockpitPage() {
               </span>
             </div>
             <p className="text-[11px] text-[#9BA3B0] mt-1">
-              클릭 시 관리자 사고 재구성·처분 콘솔로 이동
+              클릭 시 관리자 사고 재구성·처분 콘솔로 이동 (PIN 4400)
             </p>
           </button>
 
@@ -1435,8 +1615,8 @@ export default function FleetGuardCockpitPage() {
           </button>
         </section>
 
-        {/* VIEW MODE 2: Dedicated Solution Admin Console (관리자 관점 솔루션 관리 화면) */}
-        {viewMode === 'ADMIN_CONSOLE' ? (
+        {/* VIEW MODE 2: Dedicated Solution Admin Console (Requires PIN 4400) */}
+        {viewMode === 'ADMIN_CONSOLE' && isAdminUnlocked ? (
           <AdminManagementConsole
             vehicles={vehicles}
             employees={employees}
@@ -1448,8 +1628,15 @@ export default function FleetGuardCockpitPage() {
             onToggleEmployeeDispatch={handleToggleEmployeeDispatch}
             onSendPermissionWarningPush={handleSendPermissionWarningPush}
             onAddEmployee={handleAddEmployee}
+            onBulkImportVehicles={handleBulkImportVehicles}
+            onBulkImportEmployees={handleBulkImportEmployees}
             onResolveIncident={handleResolveIncident}
             onUpdatePolicyConfig={(nextCfg) => setPolicyConfig(nextCfg)}
+            onLockAdminConsole={() => {
+              setIsAdminUnlocked(false);
+              setViewMode('LIVE_MONITOR');
+            }}
+            onOpenManual={() => setIsManualOpen(true)}
           />
         ) : (
           /* VIEW MODE 1: Live Monitoring Cockpit + Employee Smartphone Simulator */
@@ -1939,6 +2126,118 @@ export default function FleetGuardCockpitPage() {
           </div>
         )}
       </main>
+
+      {/* Admin Security PIN 4400 Keypad Modal */}
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div
+            className="w-full max-w-sm rounded-2xl bg-[#131720] border border-white/15 p-6 space-y-5"
+            style={{
+              boxShadow:
+                'rgba(0, 0, 0, 0.85) 0px 24px 60px, rgba(255, 255, 255, 0.1) 0px 0px 0px 1px',
+            }}
+          >
+            <div className="text-center space-y-1.5">
+              <div className="w-11 h-11 rounded-2xl bg-[#E82127]/20 border border-[#E82127]/40 flex items-center justify-center mx-auto">
+                <KeyRound className="w-5 h-5 text-[#E82127]" />
+              </div>
+              <h3 className="text-base font-semibold text-[#F4F6F8]">
+                관리자 콘솔 보안 PIN 인증
+              </h3>
+              <p className="text-xs text-[#9BA3B0]">
+                관리자 화면(차량·임직원 CSV 등록, 사고 처분, 정책 변경) 접속을 위해 4자리 보안 PIN을 입력하세요.
+              </p>
+            </div>
+
+            {/* 4-Digit PIN Indicator Dots + Direct Input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleVerifyAdminPin();
+              }}
+              className="space-y-3"
+            >
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                autoFocus
+                value={pinInput}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                  setPinInput(val);
+                  setPinError(null);
+                  if (val.length === 4) {
+                    handleVerifyAdminPin(val);
+                  }
+                }}
+                placeholder="PIN 4자리 입력"
+                className="w-full text-center tracking-[0.8em] text-xl font-mono font-semibold rounded-xl bg-[#0B0D10] border border-white/15 py-3 text-[#F4F6F8] focus:outline-none focus:border-[#3E6AE1]"
+              />
+
+              {pinError && (
+                <p className="text-center text-xs text-[#FF8080] font-medium">
+                  {pinError}
+                </p>
+              )}
+
+              {/* Interactive Numeric Keypad */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                  <button
+                    key={digit}
+                    type="button"
+                    onClick={() => handleDigitClick(digit)}
+                    className="py-3 rounded-xl bg-[#191E2A] hover:bg-white/10 border border-white/10 text-base font-mono font-semibold text-[#F4F6F8] transition active:scale-95"
+                  >
+                    {digit}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPinInput('');
+                    setPinError(null);
+                  }}
+                  className="py-3 rounded-xl bg-[#191E2A] hover:bg-white/10 border border-white/10 text-xs font-mono text-[#9BA3B0] transition"
+                >
+                  지우기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDigitClick('0')}
+                  className="py-3 rounded-xl bg-[#191E2A] hover:bg-white/10 border border-white/10 text-base font-mono font-semibold text-[#F4F6F8] transition active:scale-95"
+                >
+                  0
+                </button>
+                <button
+                  type="submit"
+                  className="py-3 rounded-xl bg-[#E82127] hover:bg-[#C91B20] text-xs font-semibold text-white transition"
+                >
+                  확인
+                </button>
+              </div>
+            </form>
+
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#9BA3B0]">
+              <span className="font-mono">초기 PIN: 4400 (Northpark Dr)</span>
+              <button
+                type="button"
+                onClick={() => setShowPinModal(false)}
+                className="text-[#9BA3B0] hover:text-white underline"
+              >
+                취소 및 닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Request & Manager Approval Manual Modal */}
+      <UserApprovalManualModal
+        isOpen={isManualOpen}
+        onClose={() => setIsManualOpen(false)}
+      />
     </div>
   );
 }
