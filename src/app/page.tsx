@@ -114,7 +114,7 @@ export default function FleetGuardCockpitPage() {
       setPinError(null);
       setViewMode('ADMIN_CONSOLE');
     } else {
-      setPinError('보안 PIN 번호가 일치하지 않습니다. (관리자 PIN: 4400)');
+      setPinError('보안 PIN 번호가 일치하지 않습니다. 관리자에게 문의하세요.');
       setPinInput('');
     }
   };
@@ -130,7 +130,7 @@ export default function FleetGuardCockpitPage() {
         setPinInput('');
         setViewMode('ADMIN_CONSOLE');
       } else {
-        setPinError('보안 PIN 번호가 일치하지 않습니다. (관리자 PIN: 4400)');
+        setPinError('보안 PIN 번호가 일치하지 않습니다. 관리자에게 문의하세요.');
         setTimeout(() => setPinInput(''), 350);
       }
     }
@@ -1451,7 +1451,7 @@ export default function FleetGuardCockpitPage() {
                 ) : (
                   <Lock className="w-3.5 h-3.5 text-[#F79009]" />
                 )}
-                솔루션 관리자 화면 {isAdminUnlocked ? '(Admin Console)' : '(PIN 4400 잠금)'}
+                솔루션 관리자 화면 {isAdminUnlocked ? '(Admin Console)' : '(PIN 잠금)'}
               </button>
               <button
                 type="button"
@@ -1588,10 +1588,10 @@ export default function FleetGuardCockpitPage() {
                 </span>
                 <div>
                   <p className="font-semibold text-[#F4F6F8]">
-                    STEP 3. 차고지 복귀 자동 반납 & 관리자(PIN 4400)
+                    STEP 3. 차고지 복귀 자동 반납 & 관리자 콘솔(보안 PIN)
                   </p>
                   <p className="text-[11px] text-[#9BA3B0] mt-0.5">
-                    4400 Northpark Dr 복귀 시 자동 반납 및 세무일지가 생성되며, 관리자는 <strong>PIN 4400</strong>으로 CSV 일괄 등록 및 사고를 관제합니다.
+                    4400 Northpark Dr 복귀 시 자동 반납 및 세무일지가 생성되며, 관리자는 <strong>전용 보안 PIN</strong>으로 CSV 일괄 등록 및 사고를 관제합니다.
                   </p>
                 </div>
               </div>
@@ -1647,7 +1647,7 @@ export default function FleetGuardCockpitPage() {
               </span>
             </div>
             <p className="text-[11px] text-[#9BA3B0] mt-1">
-              클릭 시 관리자 사고 재구성·처분 콘솔로 이동 (PIN 4400)
+              클릭 시 관리자 사고 재구성·처분 콘솔로 이동 (보안 PIN 인증)
             </p>
           </button>
 
@@ -2310,7 +2310,7 @@ export default function FleetGuardCockpitPage() {
             </form>
 
             <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#9BA3B0]">
-              <span className="font-mono">초기 PIN: 4400 (Northpark Dr)</span>
+              <span className="font-mono">보안 등급: Fleet Admin (비공개 PIN)</span>
               <button
                 type="button"
                 onClick={() => setShowPinModal(false)}

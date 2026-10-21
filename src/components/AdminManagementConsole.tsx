@@ -286,7 +286,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#3E6AE1]/20 text-[#9BC1FF] border border-[#3E6AE1]/40">
-              FLEET ADMIN CONSOLE (PIN 4400 인증됨)
+              FLEET ADMIN CONSOLE (보안 PIN 인증됨)
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#12B76A]/15 text-[#32D583] border border-[#12B76A]/30">
               차량 내 블랙박스·OBD 단말기 0대 (100% 스마트폰 센서 재구성)

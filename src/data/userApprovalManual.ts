@@ -5,7 +5,7 @@ export const USER_APPROVAL_MANUAL_MARKDOWN = `# FleetGuard 30 법인차량 신�
 - **적용 사업장:** 4400 Northpark Dr, Opelika, AL 36801 (Lee County, Alabama, USA)
 - **관리 대상:** 법인차량 30대 (AL 41A-2237 ~ AL 41F-6210)
 - **시스템 특성:** 차량 내 블랙박스 0대 · OBD 단말기 0대 · 100% 임직원 스마트폰(BYOD) 6축 센서 및 순정 블루투스 기반
-- **관리자 콘솔 보안 PIN:** \`4400\` (본사 번지수 4400 Northpark Dr 기준)
+- **관리자 콘솔 보안 인증:** 4자리 보안 PIN (총무팀/차량관리자 전용 비공개 코드)
 
 ---
 
@@ -53,9 +53,9 @@ export const USER_APPROVAL_MANUAL_MARKDOWN = `# FleetGuard 30 법인차량 신�
 
 ## 제2장. 관리자(Fleet Admin) 승인 · 관제 · CSV 등록 매뉴얼
 
-### 1. 관리자 화면 접속 (보안 PIN \`4400\`)
+### 1. 관리자 화면 접속 (보안 PIN 인증)
 1. 상단 우측의 **[솔루션 관리자 화면 (Admin Console)]** 버튼을 클릭합니다.
-2. 보안 키패드 모달이 나타나면 관리자 전용 PIN 번호 **\`4400\`**을 입력해 잠금을 해제합니다.
+2. 보안 키패드 모달이 나타나면 관리자에게 부여된 **4자리 전용 보안 PIN 번호(\`••••\`)**를 입력해 잠금을 해제합니다.
 3. 자리를 비울 때는 관리자 콘솔 우측 상단의 **[🔒 관리자 화면 잠금]** 버튼을 눌러 다시 보호할 수 있습니다.
 
 ### 2. 배차 신청 승인 및 반려 처리
@@ -64,7 +64,7 @@ export const USER_APPROVAL_MANUAL_MARKDOWN = `# FleetGuard 30 법인차량 신�
 3. 처리 결과는 즉시 백엔드 데이터베이스에 영구 저장되며 신청자 휴대폰으로 푸시 통보됩니다.
 
 ### 3. 사용자(임직원) 및 차량 정보 CSV 일괄 입력 방법
-1. 관리자 화면(\`PIN 4400\`)으로 진입합니다.
+1. 관리자 화면(보안 PIN 인증)으로 진입합니다.
 2. **차량 30대 CSV 일괄 입력 (\`🚗 차량 30대 · 계기판 실사\` 탭):**
    - **[📥 차량 CSV 양식 다운로드]** 버튼을 눌러 샘플 양식(\`fleetNumber,plateNumber,modelName,btMacAddress,bleBeaconUuid,cumulativeGpsKm,parkingZone\`)을 내려받습니다.
    - 엑셀이나 메모장에서 차량 정보를 수정/추가한 뒤 **[📤 차량 CSV 업로드]** 버튼으로 파일을 선택하면 기존 호차 업데이트 및 신규 차량 추가가 일괄 반영됩니다.
@@ -171,7 +171,7 @@ export function downloadManualAsHtml() {
     <span class="badge" style="background:rgba(18,183,106,0.2);color:#32D583;border-color:rgba(18,183,106,0.4);">차량 내 블랙박스 0대 · 스마트폰 센서 기반</span>
     <h1>법인차량 30대 사용자 신청 · 관리자 승인 · CSV 운영 매뉴얼</h1>
     <p style="color:#9BA3B0;font-size:13px;margin:0;">
-      본사 주소: 4400 Northpark Dr, Opelika, AL 36801 (Lee County AL 41 번호판) | 관리자 콘솔 보안 PIN: <code>4400</code>
+      본사 주소: 4400 Northpark Dr, Opelika, AL 36801 (Lee County AL 41 번호판) | 관리자 콘솔 보안 PIN: <code>•••• (비공개)</code>
     </p>
   </div>
 
@@ -215,8 +215,8 @@ export function downloadManualAsHtml() {
 
   <h2>2. 관리자(Fleet Admin) 보안 접속 및 승인 매뉴얼</h2>
   <div class="card">
-    <h3>① 관리자 콘솔 PIN 잠금 해제 (PIN: 4400)</h3>
-    <p>상단 <strong>[솔루션 관리자 화면 (Admin Console)]</strong> 클릭 시 보안 모달이 표시됩니다. 본사 번지수(4400 Northpark Dr)와 동일한 <strong>PIN <code>4400</code></strong>을 입력하면 잠금이 해제됩니다.</p>
+    <h3>① 관리자 콘솔 보안 PIN 잠금 해제</h3>
+    <p>상단 <strong>[솔루션 관리자 화면 (Admin Console)]</strong> 클릭 시 보안 모달이 표시됩니다. 관리자에게 부여된 전용 <strong>4자리 보안 PIN(<code>••••</code>)</strong>을 입력하면 잠금이 해제됩니다.</p>
     <h3>② 사용자(임직원) 및 차량 30대 CSV 일괄 등록</h3>
     <p>관리자 화면의 <strong>[차량 30대 · 계기판 실사]</strong> 탭과 <strong>[임직원 자격 · 권한 통제]</strong> 탭에서 각각 <strong>[CSV 양식 다운로드]</strong>를 받아 엑셀로 편집한 후 <strong>[CSV 업로드]</strong>를 수행하면 즉시 서버 DB에 일괄 반영됩니다.</p>
     <h3>③ 무블랙박스 스마트폰 6축 센서 사고 판정 및 유령 주행 실사</h3>

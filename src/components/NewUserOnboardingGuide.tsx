@@ -117,9 +117,9 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
               },
               {
                 step: 3 as const,
-                badge: 'STEP 3 · 반납 및 관리자(PIN 4400)',
+                badge: 'STEP 3 · 반납 및 관리자 콘솔',
                 title: '자동 반납 · CSV 등록 · 사고 관제',
-                subtitle: '차고지 자동반납 & 관리자 콘솔 운영',
+                subtitle: '차고지 자동반납 & 관리자 PIN 운영',
                 icon: KeyRound,
               },
             ].map((item) => {
@@ -310,7 +310,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                   onClick={() => markStepComplete(2)}
                   className="px-4 py-2 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-semibold flex items-center gap-1.5 transition"
                 >
-                  3단계(자동 반납 & 관리자 PIN 4400) 보기
+                  3단계(자동 반납 & 관리자 콘솔) 보기
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -324,10 +324,10 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                   3단계 핵심 목표
                 </span>
                 <h3 className="text-base font-semibold text-[#F4F6F8]">
-                  차고지 복귀 시 자동 반납 & 관리자 전용 콘솔(PIN 4400)로 완벽 통제
+                  차고지 복귀 시 자동 반납 & 관리자 전용 콘솔(보안 PIN)로 완벽 통제
                 </h3>
                 <p className="text-xs text-[#9BA3B0] leading-relaxed">
-                  운전자는 복귀 후 주차만 하면 운행일지가 자동 생성되며, 관리자는 <strong>보안 PIN <code>4400</code></strong>을 눌러 사용자·차량 CSV 일괄 등록과 사고/유령주행 감사를 수행합니다.
+                  운전자는 복귀 후 주차만 하면 운행일지가 자동 생성되며, 관리자는 <strong>4자리 전용 보안 PIN(<code>••••</code>)</strong>을 입력해 사용자·차량 CSV 일괄 등록과 사고/유령주행 감사를 수행합니다.
                 </p>
               </div>
 
@@ -345,10 +345,10 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                 <div className="p-4 rounded-xl bg-[#0F131B] border border-white/10 space-y-2">
                   <div className="flex items-center gap-2 text-[#FF8080] font-semibold">
                     <KeyRound className="w-4 h-4" />
-                    ② 관리자 화면 접속 (PIN: 4400)
+                    ② 관리자 화면 보안 PIN 접속
                   </div>
                   <p className="text-[11px] text-[#9BA3B0] leading-relaxed">
-                    상단 <strong>[솔루션 관리자 화면]</strong> 클릭 후 보안 PIN <code className="text-[#FDB022] font-mono">4400</code>을 입력하면 계기판 실사 대조(유령 주행 색출), 사고 처분, 임직원 자격 정지가 가능합니다.
+                    상단 <strong>[솔루션 관리자 화면]</strong> 클릭 후 관리자 전용 4자리 보안 PIN(<code className="text-[#FDB022] font-mono">••••</code>)을 입력하면 계기판 실사 대조(유령 주행 색출), 사고 처분, 임직원 자격 정지가 가능합니다.
                   </p>
                 </div>
 
@@ -374,7 +374,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                     className="px-3.5 py-2 rounded-lg bg-[#E82127] hover:bg-[#C91B20] text-white text-xs font-semibold flex items-center gap-1.5 transition"
                   >
                     <KeyRound className="w-3.5 h-3.5" />
-                    관리자 콘솔(PIN 4400) 바로 열기
+                    관리자 콘솔(PIN 인증) 바로 열기
                   </button>
                   <button
                     type="button"

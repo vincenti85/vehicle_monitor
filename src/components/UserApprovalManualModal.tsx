@@ -53,7 +53,7 @@ export const UserApprovalManualModal: React.FC<UserApprovalManualModalProps> = (
                 </span>
               </div>
               <p className="text-xs text-[#9BA3B0]">
-                임직원 차량 신청·사용·반납 4단계 가이드 및 관리자(PIN 4400) 승인·CSV 일괄 등록 지침서
+                임직원 차량 신청·사용·반납 4단계 가이드 및 관리자 보안 PIN 인증 · CSV 일괄 등록 지침서
               </p>
             </div>
           </div>
@@ -137,21 +137,21 @@ export const UserApprovalManualModal: React.FC<UserApprovalManualModalProps> = (
             </div>
           </div>
 
-          {/* Section 2: Manager Approval & PIN 4400 Security */}
+          {/* Section 2: Manager Approval & PIN Security */}
           <div className="p-4 rounded-xl bg-[#0F131B] border border-white/10 space-y-3">
             <h3 className="text-sm font-semibold text-[#F4F6F8] flex items-center gap-2">
               <Lock className="w-4 h-4 text-[#E82127]" />
-              제2장. 관리자(Fleet Admin) 승인 · 보안 접속(PIN 4400) · CSV 일괄 등록 매뉴얼
+              제2장. 관리자(Fleet Admin) 승인 · 보안 PIN 접속 · CSV 일괄 등록 매뉴얼
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3 rounded-lg bg-[#131720] border border-white/5 space-y-1">
                 <div className="flex items-center gap-1.5 text-[#FF8080] font-semibold">
                   <KeyRound className="w-3.5 h-3.5" />
-                  1. 보안 PIN 4400 접속
+                  1. 관리자 전용 보안 PIN 접속
                 </div>
                 <p className="text-[11px] text-[#9BA3B0] leading-relaxed">
-                  상단 <strong>[솔루션 관리자 화면]</strong> 클릭 시 본사 번지수(4400 Northpark Dr)와 동일한 보안 PIN <code className="text-[#FDB022] font-mono">4400</code>을 입력해야 관리자 콘솔에 진입할 수 있습니다.
+                  상단 <strong>[솔루션 관리자 화면]</strong> 클릭 시 총무팀/차량관리자에게만 부여된 <strong>4자리 보안 PIN 번호(<code className="text-[#FDB022] font-mono">••••</code>)</strong>를 입력해야 관리자 콘솔에 진입할 수 있습니다.
                 </p>
               </div>
 
