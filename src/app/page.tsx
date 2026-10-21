@@ -22,6 +22,7 @@ import {
   Settings2,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   UserCheck,
   Zap,
 } from 'lucide-react';
@@ -56,6 +57,7 @@ import {
   VehicleCsvRow,
 } from '@/components/AdminManagementConsole';
 import { UserApprovalManualModal } from '@/components/UserApprovalManualModal';
+import { NewUserOnboardingGuide } from '@/components/NewUserOnboardingGuide';
 
 type TopViewMode = 'LIVE_MONITOR' | 'ADMIN_CONSOLE';
 
@@ -84,12 +86,14 @@ export default function FleetGuardCockpitPage() {
   const [statusFilter, setStatusFilter] = useState<'ALL' | VehicleStatus>('ALL');
   const [liveTelemetryTick, setLiveTelemetryTick] = useState<boolean>(true);
 
-  // Admin PIN 4400 Gate & Manual Modal State
+  // Admin PIN 4400 Gate, Manual Modal & 3-Step Onboarding Guide State
   const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(false);
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [pinInput, setPinInput] = useState<string>('');
   const [pinError, setPinError] = useState<string | null>(null);
   const [isManualOpen, setIsManualOpen] = useState<boolean>(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+  const [showQuickGuideBar, setShowQuickGuideBar] = useState<boolean>(true);
 
   const handleOpenAdminConsole = () => {
     if (isAdminUnlocked) {
@@ -1449,6 +1453,14 @@ export default function FleetGuardCockpitPage() {
                 )}
                 솔루션 관리자 화면 {isAdminUnlocked ? '(Admin Console)' : '(PIN 4400 잠금)'}
               </button>
+              <button
+                type="button"
+                onClick={() => setIsOnboardingOpen(true)}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-gradient-to-r from-[#3E6AE1]/30 to-[#12B76A]/30 hover:from-[#3E6AE1]/50 hover:to-[#12B76A]/50 text-[#F4F6F8] border border-[#3E6AE1]/40 transition"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#32D583]" />
+                신규 이용자 3단계 가이드
+              </button>
             </div>
 
             <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#131720] border border-white/10 text-[11px] font-mono">
@@ -1510,6 +1522,83 @@ export default function FleetGuardCockpitPage() {
       </header>
 
       <main className="max-w-[1600px] mx-auto px-4 lg:px-8 pt-5 space-y-5">
+        {/* New User 3-Step Quick Onboarding Banner */}
+        {showQuickGuideBar && (
+          <section className="rounded-2xl bg-gradient-to-r from-[#131720] via-[#161D2B] to-[#131720] p-4 border border-[#3E6AE1]/40 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#3E6AE1] text-white">
+                  NEW USER 3-STEP GUIDE
+                </span>
+                <h2 className="text-sm font-semibold text-[#F4F6F8]">
+                  처음 오셨나요? 신규 이용자를 위한 3단계 빠른 시작 가이드
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsOnboardingOpen(true)}
+                  className="px-3 py-1 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-semibold flex items-center gap-1.5 transition"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  3단계 인터랙티브 가이드 자세히 보기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowQuickGuideBar(false)}
+                  className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-[#9BA3B0] hover:text-white transition"
+                >
+                  접기
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-[#0B0D10]/80 border border-white/10 flex items-start gap-3">
+                <span className="w-6 h-6 rounded-lg bg-[#3E6AE1]/20 border border-[#3E6AE1]/40 text-[#9BC1FF] font-mono font-bold flex items-center justify-center shrink-0">
+                  1
+                </span>
+                <div>
+                  <p className="font-semibold text-[#F4F6F8]">
+                    STEP 1. 휴대폰 웹앱 접속 & 3대 센서 허용
+                  </p>
+                  <p className="text-[11px] text-[#9BA3B0] mt-0.5">
+                    차량 내 블랙박스·OBD 없이 휴대폰의 <strong>블루투스 + 6축 가속도/자이로 + GPS</strong> 권한만 켜면 차량과 자동 매칭됩니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#0B0D10]/80 border border-white/10 flex items-start gap-3">
+                <span className="w-6 h-6 rounded-lg bg-[#12B76A]/20 border border-[#12B76A]/40 text-[#32D583] font-mono font-bold flex items-center justify-center shrink-0">
+                  2
+                </span>
+                <div>
+                  <p className="font-semibold text-[#F4F6F8]">
+                    STEP 2. 배차 신청 → 관리자 승인 → 키 수령 운행
+                  </p>
+                  <p className="text-[11px] text-[#9BA3B0] mt-0.5">
+                    우측 휴대폰 시뮬레이터에서 차량·행선지를 신청하고 승인 후 출발하세요. (관리자 부재 시 <strong>1초 원터치 자율 반출</strong> 지원)
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#0B0D10]/80 border border-white/10 flex items-start gap-3">
+                <span className="w-6 h-6 rounded-lg bg-[#E82127]/20 border border-[#E82127]/40 text-[#FF8080] font-mono font-bold flex items-center justify-center shrink-0">
+                  3
+                </span>
+                <div>
+                  <p className="font-semibold text-[#F4F6F8]">
+                    STEP 3. 차고지 복귀 자동 반납 & 관리자(PIN 4400)
+                  </p>
+                  <p className="text-[11px] text-[#9BA3B0] mt-0.5">
+                    4400 Northpark Dr 복귀 시 자동 반납 및 세무일지가 생성되며, 관리자는 <strong>PIN 4400</strong>으로 CSV 일괄 등록 및 사고를 관제합니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* 4-Classification Fleet KPI Bar */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           <button
@@ -2238,6 +2327,18 @@ export default function FleetGuardCockpitPage() {
       <UserApprovalManualModal
         isOpen={isManualOpen}
         onClose={() => setIsManualOpen(false)}
+      />
+
+      {/* New User 3-Step Interactive Onboarding Guide Modal */}
+      <NewUserOnboardingGuide
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onSelectDispatchTab={() => {
+          setViewMode('LIVE_MONITOR');
+          setActiveTab('DISPATCH_WORKFLOW');
+        }}
+        onOpenAdminConsole={handleOpenAdminConsole}
+        onOpenFullManual={() => setIsManualOpen(true)}
       />
     </div>
   );
