@@ -510,6 +510,40 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                   ))}
                 </div>
               )}
+
+              {/* Quick 1-Tap Garage Auto-Return directly inside the main WORKFLOW tab */}
+              <div className="pt-2 border-t border-white/10 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[#9BA3B0]">
+                    현재 선택 차량:{' '}
+                    <strong className="text-[#F4F6F8]">
+                      #{currentVeh.fleetNumber}호차 ({currentVeh.plateNumber})
+                    </strong>
+                  </span>
+                  <span
+                    className={`font-mono px-1.5 py-0.5 rounded text-[10px] ${
+                      currentVeh.status === 'IDLE'
+                        ? 'bg-[#12B76A]/20 text-[#32D583]'
+                        : 'bg-[#3E6AE1]/25 text-[#9BC1FF]'
+                    }`}
+                  >
+                    {currentVeh.status === 'IDLE' ? '대기중 (반납완료)' : `운행중 (${currentVeh.status})`}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAutoReturnToGarage(selectedVehId);
+                    setSimFeedback(
+                      `🅿️ [4단계 차고지 복귀 자동반납 완료] #${currentVeh.fleetNumber}호차(${currentVeh.plateNumber})가 4400 Northpark Dr 차고지 복귀 및 시동 OFF로 자동 반납되고 세무 운행일지에 등록되었습니다.`
+                    );
+                  }}
+                  className="w-full py-2 px-3 rounded-xl bg-[#12B76A] hover:bg-[#0E9F5A] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow transition"
+                >
+                  <Car className="w-4 h-4" />
+                  🚗 4단계: 4400 Northpark Dr 차고지 복귀 자동반납 (운행 종료)
+                </button>
+              </div>
             </div>
           </div>
         )}

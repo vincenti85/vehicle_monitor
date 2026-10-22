@@ -22,6 +22,7 @@ import {
   Settings2,
   ShieldAlert,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   UserCheck,
   Zap,
@@ -58,8 +59,9 @@ import {
 } from '@/components/AdminManagementConsole';
 import { UserApprovalManualModal } from '@/components/UserApprovalManualModal';
 import { NewUserOnboardingGuide } from '@/components/NewUserOnboardingGuide';
+import { VehiclePhoneSetupInfographic } from '@/components/VehiclePhoneSetupInfographic';
 
-type TopViewMode = 'LIVE_MONITOR' | 'ADMIN_CONSOLE';
+type TopViewMode = 'EMPLOYEE_OPS' | 'LIVE_MONITOR' | 'ADMIN_CONSOLE';
 
 type CockpitTab =
   | 'DISPATCH_WORKFLOW'
@@ -69,7 +71,8 @@ type CockpitTab =
   | 'TAX_LOGBOOK';
 
 export default function FleetGuardCockpitPage() {
-  const [viewMode, setViewMode] = useState<TopViewMode>('LIVE_MONITOR');
+  // Default initial screen is now EMPLOYEE_OPS (임직원 차량 신청·반납 운영화면)
+  const [viewMode, setViewMode] = useState<TopViewMode>('EMPLOYEE_OPS');
   const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
   const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
   const [reservations, setReservations] =
@@ -1422,27 +1425,39 @@ export default function FleetGuardCockpitPage() {
             </div>
           </div>
 
-          {/* Primary View Switcher: Live Monitor vs Admin Management Console */}
+          {/* Primary 3-Mode View Switcher: 1. 임직원 운영화면(최초 기본) | 2. 관리자 관제 대시보드 | 3. 시스템 관리자 콘솔(PIN) */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center bg-[#131720] p-1 rounded-xl border border-white/10">
+            <div className="flex flex-wrap items-center bg-[#131720] p-1 rounded-xl border border-white/10 gap-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('EMPLOYEE_OPS')}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                  viewMode === 'EMPLOYEE_OPS'
+                    ? 'bg-[#12B76A] text-white shadow-lg shadow-[#12B76A]/25'
+                    : 'text-[#9BA3B0] hover:text-white'
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                1. 임직원 신청·반납 운영화면 (모바일앱)
+              </button>
               <button
                 type="button"
                 onClick={() => setViewMode('LIVE_MONITOR')}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
                   viewMode === 'LIVE_MONITOR'
-                    ? 'bg-[#3E6AE1] text-white shadow'
+                    ? 'bg-[#3E6AE1] text-white shadow-lg shadow-[#3E6AE1]/25'
                     : 'text-[#9BA3B0] hover:text-white'
                 }`}
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
-                실시간 통합 관제 & 배차
+                2. 관리자 관제 대시보드 (30대 레이더)
               </button>
               <button
                 type="button"
                 onClick={handleOpenAdminConsole}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
                   viewMode === 'ADMIN_CONSOLE'
-                    ? 'bg-[#E82127] text-white shadow'
+                    ? 'bg-[#E82127] text-white shadow-lg shadow-[#E82127]/25'
                     : 'text-[#9BA3B0] hover:text-white'
                 }`}
               >
@@ -1451,15 +1466,15 @@ export default function FleetGuardCockpitPage() {
                 ) : (
                   <Lock className="w-3.5 h-3.5 text-[#F79009]" />
                 )}
-                솔루션 관리자 화면 {isAdminUnlocked ? '(Admin Console)' : '(PIN 잠금)'}
+                3. 시스템 설정 콘솔 {isAdminUnlocked ? '(Admin)' : '(PIN 잠금)'}
               </button>
               <button
                 type="button"
                 onClick={() => setIsOnboardingOpen(true)}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-gradient-to-r from-[#3E6AE1]/30 to-[#12B76A]/30 hover:from-[#3E6AE1]/50 hover:to-[#12B76A]/50 text-[#F4F6F8] border border-[#3E6AE1]/40 transition"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-gradient-to-r from-[#3E6AE1]/30 to-[#12B76A]/30 hover:from-[#3E6AE1]/50 hover:to-[#12B76A]/50 text-[#F4F6F8] border border-[#3E6AE1]/40 transition"
               >
                 <Sparkles className="w-3.5 h-3.5 text-[#32D583]" />
-                신규 이용자 3단계 가이드
+                3단계 가이드
               </button>
             </div>
 
@@ -1609,114 +1624,209 @@ export default function FleetGuardCockpitPage() {
           </section>
         )}
 
-        {/* 4-Classification Fleet KPI Bar */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <button
-            type="button"
-            onClick={() => {
-              setViewMode('LIVE_MONITOR');
-              setStatusFilter('UNAUTHORIZED');
-              setActiveTab('FLEET_MATRIX');
-            }}
-            className="text-left rounded-xl bg-[#131720] p-4 border border-[#E82127]/40 hover:border-[#E82127] transition relative overflow-hidden"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase text-[#FF8080]">
-                🚨 미승인 무단 운행 (RED ALERT)
-              </span>
-              <ShieldAlert className="w-4 h-4 text-[#E82127]" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-semibold font-mono tabular-nums text-[#F4F6F8]">
-                {counts.unauthorized}
-              </span>
-              <span className="text-xs text-[#9BA3B0]">/ 30대 (즉시 추적중)</span>
-            </div>
-            <p className="text-[11px] text-[#9BA3B0] mt-1">
-              관리자 부재 중 배차 신청·승인 없이 시동·출발 포착
-            </p>
-          </button>
+        {/* ============================================================================
+            VIEW MODE 1 (DEFAULT): 임직원 차량 신청 · 운행 · 반납 전용 운영화면 (EMPLOYEE_OPS)
+            ============================================================================ */}
+        {viewMode === 'EMPLOYEE_OPS' ? (
+          <div className="space-y-6">
+            {/* Top 4-Stage Dispatch & Return Process Banner */}
+            <section className="rounded-2xl bg-gradient-to-r from-[#131720] via-[#152036] to-[#131720] p-5 border border-[#12B76A]/40 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#12B76A] text-white">
+                      EMPLOYEE OPERATIONS SCREEN (최초 기본 화면)
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-[#3E6AE1]/20 text-[#9BC1FF] border border-[#3E6AE1]/40">
+                      임직원 신청·반납 운영화면 ↔ 관리자 대시보드 분리 완료
+                    </span>
+                  </div>
+                  <h2 className="text-base lg:text-lg font-bold text-[#F4F6F8] mt-1.5">
+                    📱 임직원 법인차량 신청 · 승인 · 운행 · 반납 운영센터 (4400 Northpark Dr, Opelika, AL)
+                  </h2>
+                  <p className="text-xs text-[#9BA3B0] mt-0.5">
+                    좌측 <strong>[임직원 모바일 앱]</strong> 또는 우측 <strong>[배차 신청·반납 보드]</strong>에서 차량 신청부터 반납까지 즉시 처리할 수 있으며, 하단 차량 인포그래픽에서 핸드폰 초기 연결 방법을 확인할 수 있습니다.
+                  </p>
+                </div>
 
-          <button
-            type="button"
-            onClick={handleOpenAdminConsole}
-            className="text-left rounded-xl bg-[#131720] p-4 border border-[#F79009]/40 hover:border-[#F79009] transition"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase text-[#FDB022]">
-                💥 무블랙박스 스마트폰 충격·권한 감사
-              </span>
-              <Zap className="w-4 h-4 text-[#F79009]" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-semibold font-mono tabular-nums text-[#F4F6F8]">
-                {counts.incident}
-              </span>
-              <span className="text-xs text-[#FDB022] font-mono">
-                (미결 사건 {counts.unresolvedIncidents}건 · 권한OFF {counts.permissionEvasion}명)
-              </span>
-            </div>
-            <p className="text-[11px] text-[#9BA3B0] mt-1">
-              클릭 시 관리자 사고 재구성·처분 콘솔로 이동 (보안 PIN 인증)
-            </p>
-          </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('LIVE_MONITOR')}
+                    className="px-3.5 py-2 rounded-xl bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-semibold flex items-center gap-1.5 shadow transition"
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    📡 관리자 30대 레이더 관제 대시보드로 전환
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenAdminConsole}
+                    className="px-3.5 py-2 rounded-xl bg-[#191E2A] hover:bg-white/10 text-[#F4F6F8] border border-white/15 text-xs font-semibold flex items-center gap-1.5 transition"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-[#F79009]" />
+                    🔒 시스템 설정 콘솔 (PIN)
+                  </button>
+                </div>
+              </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setViewMode('LIVE_MONITOR');
-              setActiveTab('DISPATCH_WORKFLOW');
-            }}
-            className="text-left rounded-xl bg-[#131720] p-4 border border-[#3E6AE1]/40 hover:border-[#3E6AE1] transition"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase text-[#7EA0FF]">
-                📡 정식 승인 운행 · 배차 워크플로우
-              </span>
-              <Car className="w-4 h-4 text-[#3E6AE1]" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-semibold font-mono tabular-nums text-[#F4F6F8]">
-                {counts.authorized}
-              </span>
-              <span className="text-xs text-[#9BC1FF] font-mono">
-                (신청대기 {counts.pendingApproval} · 승인완료 {counts.approvedReady})
-              </span>
-            </div>
-            <p className="text-[11px] text-[#9BA3B0] mt-1">
-              차량 신청 → 관리자 승인 → 사용(운행) → 반납 통합 관리
-            </p>
-          </button>
+              {/* 4-Step Visual Process Guide Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div className="p-3.5 rounded-xl bg-[#0B0D10]/90 border border-[#3E6AE1]/40 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-[#9BC1FF]">STEP 01 · 배차 신청</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#F79009]/20 text-[#FDB022]">
+                      승인대기 {counts.pendingApproval}건
+                    </span>
+                  </div>
+                  <p className="font-semibold text-[#F4F6F8]">차량 선택 & 행선지 신청</p>
+                  <p className="text-[11px] text-[#9BA3B0]">
+                    좌측 모바일 앱의 <strong>[1단계: 차량 배차 신청하기]</strong> 또는 우측 <strong>[+ 신규 차량 배차 신청]</strong> 클릭
+                  </p>
+                </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setViewMode('LIVE_MONITOR');
-              setStatusFilter('IDLE');
-              setActiveTab('FLEET_MATRIX');
-            }}
-            className="text-left rounded-xl bg-[#131720] p-4 border border-white/10 hover:border-[#12B76A]/60 transition"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-mono uppercase text-[#32D583]">
-                🅿️ Northpark 차고지 대기중
-              </span>
-              <ShieldCheck className="w-4 h-4 text-[#12B76A]" />
-            </div>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-semibold font-mono tabular-nums text-[#F4F6F8]">
-                {counts.idle}
-              </span>
-              <span className="text-xs text-[#9BA3B0]">/ 30대</span>
-            </div>
-            <p className="text-[11px] text-[#9BA3B0] mt-1">
-              4400 Northpark Dr 반경 {policyConfig.garageGeofenceRadiusM}m 지오펜스 내 대기
-            </p>
-          </button>
-        </section>
+                <div className="p-3.5 rounded-xl bg-[#0B0D10]/90 border border-[#3E6AE1]/40 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-[#9BC1FF]">STEP 02 · 배차 승인</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3E6AE1]/20 text-[#9BC1FF]">
+                      승인완료 {counts.approvedReady}건
+                    </span>
+                  </div>
+                  <p className="font-semibold text-[#F4F6F8]">자동 승인 또는 차키 QR 스캔</p>
+                  <p className="text-[11px] text-[#9BA3B0]">
+                    <strong>[⚡ 무설정 1초 탑승: 자동차키 QR 스캔]</strong> 클릭 시 신청·승인·출발이 1초 만에 완료됩니다.
+                  </p>
+                </div>
 
-        {/* VIEW MODE 2: Dedicated Solution Admin Console (Requires PIN 4400) */}
-        {viewMode === 'ADMIN_CONSOLE' && isAdminUnlocked ? (
+                <div className="p-3.5 rounded-xl bg-[#0B0D10]/90 border border-[#12B76A]/40 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-[#32D583]">STEP 03 · 차량 사용</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#12B76A]/20 text-[#32D583]">
+                      운행중 {counts.authorized}대
+                    </span>
+                  </div>
+                  <p className="font-semibold text-[#F4F6F8]">키 수령 & 휴대폰 6축 센서 연동</p>
+                  <p className="text-[11px] text-[#9BA3B0]">
+                    <strong>[3단계: 키 수령 & 차량 사용 시작]</strong> 클릭 시 블루투스·6축 충격 센서가 자동 작동합니다.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-[#0B0D10]/90 border border-[#12B76A]/40 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono font-bold text-[#32D583]">STEP 04 · 차량 반납</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-white/10 text-[#F4F6F8]">
+                      대기중 {counts.idle}대
+                    </span>
+                  </div>
+                  <p className="font-semibold text-[#F4F6F8]">차고지 복귀 자동/수동 반납</p>
+                  <p className="text-[11px] text-[#9BA3B0]">
+                    <strong>[4단계: 차량·키 반납 완료]</strong> 또는 <strong>[🚗 4400 Northpark Dr 차고지 복귀 자동반납]</strong> 클릭
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Primary Employee Operations Workspace: Left Mobile App + Right 4-Stage Workflow Board */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* Left 5 Cols: Employee Mobile App (신청 · 승인 · 사용 · 반납 단말기) */}
+              <div className="lg:col-span-5">
+                <EmployeePhoneSimulator
+                  vehicles={vehicles}
+                  employees={employees}
+                  reservations={reservations}
+                  onCreateRequest={handleCreateRequest}
+                  onApproveRequest={handleApproveRequest}
+                  onStartUsingVehicle={handleStartUsingVehicle}
+                  onReturnVehicle={handleReturnVehicle}
+                  onAuthorizedCheckout={handleAuthorizedCheckout}
+                  onUnauthorizedKeyTheft={handleUnauthorizedKeyTheft}
+                  onLateReasonSubmit={handleLateReasonSubmit}
+                  onSimulateCrashOrDrop={handleSimulateCrashOrDrop}
+                  onTogglePermissionEvasion={handleTogglePermissionEvasion}
+                  onAutoReturnToGarage={handleAutoReturnToGarage}
+                />
+              </div>
+
+              {/* Right 7 Cols: Live 4-Stage Dispatch & Return Board + Driver Push Feed */}
+              <div className="lg:col-span-7 space-y-5">
+                <div className="rounded-2xl bg-[#131720] border border-white/10 overflow-hidden">
+                  <div className="px-4 py-3 bg-[#0F131B] border-b border-white/10 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Car className="w-4 h-4 text-[#3E6AE1]" />
+                      <h3 className="text-sm font-semibold text-[#F4F6F8]">
+                        실시간 차량 배차 신청 · 승인 · 운행 · 반납 처리 현황판
+                      </h3>
+                    </div>
+                    <span className="text-[11px] font-mono text-[#9BC1FF]">
+                      신청 → 승인 → 사용 → 반납 전 과정 즉시 실행
+                    </span>
+                  </div>
+                  <ReservationWorkflowPanel
+                    reservations={reservations}
+                    vehicles={vehicles}
+                    employees={employees}
+                    autoApproveWhenManagerAway={policyConfig.autoApproveWhenManagerAway}
+                    onToggleAutoApprove={() =>
+                      setPolicyConfig((prev) => ({
+                        ...prev,
+                        autoApproveWhenManagerAway: !prev.autoApproveWhenManagerAway,
+                      }))
+                    }
+                    onCreateRequest={handleCreateRequest}
+                    onApproveRequest={handleApproveRequest}
+                    onRejectRequest={handleRejectRequest}
+                    onStartUsingVehicle={handleStartUsingVehicle}
+                    onReturnVehicle={handleReturnVehicle}
+                  />
+                </div>
+
+                {/* Real-Time Driver & Dispatcher Notification Feed */}
+                <div className="rounded-2xl bg-[#131720] p-4 border border-white/10">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+                    <span className="text-xs font-semibold text-[#F4F6F8] flex items-center gap-1.5">
+                      <BellRing className="w-3.5 h-3.5 text-[#12B76A]" />
+                      임직원 배차 · 운행 · 반납 실시간 알림 내역
+                    </span>
+                    <span className="text-[10px] font-mono text-[#9BA3B0]">
+                      {pushStream.length} EVENTS
+                    </span>
+                  </div>
+                  <div className="mt-3 space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                    {pushStream.slice(0, 6).map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-2.5 rounded-lg border text-xs ${
+                          item.level === 'CRITICAL'
+                            ? 'bg-[#E82127]/10 border-[#E82127]/30 text-[#FFD6D6]'
+                            : 'bg-[#191E2A] border-white/5 text-[#D0D5DD]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-[10px] font-mono mb-1">
+                          <span
+                            className={`px-1.5 py-0.5 rounded ${
+                              item.target === 'MANAGER'
+                                ? 'bg-[#3E6AE1]/30 text-[#9BC1FF]'
+                                : 'bg-[#12B76A]/30 text-[#32D583]'
+                            }`}
+                          >
+                            {item.target === 'MANAGER' ? '관제/관리자 알림' : '임직원 휴대폰 알림'}
+                          </span>
+                          <span className="text-[#9BA3B0]">{item.time}</span>
+                        </div>
+                        <p className="leading-relaxed">{item.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Section: Vehicle-to-Smartphone Initial Setup Infographic */}
+            <VehiclePhoneSetupInfographic />
+          </div>
+        ) : viewMode === 'ADMIN_CONSOLE' && isAdminUnlocked ? (
+          /* ============================================================================
+             VIEW MODE 3: 시스템 관리자 설정 콘솔 (Requires Security PIN)
+             ============================================================================ */
           <AdminManagementConsole
             vehicles={vehicles}
             employees={employees}
@@ -1734,33 +1844,141 @@ export default function FleetGuardCockpitPage() {
             onUpdatePolicyConfig={(nextCfg) => setPolicyConfig(nextCfg)}
             onLockAdminConsole={() => {
               setIsAdminUnlocked(false);
-              setViewMode('LIVE_MONITOR');
+              setViewMode('EMPLOYEE_OPS');
             }}
             onOpenManual={() => setIsManualOpen(true)}
           />
         ) : (
-          /* VIEW MODE 1: Live Monitoring Cockpit + Employee Smartphone Simulator */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            {/* Left 8 Cols */}
-            <div className="lg:col-span-8 space-y-5">
-              {/* Tesla Radar & Selected Vehicle HUD */}
-              <TeslaTelemetryMap
-                vehicles={vehicles}
-                employees={employees}
-                selectedVehicle={selectedVehicle}
-                onSelectVehicle={(v) => setSelectedVehicleId(v.id)}
-                latestIncidentForSelected={latestIncidentForSelected}
-              />
+          /* ============================================================================
+             VIEW MODE 2: 관리자용 실시간 관제 대시보드 (LIVE_MONITOR)
+             ============================================================================ */
+          <div className="space-y-5">
+            {/* 4-Classification Fleet KPI Bar (Manager Dashboard) */}
+            <section className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('LIVE_MONITOR');
+                  setStatusFilter('UNAUTHORIZED');
+                  setActiveTab('FLEET_MATRIX');
+                }}
+                className="text-left rounded-xl bg-[#131720] p-4 border border-[#E82127]/40 hover:border-[#E82127] transition relative overflow-hidden"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase text-[#FF8080]">
+                    🚨 미승인 무단 운행 (RED ALERT)
+                  </span>
+                  <ShieldAlert className="w-4 h-4 text-[#E82127]" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold font-mono tabular-nums text-[#F4F6F8]">
+                    {counts.unauthorized}
+                  </span>
+                  <span className="text-xs text-[#9BA3B0]">/ 30대 (즉시 추적중)</span>
+                </div>
+                <p className="text-[11px] text-[#9BA3B0] mt-1">
+                  관리자 부재 중 배차 신청·승인 없이 시동·출발 포착
+                </p>
+              </button>
 
-              {/* Cockpit Navigation Tabs */}
-              <div className="rounded-xl bg-[#131720] border border-white/10 overflow-hidden">
-                <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3 border-b border-white/10 bg-[#0F131B]">
-                  <div className="flex flex-wrap gap-1">
-                    {[
-                      {
-                        id: 'DISPATCH_WORKFLOW' as CockpitTab,
-                        label: `🔑 차량 신청·승인·사용·반납 (${reservations.length})`,
-                      },
+              <button
+                type="button"
+                onClick={handleOpenAdminConsole}
+                className="text-left rounded-xl bg-[#131720] p-4 border border-[#F79009]/40 hover:border-[#F79009] transition"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase text-[#FDB022]">
+                    💥 무블랙박스 스마트폰 충격·권한 감사
+                  </span>
+                  <Zap className="w-4 h-4 text-[#F79009]" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold font-mono tabular-nums text-[#F4F6F8]">
+                    {counts.incident}
+                  </span>
+                  <span className="text-xs text-[#FDB022] font-mono">
+                    (미결 사건 {counts.unresolvedIncidents}건 · 권한OFF {counts.permissionEvasion}명)
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#9BA3B0] mt-1">
+                  클릭 시 관리자 사고 재구성·처분 콘솔로 이동 (보안 PIN 인증)
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('EMPLOYEE_OPS');
+                }}
+                className="text-left rounded-xl bg-[#131720] p-4 border border-[#3E6AE1]/40 hover:border-[#3E6AE1] transition"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase text-[#7EA0FF]">
+                    📡 정식 승인 운행 · 배차 신청/반납
+                  </span>
+                  <Car className="w-4 h-4 text-[#3E6AE1]" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold font-mono tabular-nums text-[#F4F6F8]">
+                    {counts.authorized}
+                  </span>
+                  <span className="text-xs text-[#9BC1FF] font-mono">
+                    (신청대기 {counts.pendingApproval} · 승인완료 {counts.approvedReady})
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#9BA3B0] mt-1">
+                  클릭 시 임직원 신청·반납 운영화면으로 즉시 이동
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('LIVE_MONITOR');
+                  setStatusFilter('IDLE');
+                  setActiveTab('FLEET_MATRIX');
+                }}
+                className="text-left rounded-xl bg-[#131720] p-4 border border-white/10 hover:border-[#12B76A]/60 transition"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase text-[#32D583]">
+                    🅿️ Northpark 차고지 대기중
+                  </span>
+                  <ShieldCheck className="w-4 h-4 text-[#12B76A]" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-3xl font-semibold font-mono tabular-nums text-[#F4F6F8]">
+                    {counts.idle}
+                  </span>
+                  <span className="text-xs text-[#9BA3B0]">/ 30대</span>
+                </div>
+                <p className="text-[11px] text-[#9BA3B0] mt-1">
+                  4400 Northpark Dr 반경 {policyConfig.garageGeofenceRadiusM}m 지오펜스 내 대기
+                </p>
+              </button>
+            </section>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {/* Left 8 Cols */}
+              <div className="lg:col-span-8 space-y-5">
+                {/* Tesla Radar & Selected Vehicle HUD */}
+                <TeslaTelemetryMap
+                  vehicles={vehicles}
+                  employees={employees}
+                  selectedVehicle={selectedVehicle}
+                  onSelectVehicle={(v) => setSelectedVehicleId(v.id)}
+                  latestIncidentForSelected={latestIncidentForSelected}
+                />
+
+                {/* Cockpit Navigation Tabs */}
+                <div className="rounded-xl bg-[#131720] border border-white/10 overflow-hidden">
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3 border-b border-white/10 bg-[#0F131B]">
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        {
+                          id: 'DISPATCH_WORKFLOW' as CockpitTab,
+                          label: `🔑 차량 신청·승인·사용·반납 (${reservations.length})`,
+                        },
                       {
                         id: 'FLEET_MATRIX' as CockpitTab,
                         label: `30대 전체 차량 매트릭스 (${vehicles.length})`,
@@ -2224,6 +2442,7 @@ export default function FleetGuardCockpitPage() {
               </div>
             </div>
           </div>
+          </div>
         )}
       </main>
 
@@ -2344,7 +2563,7 @@ export default function FleetGuardCockpitPage() {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
         onSelectDispatchTab={() => {
-          setViewMode('LIVE_MONITOR');
+          setViewMode('EMPLOYEE_OPS');
           setActiveTab('DISPATCH_WORKFLOW');
         }}
         onOpenAdminConsole={handleOpenAdminConsole}
