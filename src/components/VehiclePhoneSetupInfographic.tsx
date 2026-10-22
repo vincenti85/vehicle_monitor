@@ -519,13 +519,13 @@ export const VehiclePhoneSetupInfographic: React.FC = () => {
             </div>
           </div>
 
-          {/* Smartphone OS Initial Setup Box (iPhone vs Android) */}
-          <div className="rounded-2xl bg-[#0B0D10] border border-white/10 p-4 space-y-3">
+          {/* Quick OS Switcher Preview Card inside Right Column */}
+          <div className="rounded-2xl bg-[#0B0D10] border border-white/10 p-4 space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Smartphone className="w-4 h-4 text-[#3E6AE1]" />
                 <h4 className="text-xs font-bold text-[#F4F6F8]">
-                  핸드폰 최초 1회 설정 (30초 완료)
+                  스마트폰 기종별 상세 설정 모드 선택
                 </h4>
               </div>
               <div className="flex rounded-lg bg-[#131720] p-0.5 border border-white/10 text-[11px]">
@@ -553,52 +553,211 @@ export const VehiclePhoneSetupInfographic: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {phoneOsTab === 'IOS' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
-                <div className="p-2.5 rounded-xl bg-[#131720] border border-white/5">
-                  <div className="font-semibold text-[#9BC1FF]">1. 홈 화면에 추가</div>
-                  <p className="text-[#9BA3B0] mt-0.5">
-                    Safari 하단 <strong>[공유 ↑] → [홈 화면에 추가]</strong> 터치
-                  </p>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#131720] border border-white/5">
-                  <div className="font-semibold text-[#32D583]">2. 센서 권한 허용</div>
-                  <p className="text-[#9BA3B0] mt-0.5">
-                    앱 상단 <strong>[센서 연결]</strong> 터치 후 위치·동작 센서 <strong>[허용]</strong>
-                  </p>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#131720] border border-white/5">
-                  <div className="font-semibold text-[#FDB022]">3. 탑승 시 QR 스캔</div>
-                  <p className="text-[#9BA3B0] mt-0.5">
-                    차키 QR 스캔(또는 차량 BT 자동연결) 후 즉시 출발
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
-                <div className="p-2.5 rounded-xl bg-[#131720] border border-white/5">
-                  <div className="font-semibold text-[#32D583]">1. 웹앱 설치</div>
-                  <p className="text-[#9BA3B0] mt-0.5">
-                    Chrome 우측 상단 <strong>[⋮] → [홈 화면에 추가 / 앱 설치]</strong>
-                  </p>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#131720] border border-white/5">
-                  <div className="font-semibold text-[#9BC1FF]">2. 근처 기기·위치 허용</div>
-                  <p className="text-[#9BA3B0] mt-0.5">
-                    <strong>위치 + 근처 기기(블루투스) + 신체활동</strong> 권한 허용
-                  </p>
-                </div>
-                <div className="p-2.5 rounded-xl bg-[#131720] border border-white/5">
-                  <div className="font-semibold text-[#FDB022]">3. 탑승 시 자동 연결</div>
-                  <p className="text-[#9BA3B0] mt-0.5">
-                    차키 QR 스캔 또는 시동(ACC ON) 시 블루투스 즉시 매칭
-                  </p>
-                </div>
-              </div>
-            )}
+            <p className="text-[11px] text-[#9BA3B0]">
+              아래 상세 박스에는 <strong>{phoneOsTab === 'IOS' ? 'iPhone (iOS Safari)' : 'Android (Galaxy · Chrome)'}</strong> 기준 <strong>① 웹앱 설치 → ② 3대 센서·근처기기 권한 허용 → ③ 차량 탑승 시 자동 연결(QR / 블루투스)</strong>의 실제 휴대폰 메뉴 경로와 팝업창 조작법이 단계별로 정리되어 있습니다.
+            </p>
           </div>
         </div>
+      </div>
+
+      {/* Full-Width Detailed Smartphone 1-Time Setup Guide (Expanded Step-by-Step for iOS & Android) */}
+      <div className="rounded-2xl bg-[#0B0D10] border border-[#3E6AE1]/40 p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[#3E6AE1]/20 border border-[#3E6AE1]/40 flex items-center justify-center">
+              <Smartphone className="w-4 h-4 text-[#9BC1FF]" />
+            </div>
+            <div>
+              <h3 className="text-sm lg:text-base font-bold text-[#F4F6F8]">
+                📱 핸드폰 최초 1회 설정 상세 매뉴얼 (입사/최초 탑승 시 딱 1번 · 30초 완료)
+              </h3>
+              <p className="text-xs text-[#9BA3B0]">
+                별도 앱스토어 검색 없이 사내 배포 URL 접속만으로 설치되며, 아래 3단계를 최초 1회만 완료하면 이후에는 무조작으로 작동합니다.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex rounded-xl bg-[#131720] p-1 border border-white/10 text-xs">
+            <button
+              type="button"
+              onClick={() => setPhoneOsTab('IOS')}
+              className={`px-3.5 py-1.5 rounded-lg font-semibold transition ${
+                phoneOsTab === 'IOS'
+                  ? 'bg-[#3E6AE1] text-white shadow'
+                  : 'text-[#9BA3B0] hover:text-white'
+              }`}
+            >
+              🍎 iPhone (iOS · Safari) 상세 보기
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhoneOsTab('ANDROID')}
+              className={`px-3.5 py-1.5 rounded-lg font-semibold transition ${
+                phoneOsTab === 'ANDROID'
+                  ? 'bg-[#12B76A] text-white shadow'
+                  : 'text-[#9BA3B0] hover:text-white'
+              }`}
+            >
+              🤖 Android (Galaxy · Chrome) 상세 보기
+            </button>
+          </div>
+        </div>
+
+        {phoneOsTab === 'ANDROID' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
+            {/* Android Step 1 */}
+            <div className="p-4 rounded-xl bg-[#131720] border border-[#12B76A]/30 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-[#12B76A]/20 text-[#32D583] font-mono font-bold text-[11px]">
+                  STEP 1 · 웹앱 설치 (10초)
+                </span>
+                <span className="text-[11px] font-mono text-[#9BA3B0]">Chrome 브라우저</span>
+              </div>
+              <h4 className="text-sm font-bold text-[#32D583]">
+                1. 홈 화면에 웹앱(PWA) 아이콘 설치
+              </h4>
+              <ol className="space-y-1.5 text-[#D0D5DD] list-decimal list-inside leading-relaxed">
+                <li>
+                  안드로이드 <strong>Chrome(크롬)</strong> 앱에서 사내 차량 관제 웹앱 URL에 접속합니다.
+                </li>
+                <li>
+                  우측 상단 <strong>점 3개 메뉴 <code className="px-1 py-0.5 rounded bg-black/50 text-[#F4F6F8]">[⋮]</code></strong> 를 터치합니다.
+                </li>
+                <li>
+                  메뉴에서 <strong>[홈 화면에 추가]</strong> 또는 <strong>[앱 설치 (Install App)]</strong>를 선택하면 바탕화면에 전용 앱 아이콘이 생성됩니다.
+                </li>
+              </ol>
+              <div className="p-2.5 rounded-lg bg-[#0B0D10] border border-white/5 text-[11px] text-[#9BA3B0]">
+                💡 <strong>왜 설치하나요?</strong> 일반 브라우저 탭보다 백그라운드 센서 유지력이 높아져 주행 중 화면이 꺼져도 끊김이 없습니다.
+              </div>
+            </div>
+
+            {/* Android Step 2 */}
+            <div className="p-4 rounded-xl bg-[#131720] border border-[#3E6AE1]/30 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-[#3E6AE1]/20 text-[#9BC1FF] font-mono font-bold text-[11px]">
+                  STEP 2 · 3대 권한 허용 (10초)
+                </span>
+                <span className="text-[11px] font-mono text-[#9BA3B0]">위치 · 블루투스 · 동작센서</span>
+              </div>
+              <h4 className="text-sm font-bold text-[#9BC1FF]">
+                2. 근처 기기(블루투스) · 위치 · 신체활동 허용
+              </h4>
+              <ol className="space-y-1.5 text-[#D0D5DD] list-decimal list-inside leading-relaxed">
+                <li>
+                  임직원 모바일 화면 상단의 <strong>[📡 실제 휴대폰 센서(GPS·6축 IMU) 연결]</strong> 버튼을 터치합니다.
+                </li>
+                <li>
+                  팝업창이 뜨면 <strong>① 위치 권한: [앱 사용 중에만 허용]</strong>을 누릅니다.
+                </li>
+                <li>
+                  이어서 <strong>[🔵 블루투스 연결]</strong> 터치 시 뜨는 <strong>② 근처 기기(Nearby devices) 허용</strong> 및 <strong>③ 신체 활동(가속도·자이로 센서) 허용</strong>을 누릅니다.
+                </li>
+              </ol>
+              <div className="p-2.5 rounded-lg bg-[#0B0D10] border border-white/5 text-[11px] text-[#9BA3B0]">
+                🔧 <strong>실수로 팝업을 닫았을 때:</strong> 주소창 왼쪽 <code className="px-1 py-0.5 rounded bg-black/50 text-[#F4F6F8]">[자물쇠/설정 아이콘]</code> → <strong>[권한]</strong> → 위치·근처 기기·동작 센서를 <strong>[허용]</strong>으로 켜주세요.
+              </div>
+            </div>
+
+            {/* Android Step 3 */}
+            <div className="p-4 rounded-xl bg-[#131720] border border-[#F79009]/30 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-[#F79009]/20 text-[#FDB022] font-mono font-bold text-[11px]">
+                  STEP 3 · 탑승 시 자동 연결 (10초)
+                </span>
+                <span className="text-[11px] font-mono text-[#9BA3B0]">QR 스캔 또는 BT 연동</span>
+              </div>
+              <h4 className="text-sm font-bold text-[#FDB022]">
+                3. 차량 탑승 시 1초 연결 (2가지 방식 중 택1)
+              </h4>
+              <ul className="space-y-1.5 text-[#D0D5DD] leading-relaxed">
+                <li>
+                  ✅ <strong>방식 A (가장 쉬움 · 차키 QR 스캔):</strong> 블루투스 페어링 없이 자동차 키고리에 붙은 <strong>QR 스티커를 휴대폰 카메라로 스캔</strong>(또는 앱 상단 <strong>[⚡ 무설정 1초 탑승]</strong> 클릭)하면 차량 번호판과 즉시 매칭되어 출발 처리됩니다.
+                </li>
+                <li>
+                  ✅ <strong>방식 B (차량 순정 블루투스 자동연결):</strong> 차량 오디오 화면에서 최초 1회 휴대폰 블루투스를 연결해 두면, 이후에는 <strong>시동(ACC ON)만 걸어도 자동 매칭</strong>되며 차고지(4400 Northpark Dr) 복귀 후 시동을 끄면 자동 반납됩니다.
+                </li>
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-xs">
+            {/* iOS Step 1 */}
+            <div className="p-4 rounded-xl bg-[#131720] border border-[#3E6AE1]/30 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-[#3E6AE1]/20 text-[#9BC1FF] font-mono font-bold text-[11px]">
+                  STEP 1 · 홈 화면에 추가 (10초)
+                </span>
+                <span className="text-[11px] font-mono text-[#9BA3B0]">iOS Safari 전용</span>
+              </div>
+              <h4 className="text-sm font-bold text-[#9BC1FF]">
+                1. Safari에서 [홈 화면에 추가]로 웹앱 설치
+              </h4>
+              <ol className="space-y-1.5 text-[#D0D5DD] list-decimal list-inside leading-relaxed">
+                <li>
+                  아이폰 기본 브라우저인 <strong>Safari(사파리)</strong>로 사내 차량 관제 URL을 엽니다.
+                </li>
+                <li>
+                  화면 하단 중앙의 <strong>[공유 아이콘 <code className="px-1 py-0.5 rounded bg-black/50 text-[#F4F6F8]">↑</code>]</strong> 을 터치합니다.
+                </li>
+                <li>
+                  메뉴를 아래로 내려 <strong>[홈 화면에 추가 (Add to Home Screen)] → 우측 상단 [추가]</strong>를 누르면 아이폰 바탕화면에 전용 앱이 생성됩니다.
+                </li>
+              </ol>
+              <div className="p-2.5 rounded-lg bg-[#0B0D10] border border-white/5 text-[11px] text-[#9BA3B0]">
+                💡 <strong>주의:</strong> 카카오톡 인앱 브라우저가 아닌 <strong>Safari</strong>에서 열어야 6축 가속도·자이로 센서가 정상 작동합니다.
+              </div>
+            </div>
+
+            {/* iOS Step 2 */}
+            <div className="p-4 rounded-xl bg-[#131720] border border-[#12B76A]/30 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-[#12B76A]/20 text-[#32D583] font-mono font-bold text-[11px]">
+                  STEP 2 · 센서 권한 허용 (10초)
+                </span>
+                <span className="text-[11px] font-mono text-[#9BA3B0]">위치 · 동작 및 방향</span>
+              </div>
+              <h4 className="text-sm font-bold text-[#32D583]">
+                2. 위치(GPS) 및 동작·방향(6축 센서) 권한 허용
+              </h4>
+              <ol className="space-y-1.5 text-[#D0D5DD] list-decimal list-inside leading-relaxed">
+                <li>
+                  바탕화면에 설치된 웹앱을 열고 상단의 <strong>[📡 실제 휴대폰 센서(GPS·6축 IMU) 연결]</strong> 버튼을 터치합니다.
+                </li>
+                <li>
+                  아이폰 시스템 팝업에서 <strong>① &quot;동작 및 방향 접근을 허용하시겠습니까?&quot; → [허용]</strong>을 누릅니다. (블랙박스 대체 6축 충돌 감지용)
+                </li>
+                <li>
+                  이어서 <strong>② &quot;위치 정보 접근&quot; → [앱을 사용하는 동안 허용]</strong>을 누릅니다.
+                </li>
+              </ol>
+              <div className="p-2.5 rounded-lg bg-[#0B0D10] border border-white/5 text-[11px] text-[#9BA3B0]">
+                🔧 <strong>권한 재설정 경로:</strong> 아이폰 <strong>[설정 → 개인정보 보호 및 보안 → 위치 서비스 → Safari 웹사이트 → 앱을 사용하는 동안]</strong>
+              </div>
+            </div>
+
+            {/* iOS Step 3 */}
+            <div className="p-4 rounded-xl bg-[#131720] border border-[#F79009]/30 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-[#F79009]/20 text-[#FDB022] font-mono font-bold text-[11px]">
+                  STEP 3 · 탑승 시 1초 연결 (10초)
+                </span>
+                <span className="text-[11px] font-mono text-[#9BA3B0]">차키 QR 스캔 권장</span>
+              </div>
+              <h4 className="text-sm font-bold text-[#FDB022]">
+                3. 차키 QR 스캔 또는 차량 블루투스로 즉시 출발
+              </h4>
+              <ul className="space-y-1.5 text-[#D0D5DD] leading-relaxed">
+                <li>
+                  ✅ <strong>방식 A (아이폰 권장 · 1초 QR 스캔):</strong> iOS 보안 정책상 웹 블루투스 수동 검색 대신, <strong>자동차 키고리의 QR 태그를 아이폰 기본 카메라로 비추면</strong> 1초 만에 해당 호차(`#01~#30호차`) 배차 승인 + 센서 연동이 동시에 켜집니다.
+                </li>
+                <li>
+                  ✅ <strong>방식 B (차고지 복귀 시 자동 반납):</strong> 운행을 마치고 본사 차고지(<strong>4400 Northpark Dr</strong> 반경 150m)에 주차하면 자동으로 반납 처리되며, 퇴근 후 개인 이동 위치는 일절 수집되지 않습니다.
+                </li>
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
