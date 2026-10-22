@@ -1753,7 +1753,7 @@ export default function FleetGuardCockpitPage() {
                   {isEng ? 'Request & Approval Manual' : '신청·승인 매뉴얼 다운로드'}
                 </button>
                 <a
-                  href="/test-scenarios.html"
+                  href={isEng ? '/test-scenarios-en.html' : '/test-scenarios.html'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-1.5 rounded-lg bg-[#10B981] hover:bg-[#059669] text-xs font-medium text-white flex items-center gap-1.5 transition"
@@ -2531,12 +2531,14 @@ export default function FleetGuardCockpitPage() {
 
       {/* User Request & Manager Approval Manual Modal */}
       <UserApprovalManualModal
+        lang={lang}
         isOpen={isManualOpen}
         onClose={() => setIsManualOpen(false)}
       />
 
       {/* New User 3-Step Interactive Onboarding Guide Modal */}
       <NewUserOnboardingGuide
+        lang={lang}
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
         onSelectDispatchTab={() => {

@@ -1,4 +1,7 @@
 // Comprehensive User Request & Manager Approval Manual for FleetGuard 30 (Opelika, AL)
+// Supports both Korean (KOR) and English (ENG) editions.
+
+import { AppLang } from '@/utils/i18n';
 
 export const USER_APPROVAL_MANUAL_MARKDOWN = `# FleetGuard 30 법인차량 신청 · 승인 · 사용 · 반납 통합 운영 매뉴얼
 
@@ -36,7 +39,7 @@ export const USER_APPROVAL_MANUAL_MARKDOWN = `# FleetGuard 30 법인차량 신�
 
 #### [3단계] 자동차키 수령 및 운행 개시 (\`IN_USE\`)
 1. 승인 완료 카드를 확인한 후 \`4400 Northpark Dr\` 본사 총무팀 **키 보관함(반경 3m)**에서 해당 호차의 자동차키를 수령합니다.
-2. 스마트폰 앱에서 **[🔑 키 수령 및 사용(운행) 시작]** 버튼을 누르고 차량 시동을 걸면 차량 순정 블루투스(\`MAC\`)가 자동 매칭되며 정상 운행(\`AUTHORIZED\`) 상태로 전환됩니다.
+2. 스마트폰 앱에서 **[🔑 키 수령 및 사용(운행) 시작]** 버튼을 누르고 차량 시동을 걸면 순정 블루투스(\`MAC\`)가 자동 매칭되며 정상 운행(\`AUTHORIZED\`) 상태로 전환됩니다.
 
 #### [4단계] 차량 및 자동차키 반납 (\`RETURNED\`)
 1. 외근 복귀 후 본사 지정 주차구역(\`Northpark Lot A #01~#30\`)에 주차하고 시동을 끕니다.
@@ -54,12 +57,12 @@ export const USER_APPROVAL_MANUAL_MARKDOWN = `# FleetGuard 30 법인차량 신�
 ## 제2장. 관리자(Fleet Admin) 승인 · 관제 · CSV 등록 매뉴얼
 
 ### 1. 관리자 화면 접속 (보안 PIN 인증)
-1. 상단 우측의 **[솔루션 관리자 화면 (Admin Console)]** 버튼을 클릭합니다.
+1. 상단 우측의 **[관리자 설정 (PIN)]** 버튼을 클릭합니다.
 2. 보안 키패드 모달이 나타나면 관리자에게 부여된 **4자리 전용 보안 PIN 번호(\`••••\`)**를 입력해 잠금을 해제합니다.
 3. 자리를 비울 때는 관리자 콘솔 우측 상단의 **[🔒 관리자 화면 잠금]** 버튼을 눌러 다시 보호할 수 있습니다.
 
 ### 2. 배차 신청 승인 및 반려 처리
-1. **[실시간 통합 관제 & 배차]** 화면의 **[📋 차량 신청·승인·사용·반납 (4단계)]** 탭에서 \`1. 승인 대기 (REQUESTED)\` 목록을 확인합니다.
+1. **[차량 신청 · 반납]** 또는 **[30대 실시간 관제]** 화면의 배차 목록에서 \`승인 대기 (REQUESTED)\` 건을 확인합니다.
 2. 신청자, 행선지, 운행 목적, 시간대를 확인한 후 **[승인 (Approve)]** 또는 **[반려 (Reject)]** 버튼을 클릭합니다.
 3. 처리 결과는 즉시 백엔드 데이터베이스에 영구 저장되며 신청자 휴대폰으로 푸시 통보됩니다.
 
@@ -77,20 +80,238 @@ export const USER_APPROVAL_MANUAL_MARKDOWN = `# FleetGuard 30 법인차량 신�
 2. **실제 계기판 실사 대조:** 주 1회 차량 점검 시 실제 계기판 주행거리(km)를 입력해 **[실사 대조]**를 누르면, 앱 누적 주행거리와 \`+5km\` 이상 차이 날 경우 해당 시간대 차고지 출입자 및 권한 OFF 직원을 교차 분석하여 **유령 주행 용의자**를 자동 특정합니다.
 `;
 
-export function downloadManualAsMarkdown() {
-  const blob = new Blob([USER_APPROVAL_MANUAL_MARKDOWN], {
+export const USER_APPROVAL_MANUAL_MARKDOWN_EN = `# FleetGuard 30 Corporate Fleet Request · Approval · Dispatch · Return Manual (English Edition)
+
+- **Headquarters & Geofence Site:** 4400 Northpark Dr, Opelika, AL 36801 (Lee County, Alabama, USA)
+- **Managed Fleet Size:** 30 Corporate Vehicles (\`AL 41A-2237\` ~ \`AL 41F-6210\`)
+- **System Architecture:** 0 In-Car Dashcams · 0 OBD Dongles · 100% BYOD Smartphone 6-Axis IMU Sensors + Factory Bluetooth MAC + Keybox 3m BLE
+- **Admin Console Security:** 4-Digit Private Security PIN (Restricted to Fleet Managers)
+
+---
+
+## Chapter 1. Employee (Driver) Vehicle Request · Start · Return Guide
+
+### 1. One-Time Initial Smartphone Setup (1 Minute)
+1. Open the corporate deployment URL on your smartphone browser (**iPhone Safari** or **Android Chrome**).
+2. Tap **[Add to Home Screen]** to install the \`FleetGuard 30\` web app icon.
+3. Tap **[Connect Phone Sensors]** and allow the 3 required permissions:
+   - **Location (GPS):** \`Allow Always\` (Used for active trip routing, speed \`km/h\`, and 150m HQ garage geofence return).
+   - **Bluetooth (Nearby Devices):** \`Allow\` (Matches factory hands-free Bluetooth MAC & 3m HQ Keybox BLE beacon).
+   - **Motion & Orientation (6-Axis IMU):** \`Allow\` (Reconstructs \`≥2.5G\` crash events without in-car dashcams).
+   > ⚠️ **Warning:** Disabling Bluetooth or Location permissions inside the 150m HQ Garage Geofence (\`4400 Northpark Dr\`) triggers an immediate **Permission Evasion Alert** to the Fleet Manager and may suspend your dispatch privileges.
+
+---
+
+### 2. Standard 4-Stage Dispatch Workflow (\`REQUESTED → APPROVED → IN_USE → RETURNED\`)
+
+#### [Stage 1] Request Vehicle (\`REQUESTED\`)
+1. Open Tab **1. Request & Return** and select **[1. Request Vehicle]** in the mobile app.
+2. Select **Applicant (Your Name)** and an **Available Vehicle (\`IDLE\`)** parked at the garage.
+3. Choose **Trip Purpose** (\`Client Visit\`, \`Plant Commute\`, \`Part Logistics\`, \`Airport Pickup\`, etc.), **Destination** (e.g., \`Auburn Technology Park, AL\`), and **Time Window**.
+4. Tap **[Submit Request]** to send a real-time approval notification to the Fleet Manager.
+
+#### [Stage 2] Manager Approval (\`APPROVED\`)
+1. Once the manager clicks **[Approve]**, your smartphone receives an instant \`✅ [Dispatch Approved]\` push notification.
+2. If the manager enables **[Auto-Approve ON]** while away from the desk, your request transitions to \`APPROVED\` immediately upon submission.
+
+#### [Stage 3] Pick Up Key & Start Trip (\`IN_USE\`)
+1. Pick up the physical key fob from the **HQ Keybox (3m BLE Zone)** at \`4400 Northpark Dr\`.
+2. Tap **[🔑 Pick Up Key & Start Trip]** in the app and start the engine. The car's factory Bluetooth (\`MAC\`) pairs automatically and sets the vehicle status to \`AUTHORIZED\`.
+
+#### [Stage 4] Return Vehicle & Auto-Generate IRS Logbook (\`RETURNED\`)
+1. Park the vehicle in its designated spot (\`Northpark Lot A #01~#30\`) and turn off the ignition.
+2. **Manual Return:** Enter the parking zone, check **[Key Returned to Box]**, and tap **[🅿️ Complete Vehicle & Key Return]**.
+3. **Hands-Free Auto-Return:** Even if you forget to tap the return button, entering the \`4400 Northpark Dr\` 150m garage geofence and turning off the ignition (Bluetooth disconnect) automatically closes the trip and creates an **IRS Sec. 274(d) compliant mileage logbook entry**.
+
+---
+
+### 3. Urgent Dispatch: \`1-Sec Key QR Start\` & \`Late Reason Submission\`
+- **When Manager is Away:** Scan the QR sticker on the key fob or tap **[⚡ 1-Sec Key QR Start]** in the app to immediately authorize your trip.
+- **Unreported Departure (\`>15 km/h\`):** If you drive out without registering, a **Red Alert** sounds on both the manager dashboard and your phone. Tap **[Submit Late Reason]** on the alert banner to convert the trip into a verified late-registered dispatch.
+
+---
+
+## Chapter 2. Fleet Manager Approval · Admin Console · CSV Bulk Import Guide
+
+### 1. Unlocking the Admin Console (Security PIN)
+1. Click **[3. Admin Console (PIN)]** in the top navigation bar.
+2. Enter the **4-digit private security PIN (\`••••\`)** assigned to Fleet Managers.
+3. Click **[🔒 Lock Admin Console]** when leaving your workstation.
+
+### 2. Approving or Rejecting Dispatch Requests
+1. In the **Dispatch Request · Approval · Active · Return Board**, filter by \`Pending (REQUESTED)\`.
+2. Review the driver, destination, purpose, and time window, then click **[Approve]** or **[Reject]**.
+3. Changes are persisted immediately to the backend database and pushed to the driver's phone.
+
+### 3. Bulk Importing 30 Vehicles & Employees via CSV
+1. Unlock **[3. Admin Console (PIN)]**.
+2. **30-Vehicle CSV Import (\`🚗 30-Fleet & Odometer Audit\` Tab):**
+   - Click **[📥 Download Vehicle CSV Template]** (\`fleetNumber,plateNumber,modelName,btMacAddress,bleBeaconUuid,cumulativeGpsKm,parkingZone\`).
+   - Edit the file in Excel and click **[📤 Upload Vehicle CSV]** to batch-update or register vehicles.
+3. **Employee CSV Import (\`👥 Employee Governance\` Tab):**
+   - Click **[📥 Download Employee CSV Template]** (\`name,role,department,phone,dispatchAllowed\`).
+   - Edit the roster and click **[📤 Upload Employee CSV]** to update employee dispatch permissions in bulk.
+
+### 4. No-Dashcam 6-Axis IMU Crash Reconstruction & Ghost Trip Odometer Audit
+1. **No-Dashcam Crash Reconstruction:** Combines smartphone 6-axis IMU peak G-Force (\`≥2.5G\`), gyroscope yaw rate (\`≥28°/s\`), and GPS sudden deceleration (\`Δv ≤ -25 km/h\`). Simple phone drops inside the cabin (\`Δv = 0 km/h\`) are automatically filtered out.
+2. **Physical Odometer Audit (Ghost Trip Detection):** Enter the physical dashboard odometer reading during weekly inspections. If the physical reading exceeds cumulative app GPS mileage by \`+5 km\` or more, the system cross-analyzes garage geofence logs and Bluetooth/GPS OFF heartbeats to identify **Ghost Trip suspects** with confidence scores.
+`;
+
+export function downloadManualAsMarkdown(lang: AppLang = 'KOR') {
+  const isEng = lang === 'ENG';
+  const content = isEng ? USER_APPROVAL_MANUAL_MARKDOWN_EN : USER_APPROVAL_MANUAL_MARKDOWN;
+  const blob = new Blob([content], {
     type: 'text/markdown;charset=utf-8;',
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `FleetGuard30_사용자신청_관리자승인_매뉴얼_Opelika_AL.md`;
+  a.download = isEng
+    ? `FleetGuard30_User_Approval_Manual_EN_Opelika_AL.md`
+    : `FleetGuard30_사용자신청_관리자승인_매뉴얼_Opelika_AL.md`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-export function downloadManualAsHtml() {
-  const htmlContent = `<!DOCTYPE html>
+export function downloadManualAsHtml(lang: AppLang = 'KOR') {
+  const isEng = lang === 'ENG';
+
+  const htmlContent = isEng
+    ? `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>FleetGuard 30 User Request & Manager Approval Manual (4400 Northpark Dr, Opelika, AL)</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0B0D10;
+      color: #F4F6F8;
+      line-height: 1.65;
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    .header-box {
+      background: #131720;
+      border: 1px solid rgba(62, 106, 225, 0.4);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(232, 33, 39, 0.2);
+      color: #FF8080;
+      border: 1px solid rgba(232, 33, 39, 0.4);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    h1 { color: #FFFFFF; font-size: 24px; margin: 12px 0 8px; }
+    h2 {
+      color: #7EA0FF;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      padding-bottom: 8px;
+      margin-top: 32px;
+      font-size: 19px;
+    }
+    h3 { color: #32D583; font-size: 15px; margin-top: 20px; }
+    .card {
+      background: #131720;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    code {
+      background: #191E2A;
+      color: #FDB022;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 10px 12px;
+      text-align: left;
+    }
+    th { background: #191E2A; color: #9BC1FF; }
+    @media print {
+      body { background: #FFFFFF; color: #111111; }
+      .header-box, .card { background: #F9FAFB; border-color: #D1D5DB; }
+      h1, h2, h3 { color: #111111; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-box">
+    <span class="badge">FLEETGUARD 30 · OPELIKA AL</span>
+    <span class="badge" style="background:rgba(18,183,106,0.2);color:#32D583;border-color:rgba(18,183,106,0.4);">0 In-Car Dashcams · BYOD Smartphone Sensor Telemetry</span>
+    <h1>30-Vehicle Corporate Fleet User Request · Manager Approval · CSV Operations Manual</h1>
+    <p style="color:#9BA3B0;font-size:13px;margin:0;">
+      HQ Site: 4400 Northpark Dr, Opelika, AL 36801 (Lee County AL 41 Plates) | Admin Console PIN: <code>•••• (Private)</code>
+    </p>
+  </div>
+
+  <h2>1. 4-Stage Employee Vehicle Request · Dispatch · Return Workflow</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Stage</th>
+        <th>Status Code</th>
+        <th>Employee (Driver) Action</th>
+        <th>Fleet Manager / Automated System Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Stage 1: Request</strong></td>
+        <td><code>REQUESTED</code></td>
+        <td>Select employee name, available vehicle (<code>IDLE</code>), trip purpose, destination (e.g., Auburn, Montgomery), and time window</td>
+        <td>Real-time pending alert on Manager Dashboard (or instant approval if Auto-Approve ON)</td>
+      </tr>
+      <tr>
+        <td><strong>Stage 2: Approval</strong></td>
+        <td><code>APPROVED</code></td>
+        <td>Receive <code>Dispatch Approved</code> push notification on smartphone and proceed to HQ Keybox (3m BLE)</td>
+        <td>One-click Manager <strong>[Approve]</strong> or <strong>[Reject]</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Stage 3: In Use</strong></td>
+        <td><code>IN_USE</code></td>
+        <td>Pick up physical key fob, tap <strong>[Start Trip]</strong>, and start engine (Factory Bluetooth MAC auto-pairs)</td>
+        <td>Live telemetry tracking on Opelika map + 6-Axis IMU crash reconstruction active</td>
+      </tr>
+      <tr>
+        <td><strong>Stage 4: Return</strong></td>
+        <td><code>RETURNED</code></td>
+        <td>Park at Northpark Lot A/B & return key to box (or Hands-Free Auto-Return upon 150m garage entry + ignition OFF)</td>
+        <td>Vehicle resets to <code>IDLE</code> + IRS Sec. 274(d) compliant mileage logbook row auto-generated</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Fleet Manager Security PIN, CSV Bulk Import & Audit Manual</h2>
+  <div class="card">
+    <h3>① Unlocking Admin Console via 4-Digit Security PIN</h3>
+    <p>Click <strong>[3. Admin Console (PIN)]</strong> in the top navigation bar and enter the private 4-digit PIN (<code>••••</code>) assigned to Fleet Managers.</p>
+    <h3>② Bulk Importing 30 Vehicles & Employees via CSV</h3>
+    <p>In the <strong>[30-Fleet & Odometer Audit]</strong> and <strong>[Employee Governance]</strong> tabs, click <strong>[Download CSV Template]</strong>, edit the spreadsheet in Excel, and click <strong>[Upload CSV]</strong> to batch-sync records into the persistent database.</p>
+    <h3>③ No-Dashcam 6-Axis IMU Crash Reconstruction & Ghost Trip Audit</h3>
+    <p>Review crash reports reconstructed from smartphone 6-axis IMU peak G-Force (<code>≥2.5G</code>), gyroscope yaw rate (<code>°/s</code>), and 30-second speed trace (<code>Δv</code>). Perform weekly physical odometer audits (<code>≥+5km</code> gap) to identify Ghost Trip suspects.</p>
+  </div>
+</body>
+</html>`
+    : `<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -216,7 +437,7 @@ export function downloadManualAsHtml() {
   <h2>2. 관리자(Fleet Admin) 보안 접속 및 승인 매뉴얼</h2>
   <div class="card">
     <h3>① 관리자 콘솔 보안 PIN 잠금 해제</h3>
-    <p>상단 <strong>[솔루션 관리자 화면 (Admin Console)]</strong> 클릭 시 보안 모달이 표시됩니다. 관리자에게 부여된 전용 <strong>4자리 보안 PIN(<code>••••</code>)</strong>을 입력하면 잠금이 해제됩니다.</p>
+    <p>상단 <strong>[관리자 설정 (PIN)]</strong> 클릭 시 보안 모달이 표시됩니다. 관리자에게 부여된 전용 <strong>4자리 보안 PIN(<code>••••</code>)</strong>을 입력하면 잠금이 해제됩니다.</p>
     <h3>② 사용자(임직원) 및 차량 30대 CSV 일괄 등록</h3>
     <p>관리자 화면의 <strong>[차량 30대 · 계기판 실사]</strong> 탭과 <strong>[임직원 자격 · 권한 통제]</strong> 탭에서 각각 <strong>[CSV 양식 다운로드]</strong>를 받아 엑셀로 편집한 후 <strong>[CSV 업로드]</strong>를 수행하면 즉시 서버 DB에 일괄 반영됩니다.</p>
     <h3>③ 무블랙박스 스마트폰 6축 센서 사고 판정 및 유령 주행 실사</h3>
@@ -231,7 +452,9 @@ export function downloadManualAsHtml() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `FleetGuard30_사용자신청_관리자승인_매뉴얼_인쇄용_Opelika_AL.html`;
+  a.download = isEng
+    ? `FleetGuard30_User_Approval_Manual_Printable_EN_Opelika_AL.html`
+    : `FleetGuard30_사용자신청_관리자승인_매뉴얼_인쇄용_Opelika_AL.html`;
   a.click();
   URL.revokeObjectURL(url);
 }
