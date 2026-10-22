@@ -3,6 +3,7 @@
 import React from 'react';
 import { Navigation, ShieldAlert, Zap } from 'lucide-react';
 import { Employee, IncidentEvent, Vehicle } from '@/types/fleet';
+import { AppLang, formatEmpName, formatParkingZone } from '@/utils/i18n';
 
 interface TeslaTelemetryMapProps {
   vehicles: Vehicle[];
@@ -10,6 +11,7 @@ interface TeslaTelemetryMapProps {
   selectedVehicle: Vehicle;
   onSelectVehicle: (vehicle: Vehicle) => void;
   latestIncidentForSelected?: IncidentEvent;
+  lang?: AppLang;
 }
 
 export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
@@ -18,11 +20,14 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
   selectedVehicle,
   onSelectVehicle,
   latestIncidentForSelected,
+  lang = 'KOR',
 }) => {
+  const isEng = lang === 'ENG';
+
   const getEmployeeShortName = (empId: string | null): string => {
-    if (!empId) return '대기';
+    if (!empId) return isEng ? 'Standby' : '대기';
     const found = employees.find((e) => e.id === empId);
-    return found ? found.name.split(' (')[0] : empId;
+    return found ? formatEmpName(found.name, lang) : empId;
   };
 
   const toCanvasCoords = (lat: number, lng: number) => {
@@ -52,7 +57,6 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
           boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px',
         }}
       >
-        {/* Minimalist Subtle Grid */}
         <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="geist-grid" width="48" height="48" patternUnits="userSpaceOnUse">
@@ -84,17 +88,17 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
           >
             <span className="flex items-center gap-1 text-[#FF5B4F]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#FF5B4F]" />
-              이상 {alertCount}
+              {isEng ? `Alert ${alertCount}` : `이상 ${alertCount}`}
             </span>
             <span className="text-white/15">·</span>
             <span className="flex items-center gap-1 text-[#0A72EF]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0A72EF]" />
-              운행 {activeCount}
+              {isEng ? `Active ${activeCount}` : `운행 ${activeCount}`}
             </span>
             <span className="text-white/15">·</span>
             <span className="flex items-center gap-1 text-[#10B981]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-              대기 {idleCount}
+              {isEng ? `Idle ${idleCount}` : `대기 ${idleCount}`}
             </span>
           </div>
         </div>
@@ -111,7 +115,7 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
           }}
         >
           <span className="text-[10px] font-mono text-[#71717A]">
-            HQ ({idleCount}대 대기)
+            {isEng ? `HQ (${idleCount} Idle)` : `HQ (${idleCount}대 대기)`}
           </span>
         </div>
 
@@ -166,7 +170,9 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono text-[#A1A1AA]">
-                  #{selectedVehicle.fleetNumber.toString().padStart(2, '0')}호차
+                  {isEng
+                    ? `Unit #${selectedVehicle.fleetNumber.toString().padStart(2, '0')}`
+                    : `#${selectedVehicle.fleetNumber.toString().padStart(2, '0')}호차`}
                 </span>
                 <h3 className="text-base font-semibold tracking-tight text-[#FAFAFA] font-mono">
                   {selectedVehicle.plateNumber}
@@ -186,12 +192,20 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
               }`}
             >
               {selectedVehicle.status === 'INCIDENT'
-                ? '사고감지'
+                ? isEng
+                  ? 'Incident'
+                  : '사고감지'
                 : selectedVehicle.status === 'UNAUTHORIZED'
-                  ? '무단운행'
+                  ? isEng
+                    ? 'Unauthorized'
+                    : '무단운행'
                   : selectedVehicle.status === 'AUTHORIZED'
-                    ? '정상운행'
-                    : '대기중'}
+                    ? isEng
+                      ? 'Active'
+                      : '정상운행'
+                    : isEng
+                      ? 'Idle'
+                      : '대기중'}
             </span>
           </div>
 
@@ -201,7 +215,9 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
               className="rounded-lg bg-[#111111] p-2.5"
               style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
             >
-              <span className="text-[10px] font-mono text-[#71717A] block">속도</span>
+              <span className="text-[10px] font-mono text-[#71717A] block">
+                {isEng ? 'SPEED' : '속도'}
+              </span>
               <span className="text-lg font-semibold font-mono tabular-nums text-[#FAFAFA]">
                 {selectedVehicle.speedKmh}
                 <small className="text-[10px] text-[#71717A] ml-0.5">km/h</small>
@@ -212,7 +228,9 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
               className="rounded-lg bg-[#111111] p-2.5"
               style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
             >
-              <span className="text-[10px] font-mono text-[#71717A] block">누적거리</span>
+              <span className="text-[10px] font-mono text-[#71717A] block">
+                {isEng ? 'ODOMETER' : '누적거리'}
+              </span>
               <span className="text-lg font-semibold font-mono tabular-nums text-[#FAFAFA]">
                 {selectedVehicle.cumulativeGpsKm.toLocaleString()}
                 <small className="text-[10px] text-[#71717A] ml-0.5">km</small>
@@ -223,7 +241,9 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
               className="rounded-lg bg-[#111111] p-2.5"
               style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
             >
-              <span className="text-[10px] font-mono text-[#71717A] block">충격센서</span>
+              <span className="text-[10px] font-mono text-[#71717A] block">
+                {isEng ? 'IMU SENSOR' : '충격센서'}
+              </span>
               <span
                 className={`text-lg font-semibold font-mono tabular-nums ${
                   selectedVehicle.currentGForce >= 2.5 ? 'text-[#FF5B4F]' : 'text-[#34D399]'
@@ -231,7 +251,9 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
               >
                 {selectedVehicle.currentGForce >= 2.5
                   ? `${selectedVehicle.currentGForce.toFixed(1)}G`
-                  : '정상'}
+                  : isEng
+                    ? 'OK'
+                    : '정상'}
               </span>
             </div>
           </div>
@@ -242,20 +264,20 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
             style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[#71717A]">운전자</span>
+              <span className="text-[#71717A]">{isEng ? 'Driver' : '운전자'}</span>
               <span className="font-medium text-[#FAFAFA]">
                 {getEmployeeShortName(selectedVehicle.currentDriverId)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[#71717A]">위치/상태</span>
+              <span className="text-[#71717A]">{isEng ? 'Zone / Status' : '위치/상태'}</span>
               <span className="text-[#A1A1AA] truncate max-w-[180px]">
-                {selectedVehicle.parkingZone}
+                {formatParkingZone(selectedVehicle.parkingZone, lang)}
               </span>
             </div>
             {latestIncidentForSelected && (
               <div className="flex items-center justify-between pt-1 border-t border-white/[0.06] text-[#FF5B4F]">
-                <span>최근 이벤트</span>
+                <span>{isEng ? 'Last Event' : '최근 이벤트'}</span>
                 <span className="font-mono text-[11px]">
                   PEAK {latestIncidentForSelected.gForce}G ({latestIncidentForSelected.occurredAt})
                 </span>

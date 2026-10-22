@@ -14,6 +14,7 @@ import {
   Download,
   FileSpreadsheet,
   Filter,
+  Globe,
   KeyRound,
   LayoutDashboard,
   Lock,
@@ -27,6 +28,12 @@ import {
   UserCheck,
   Zap,
 } from 'lucide-react';
+import {
+  AppLang,
+  formatDeptName,
+  formatEmpName,
+  formatTripPurpose,
+} from '@/utils/i18n';
 import {
   Employee,
   GeofenceLog,
@@ -73,6 +80,8 @@ type CockpitTab =
 export default function FleetGuardCockpitPage() {
   // Default initial screen is now EMPLOYEE_OPS (임직원 차량 신청·반납 운영화면)
   const [viewMode, setViewMode] = useState<TopViewMode>('EMPLOYEE_OPS');
+  const [lang, setLang] = useState<AppLang>('KOR');
+  const isEng = lang === 'ENG';
   const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
   const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
   const [reservations, setReservations] =
@@ -1400,7 +1409,7 @@ export default function FleetGuardCockpitPage() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-[#FAFAFA] pb-12">
-      {/* Vercel Geist Minimal Header with 4 Separated Tabs */}
+      {/* Vercel Geist Minimal Header with 4 Separated Tabs + KOR/ENG Toggle */}
       <header
         className="sticky top-0 z-40 bg-[#000000]/90 backdrop-blur-xl px-4 lg:px-8 py-2.5"
         style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 1px 0px 0px' }}
@@ -1434,7 +1443,7 @@ export default function FleetGuardCockpitPage() {
               }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
-              1. 차량 신청 · 반납
+              {isEng ? '1. Request & Return' : '1. 차량 신청 · 반납'}
             </button>
             <button
               type="button"
@@ -1446,7 +1455,7 @@ export default function FleetGuardCockpitPage() {
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
-              2. 30대 실시간 관제
+              {isEng ? '2. 30-Fleet Telemetry' : '2. 30대 실시간 관제'}
             </button>
             <button
               type="button"
@@ -1462,7 +1471,9 @@ export default function FleetGuardCockpitPage() {
               ) : (
                 <Lock className="w-3.5 h-3.5 text-[#FBBF24]" />
               )}
-              3. 관리자 설정 {isAdminUnlocked ? '' : '(PIN)'}
+              {isEng
+                ? `3. Admin Console ${isAdminUnlocked ? '' : '(PIN)'}`
+                : `3. 관리자 설정 ${isAdminUnlocked ? '' : '(PIN)'}`}
             </button>
             <button
               type="button"
@@ -1474,12 +1485,44 @@ export default function FleetGuardCockpitPage() {
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              4. 가이드 · 매뉴얼
+              {isEng ? '4. Guide & Manual' : '4. 가이드 · 매뉴얼'}
             </button>
           </div>
 
-          {/* Right: Minimal Status Controls */}
+          {/* Right: KOR / ENG Toggle + Minimal Status Controls */}
           <div className="flex items-center gap-1.5">
+            {/* Top-Level KOR / ENG Language Switcher */}
+            <div
+              className="flex items-center bg-[#0A0A0A] p-0.5 rounded-md text-[11px] font-mono"
+              style={{ boxShadow: 'rgba(255, 255, 255, 0.14) 0px 0px 0px 1px' }}
+              role="group"
+              aria-label="Language Selector"
+            >
+              <Globe className="w-3 h-3 text-[#71717A] ml-1.5 mr-1" />
+              <button
+                type="button"
+                onClick={() => setLang('KOR')}
+                className={`px-2 py-0.5 rounded font-semibold transition ${
+                  lang === 'KOR'
+                    ? 'bg-[#FAFAFA] text-[#0A0A0A]'
+                    : 'text-[#71717A] hover:text-[#FAFAFA]'
+                }`}
+              >
+                KOR
+              </button>
+              <button
+                type="button"
+                onClick={() => setLang('ENG')}
+                className={`px-2 py-0.5 rounded font-semibold transition ${
+                  lang === 'ENG'
+                    ? 'bg-[#0A72EF] text-white'
+                    : 'text-[#71717A] hover:text-[#FAFAFA]'
+                }`}
+              >
+                ENG
+              </button>
+            </div>
+
             <div
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0A0A0A] text-[11px] font-mono"
               style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
@@ -1490,12 +1533,18 @@ export default function FleetGuardCockpitPage() {
                 }`}
               />
               <span className="text-[#A1A1AA]">
-                {dbSyncState === 'SAVING' ? '저장중' : 'DB 동기화'}
+                {dbSyncState === 'SAVING'
+                  ? isEng
+                    ? 'Saving'
+                    : '저장중'
+                  : isEng
+                    ? 'DB Synced'
+                    : 'DB 동기화'}
               </span>
               <button
                 type="button"
                 onClick={handleResetDatabase}
-                title="DB 초기화"
+                title={isEng ? 'Reset DB' : 'DB 초기화'}
                 className="ml-1 text-[#71717A] hover:text-[#FAFAFA]"
               >
                 <RefreshCw className="w-3 h-3" />
@@ -1542,13 +1591,23 @@ export default function FleetGuardCockpitPage() {
             >
               <div className="flex flex-wrap items-center gap-3 font-mono">
                 <span className="text-[#FAFAFA] font-semibold font-sans">
-                  임직원 차량 신청 · 반납
+                  {isEng
+                    ? 'Employee Vehicle Request & Return'
+                    : '임직원 차량 신청 · 반납'}
                 </span>
                 <span className="text-white/15">|</span>
-                <span className="text-[#34D399]">대기 {counts.idle}대</span>
-                <span className="text-[#FBBF24]">승인대기 {counts.pendingApproval}건</span>
-                <span className="text-[#60A5FA]">승인완료 {counts.approvedReady}건</span>
-                <span className="text-[#A1A1AA]">운행중 {counts.authorized}대</span>
+                <span className="text-[#34D399]">
+                  {isEng ? `Available ${counts.idle}` : `대기 ${counts.idle}대`}
+                </span>
+                <span className="text-[#FBBF24]">
+                  {isEng ? `Pending ${counts.pendingApproval}` : `승인대기 ${counts.pendingApproval}건`}
+                </span>
+                <span className="text-[#60A5FA]">
+                  {isEng ? `Approved ${counts.approvedReady}` : `승인완료 ${counts.approvedReady}건`}
+                </span>
+                <span className="text-[#A1A1AA]">
+                  {isEng ? `In Use ${counts.authorized}` : `운행중 ${counts.authorized}대`}
+                </span>
               </div>
 
               <button
@@ -1557,7 +1616,9 @@ export default function FleetGuardCockpitPage() {
                 className="text-xs font-mono text-[#60A5FA] hover:underline flex items-center gap-1"
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                차량 연결 인포그래픽 · 매뉴얼 보기 →
+                {isEng
+                  ? 'View Vehicle Pairing Infographic & Manual →'
+                  : '차량 연결 인포그래픽 · 매뉴얼 보기 →'}
               </button>
             </div>
 
@@ -1566,6 +1627,7 @@ export default function FleetGuardCockpitPage() {
               {/* Left 4 Cols: Employee Mobile App */}
               <div className="lg:col-span-4">
                 <EmployeePhoneSimulator
+                  lang={lang}
                   vehicles={vehicles}
                   employees={employees}
                   reservations={reservations}
@@ -1590,13 +1652,16 @@ export default function FleetGuardCockpitPage() {
                 >
                   <div className="px-4 py-2.5 border-b border-white/[0.08] flex items-center justify-between">
                     <span className="text-xs font-semibold text-[#FAFAFA]">
-                      배차 신청 · 승인 · 운행 · 반납 목록
+                      {isEng
+                        ? 'Dispatch Request · Approval · Active · Return Board'
+                        : '배차 신청 · 승인 · 운행 · 반납 목록'}
                     </span>
                     <span className="text-[11px] font-mono text-[#71717A]">
-                      총 {reservations.length}건
+                      {isEng ? `Total ${reservations.length}` : `총 ${reservations.length}건`}
                     </span>
                   </div>
                   <ReservationWorkflowPanel
+                    lang={lang}
                     reservations={reservations}
                     vehicles={vehicles}
                     employees={employees}
@@ -1623,10 +1688,10 @@ export default function FleetGuardCockpitPage() {
                   <div className="flex items-center justify-between pb-2 border-b border-white/[0.08] text-xs">
                     <span className="font-semibold text-[#FAFAFA] flex items-center gap-1.5">
                       <BellRing className="w-3.5 h-3.5 text-[#10B981]" />
-                      최근 알림
+                      {isEng ? 'Recent Notifications' : '최근 알림'}
                     </span>
                     <span className="text-[10px] font-mono text-[#71717A]">
-                      {pushStream.length}건
+                      {isEng ? `${pushStream.length} events` : `${pushStream.length}건`}
                     </span>
                   </div>
                   <div className="mt-2 space-y-1.5 max-h-[130px] overflow-y-auto">
@@ -1658,10 +1723,14 @@ export default function FleetGuardCockpitPage() {
             >
               <div>
                 <h2 className="text-sm font-semibold text-[#FAFAFA]">
-                  가이드 · 매뉴얼 · 테스트 시나리오 센터
+                  {isEng
+                    ? 'Guide · Manual · Test Scenario Center'
+                    : '가이드 · 매뉴얼 · 테스트 시나리오 센터'}
                 </h2>
                 <p className="text-xs text-[#71717A] mt-0.5">
-                  차량 ↔ 핸드폰 초기 연결 인포그래픽, 3단계 온보딩 가이드, 신청·승인 매뉴얼 및 실전 테스트 시나리오를 한곳에서 확인합니다.
+                  {isEng
+                    ? 'Interactive Vehicle-to-Smartphone Pairing Infographic, 3-Step Onboarding Guide, Dispatch Manual & Test Scenarios.'
+                    : '차량 ↔ 핸드폰 초기 연결 인포그래픽, 3단계 온보딩 가이드, 신청·승인 매뉴얼 및 실전 테스트 시나리오를 한곳에서 확인합니다.'}
                 </p>
               </div>
 
@@ -1673,7 +1742,7 @@ export default function FleetGuardCockpitPage() {
                   style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#34D399]" />
-                  신규 이용자 3단계 가이드
+                  {isEng ? 'New User 3-Step Guide' : '신규 이용자 3단계 가이드'}
                 </button>
                 <button
                   type="button"
@@ -1681,7 +1750,7 @@ export default function FleetGuardCockpitPage() {
                   className="px-3 py-1.5 rounded-lg bg-[#0A72EF] hover:bg-[#0060DF] text-xs font-medium text-white flex items-center gap-1.5 transition"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  신청·승인 매뉴얼 다운로드
+                  {isEng ? 'Request & Approval Manual' : '신청·승인 매뉴얼 다운로드'}
                 </button>
                 <a
                   href="/test-scenarios.html"
@@ -1690,13 +1759,13 @@ export default function FleetGuardCockpitPage() {
                   className="px-3 py-1.5 rounded-lg bg-[#10B981] hover:bg-[#059669] text-xs font-medium text-white flex items-center gap-1.5 transition"
                 >
                   <ClipboardList className="w-3.5 h-3.5" />
-                  실전 테스트 시나리오 (.HTML / Notion)
+                  {isEng ? 'Test Scenarios (.HTML / Notion)' : '실전 테스트 시나리오 (.HTML / Notion)'}
                 </a>
               </div>
             </div>
 
             {/* Vehicle-to-Smartphone Infographic */}
-            <VehiclePhoneSetupInfographic />
+            <VehiclePhoneSetupInfographic lang={lang} />
           </div>
         ) : viewMode === 'ADMIN_CONSOLE' && isAdminUnlocked ? (
           /* ============================================================================
@@ -1740,14 +1809,16 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#FF5B4F]">
-                  <span>미승인 무단운행</span>
+                  <span>{isEng ? 'Unauthorized Trips' : '미승인 무단운행'}</span>
                   <ShieldAlert className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
                   <span className="text-2xl font-semibold font-mono tabular-nums text-[#FAFAFA]">
                     {counts.unauthorized}
                   </span>
-                  <span className="text-xs font-mono text-[#71717A]">대</span>
+                  <span className="text-xs font-mono text-[#71717A]">
+                    {isEng ? 'units' : '대'}
+                  </span>
                 </div>
               </button>
 
@@ -1758,7 +1829,7 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#FBBF24]">
-                  <span>충격·권한 감사</span>
+                  <span>{isEng ? 'Crash & Permission Audit' : '충격·권한 감사'}</span>
                   <Zap className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -1766,7 +1837,9 @@ export default function FleetGuardCockpitPage() {
                     {counts.incident}
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
-                    건 (권한OFF {counts.permissionEvasion}명)
+                    {isEng
+                      ? `events (BT/GPS OFF: ${counts.permissionEvasion})`
+                      : `건 (권한OFF ${counts.permissionEvasion}명)`}
                   </span>
                 </div>
               </button>
@@ -1778,7 +1851,7 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#60A5FA]">
-                  <span>정식 승인 운행</span>
+                  <span>{isEng ? 'Authorized Active' : '정식 승인 운행'}</span>
                   <Car className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -1786,7 +1859,9 @@ export default function FleetGuardCockpitPage() {
                     {counts.authorized}
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
-                    대 (대기 {counts.pendingApproval}건)
+                    {isEng
+                      ? `units (Pending: ${counts.pendingApproval})`
+                      : `대 (대기 ${counts.pendingApproval}건)`}
                   </span>
                 </div>
               </button>
@@ -1801,14 +1876,16 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#34D399]">
-                  <span>차고지 대기중</span>
+                  <span>{isEng ? 'Parked in Garage' : '차고지 대기중'}</span>
                   <ShieldCheck className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
                   <span className="text-2xl font-semibold font-mono tabular-nums text-[#FAFAFA]">
                     {counts.idle}
                   </span>
-                  <span className="text-xs font-mono text-[#71717A]">/ 30대</span>
+                  <span className="text-xs font-mono text-[#71717A]">
+                    {isEng ? '/ 30 units' : '/ 30대'}
+                  </span>
                 </div>
               </button>
             </section>
@@ -1817,6 +1894,7 @@ export default function FleetGuardCockpitPage() {
               {/* Left 8 Cols */}
               <div className="lg:col-span-8 space-y-4">
                 <TeslaTelemetryMap
+                  lang={lang}
                   vehicles={vehicles}
                   employees={employees}
                   selectedVehicle={selectedVehicle}
@@ -1834,471 +1912,509 @@ export default function FleetGuardCockpitPage() {
                       {[
                         {
                           id: 'DISPATCH_WORKFLOW' as CockpitTab,
-                          label: `배차 (${reservations.length})`,
+                          label: isEng
+                            ? `Dispatch (${reservations.length})`
+                            : `배차 (${reservations.length})`,
                         },
                         {
                           id: 'FLEET_MATRIX' as CockpitTab,
-                          label: `30대 차량 (${vehicles.length})`,
+                          label: isEng
+                            ? `30 Vehicles (${vehicles.length})`
+                            : `30대 차량 (${vehicles.length})`,
                         },
                         {
                           id: 'NO_DASHCAM_INCIDENTS' as CockpitTab,
-                          label: `사고·무단 (${incidents.length})`,
+                          label: isEng
+                            ? `Incidents (${incidents.length})`
+                            : `사고·무단 (${incidents.length})`,
                         },
                         {
                           id: 'ANTI_EVASION' as CockpitTab,
-                          label: `유령주행 (${ghostTrips.length})`,
+                          label: isEng
+                            ? `Ghost Trips (${ghostTrips.length})`
+                            : `유령주행 (${ghostTrips.length})`,
                         },
                         {
                           id: 'TAX_LOGBOOK' as CockpitTab,
-                          label: `운행일지 (${taxLogs.length})`,
+                          label: isEng
+                            ? `IRS Mileage Log (${taxLogs.length})`
+                            : `운행일지 (${taxLogs.length})`,
                         },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-3 py-2.5 text-xs font-medium border-b-2 transition ${
-                          activeTab === tab.id
-                            ? 'border-[#3E6AE1] text-[#F4F6F8] bg-[#191E2A]/60'
-                            : 'border-transparent text-[#9BA3B0] hover:text-[#F4F6F8]'
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {activeTab === 'FLEET_MATRIX' && (
-                    <div className="flex items-center gap-1 pb-2">
-                      <Filter className="w-3.5 h-3.5 text-[#9BA3B0] mr-1" />
-                      {(
-                        [
-                          { key: 'ALL', label: '전체 30대' },
-                          { key: 'UNAUTHORIZED', label: '무단운행' },
-                          { key: 'INCIDENT', label: '사고/충격' },
-                          { key: 'AUTHORIZED', label: '정상운행' },
-                          { key: 'IDLE', label: '대기중' },
-                        ] as const
-                      ).map((f) => (
+                      ].map((tab) => (
                         <button
-                          key={f.key}
+                          key={tab.id}
                           type="button"
-                          onClick={() => setStatusFilter(f.key)}
-                          className={`px-2 py-1 rounded text-[11px] font-mono transition ${
-                            statusFilter === f.key
-                              ? 'bg-[#3E6AE1] text-white'
-                              : 'bg-[#191E2A] text-[#9BA3B0] hover:text-white'
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`px-3 py-2.5 text-xs font-medium border-b-2 transition ${
+                            activeTab === tab.id
+                              ? 'border-[#3E6AE1] text-[#F4F6F8] bg-[#191E2A]/60'
+                              : 'border-transparent text-[#9BA3B0] hover:text-[#F4F6F8]'
                           }`}
                         >
-                          {f.label}
+                          {tab.label}
                         </button>
                       ))}
                     </div>
-                  )}
-                </div>
 
-                {/* TAB 0: 4-Stage Dispatch Workflow */}
-                {activeTab === 'DISPATCH_WORKFLOW' && (
-                  <ReservationWorkflowPanel
-                    reservations={reservations}
-                    vehicles={vehicles}
-                    employees={employees}
-                    autoApproveWhenManagerAway={policyConfig.autoApproveWhenManagerAway}
-                    onToggleAutoApprove={() =>
-                      setPolicyConfig((prev) => ({
-                        ...prev,
-                        autoApproveWhenManagerAway: !prev.autoApproveWhenManagerAway,
-                      }))
-                    }
-                    onCreateRequest={handleCreateRequest}
-                    onApproveRequest={handleApproveRequest}
-                    onRejectRequest={handleRejectRequest}
-                    onStartUsingVehicle={handleStartUsingVehicle}
-                    onReturnVehicle={handleReturnVehicle}
-                  />
-                )}
-
-                {/* TAB 1: 30-Vehicle Matrix */}
-                {activeTab === 'FLEET_MATRIX' && (
-                  <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 max-h-[420px] overflow-y-auto">
-                    {filteredVehicles.map((veh) => {
-                      const isSelected = veh.id === selectedVehicle.id;
-                      const driver = employees.find((e) => e.id === veh.currentDriverId);
-                      const cardStyle =
-                        veh.status === 'INCIDENT'
-                          ? 'bg-[#E82127]/15 border-[#E82127]'
-                          : veh.status === 'UNAUTHORIZED'
-                            ? 'bg-[#E82127]/10 border-[#E82127]/80'
-                            : veh.status === 'AUTHORIZED'
-                              ? 'bg-[#3E6AE1]/10 border-[#3E6AE1]/50'
-                              : 'bg-[#191E2A] border-white/5 hover:border-white/20';
-
-                      return (
-                        <button
-                          key={veh.id}
-                          type="button"
-                          onClick={() => setSelectedVehicleId(veh.id)}
-                          className={`text-left p-2.5 rounded-xl border transition flex flex-col justify-between ${cardStyle} ${
-                            isSelected ? 'ring-2 ring-white' : ''
-                          }`}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-[11px] font-mono font-semibold text-[#9BA3B0]">
-                                #{veh.fleetNumber.toString().padStart(2, '0')}호차
-                              </span>
-                              <span
-                                className={`w-2 h-2 rounded-full ${
-                                  veh.status === 'INCIDENT' || veh.status === 'UNAUTHORIZED'
-                                    ? 'bg-[#E82127] animate-ping'
-                                    : veh.status === 'AUTHORIZED'
-                                      ? 'bg-[#3E6AE1]'
-                                      : 'bg-[#12B76A]'
-                                }`}
-                              />
-                            </div>
-                            <div className="text-xs font-semibold text-[#F4F6F8] mt-1">
-                              {veh.plateNumber}
-                            </div>
-                            <div className="text-[10px] text-[#9BA3B0] truncate">
-                              {veh.modelName}
-                            </div>
-                          </div>
-
-                          <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
-                            <span className="truncate max-w-[90px] text-[#F4F6F8]">
-                              {driver ? driver.name.split(' ')[0] : '대기중'}
-                            </span>
-                            <span
-                              className={`tabular-nums ${
-                                veh.status === 'UNAUTHORIZED' || veh.status === 'INCIDENT'
-                                  ? 'text-[#FF8080] font-semibold'
-                                  : 'text-[#9BA3B0]'
-                              }`}
-                            >
-                              {veh.speedKmh > 0 ? `${veh.speedKmh}km/h` : '0km/h'}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* TAB 2: No-Dashcam Smartphone Incident Timeline */}
-                {activeTab === 'NO_DASHCAM_INCIDENTS' && (
-                  <div className="p-4 space-y-3 max-h-[420px] overflow-y-auto">
-                    {incidents.map((inc) => (
-                      <div
-                        key={inc.id}
-                        className="p-3.5 rounded-xl bg-[#191E2A] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#E82127]/20 text-[#FF8080] border border-[#E82127]/40">
-                              {inc.occurredAt}
-                            </span>
-                            <span className="text-xs font-mono font-semibold text-[#3E6AE1]">
-                              {inc.plateNumber}
-                            </span>
-                            <span className="text-xs font-semibold text-[#F4F6F8]">
-                              운전자: {inc.driverName}
-                            </span>
-                            {inc.coPassengerNames.length > 0 && (
-                              <span className="text-[11px] text-[#F79009] font-mono">
-                                + {inc.coPassengerNames.join(', ')}
-                              </span>
-                            )}
-                          </div>
-                          <h4 className="text-sm font-semibold text-[#F4F6F8]">{inc.title}</h4>
-                          <p className="text-xs text-[#9BA3B0] leading-relaxed">{inc.description}</p>
-                          <div className="text-[11px] font-mono text-[#636B78] pt-1">
-                            📍 {inc.locationLabel}
-                            {inc.gForce &&
-                              ` · 스마트폰 6축 IMU: ${inc.gForce}G (Δv=${inc.deltaSpeedKmh}km/h, 회전=${inc.gyroYawDegPerSec || 0}°/s)`}
-                          </div>
-                        </div>
-
-                        <div className="flex md:flex-col items-end gap-2 shrink-0">
+                    {activeTab === 'FLEET_MATRIX' && (
+                      <div className="flex items-center gap-1 pb-2">
+                        <Filter className="w-3.5 h-3.5 text-[#9BA3B0] mr-1" />
+                        {(
+                          [
+                            { key: 'ALL', label: isEng ? 'All 30' : '전체 30대' },
+                            { key: 'UNAUTHORIZED', label: isEng ? 'Unauth' : '무단운행' },
+                            { key: 'INCIDENT', label: isEng ? 'Incident' : '사고/충격' },
+                            { key: 'AUTHORIZED', label: isEng ? 'Active' : '정상운행' },
+                            { key: 'IDLE', label: isEng ? 'Idle' : '대기중' },
+                          ] as const
+                        ).map((f) => (
                           <button
+                            key={f.key}
                             type="button"
-                            onClick={() => {
-                              setSelectedVehicleId(inc.vehicleId);
-                            }}
-                            className="px-3 py-1.5 rounded-lg bg-[#3E6AE1]/20 hover:bg-[#3E6AE1]/30 text-[#7EA0FF] border border-[#3E6AE1]/40 text-xs font-mono"
+                            onClick={() => setStatusFilter(f.key)}
+                            className={`px-2 py-1 rounded text-[11px] font-mono transition ${
+                              statusFilter === f.key
+                                ? 'bg-[#3E6AE1] text-white'
+                                : 'bg-[#191E2A] text-[#9BA3B0] hover:text-white'
+                            }`}
                           >
-                            차량 텔레메트리 보기
+                            {f.label}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setViewMode('ADMIN_CONSOLE')}
-                            className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[#9BA3B0] text-[11px] font-mono"
-                          >
-                            관리자 처분 화면 이동
-                          </button>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
 
-                {/* TAB 3: 3-Layer Anti-Evasion & Ghost Trip Suspect Correlation */}
-                {activeTab === 'ANTI_EVASION' && (
-                  <div className="p-4 space-y-4 max-h-[420px] overflow-y-auto">
-                    {ghostTrips.map((gt) => (
-                      <div
-                        key={gt.id}
-                        className="p-3.5 rounded-xl bg-[#F79009]/10 border border-[#F79009]/40 space-y-2.5"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-[#F79009]" />
-                            <span className="text-xs font-semibold text-[#FDB022]">
-                              유령 주행(Ghost Trip) 자동 탐지: {gt.plateNumber} ({gt.modelName})
-                            </span>
-                          </div>
-                          <span className="text-xs font-mono text-[#FDB022]">
-                            공백 시간: {gt.windowStart} ~ {gt.windowEnd} · 미기록 주행거리 +{gt.unaccountedKm}km
-                          </span>
-                        </div>
+                  {/* TAB 0: 4-Stage Dispatch Workflow */}
+                  {activeTab === 'DISPATCH_WORKFLOW' && (
+                    <ReservationWorkflowPanel
+                      lang={lang}
+                      reservations={reservations}
+                      vehicles={vehicles}
+                      employees={employees}
+                      autoApproveWhenManagerAway={policyConfig.autoApproveWhenManagerAway}
+                      onToggleAutoApprove={() =>
+                        setPolicyConfig((prev) => ({
+                          ...prev,
+                          autoApproveWhenManagerAway: !prev.autoApproveWhenManagerAway,
+                        }))
+                      }
+                      onCreateRequest={handleCreateRequest}
+                      onApproveRequest={handleApproveRequest}
+                      onRejectRequest={handleRejectRequest}
+                      onStartUsingVehicle={handleStartUsingVehicle}
+                      onReturnVehicle={handleReturnVehicle}
+                    />
+                  )}
 
-                        <p className="text-xs text-[#9BA3B0]">
-                          주차 구역 변동 ({gt.parkingZoneChangedFrom} → {gt.parkingZoneChangedTo}) 및 주행거리 공백 시간대에{' '}
-                          <strong className="text-[#F4F6F8]">차고지/키보관함 지오펜스 출입 기록</strong>과{' '}
-                          <strong className="text-[#F4F6F8]">블루투스/위치 권한 OFF 하트비트</strong>를 교차 분석한 결과입니다:
-                        </p>
+                  {/* TAB 1: 30-Vehicle Matrix */}
+                  {activeTab === 'FLEET_MATRIX' && (
+                    <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 max-h-[420px] overflow-y-auto">
+                      {filteredVehicles.map((veh) => {
+                        const isSelected = veh.id === selectedVehicle.id;
+                        const driver = employees.find((e) => e.id === veh.currentDriverId);
+                        const cardStyle =
+                          veh.status === 'INCIDENT'
+                            ? 'bg-[#E82127]/15 border-[#E82127]'
+                            : veh.status === 'UNAUTHORIZED'
+                              ? 'bg-[#E82127]/10 border-[#E82127]/80'
+                              : veh.status === 'AUTHORIZED'
+                                ? 'bg-[#3E6AE1]/10 border-[#3E6AE1]/50'
+                                : 'bg-[#191E2A] border-white/5 hover:border-white/20';
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                          {gt.suspectEmployees.map((sus) => (
-                            <div
-                              key={sus.employeeId}
-                              className="p-2.5 rounded-lg bg-[#0B0D10]/90 border border-white/10"
-                            >
+                        return (
+                          <button
+                            key={veh.id}
+                            type="button"
+                            onClick={() => setSelectedVehicleId(veh.id)}
+                            className={`text-left p-2.5 rounded-xl border transition flex flex-col justify-between ${cardStyle} ${
+                              isSelected ? 'ring-2 ring-white' : ''
+                            }`}
+                          >
+                            <div>
                               <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold text-[#F4F6F8]">
-                                  {sus.name} ({sus.department})
+                                <span className="text-[11px] font-mono font-semibold text-[#9BA3B0]">
+                                  {isEng
+                                    ? `Unit #${veh.fleetNumber.toString().padStart(2, '0')}`
+                                    : `#${veh.fleetNumber.toString().padStart(2, '0')}호차`}
                                 </span>
                                 <span
-                                  className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${
-                                    sus.confidenceScore >= 80
-                                      ? 'bg-[#E82127]/20 text-[#FF8080]'
-                                      : 'bg-white/10 text-[#9BA3B0]'
+                                  className={`w-2 h-2 rounded-full ${
+                                    veh.status === 'INCIDENT' || veh.status === 'UNAUTHORIZED'
+                                      ? 'bg-[#E82127] animate-ping'
+                                      : veh.status === 'AUTHORIZED'
+                                        ? 'bg-[#3E6AE1]'
+                                        : 'bg-[#12B76A]'
                                   }`}
-                                >
-                                  일치율 {sus.confidenceScore}%
-                                </span>
+                                />
                               </div>
-                              <ul className="mt-1.5 space-y-1 text-[11px] text-[#9BA3B0] list-disc list-inside">
-                                {sus.evidence.map((ev, i) => (
-                                  <li key={i}>{ev}</li>
-                                ))}
-                              </ul>
+                              <div className="text-xs font-semibold text-[#F4F6F8] mt-1">
+                                {veh.plateNumber}
+                              </div>
+                              <div className="text-[10px] text-[#9BA3B0] truncate">
+                                {veh.modelName}
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="p-3 rounded-xl bg-[#191E2A] border border-white/5">
-                        <h4 className="text-xs font-mono uppercase text-[#9BA3B0] mb-2 flex items-center gap-1.5">
-                          <UserCheck className="w-3.5 h-3.5 text-[#3E6AE1]" />
-                          운전자 앱 권한 하트비트 감시 현황
-                        </h4>
-                        <div className="space-y-1.5">
-                          {employees.map((emp) => (
-                            <div
-                              key={emp.id}
-                              className="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-none"
-                            >
-                              <span>
-                                {emp.name}{' '}
-                                <span className="text-[11px] text-[#9BA3B0]">({emp.department})</span>
+                            <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
+                              <span className="truncate max-w-[90px] text-[#F4F6F8]">
+                                {driver
+                                  ? formatEmpName(driver.name, lang)
+                                  : isEng
+                                    ? 'Standby'
+                                    : '대기중'}
                               </span>
                               <span
-                                className={`px-2 py-0.5 rounded font-mono text-[10px] ${
-                                  emp.permissionStatus === 'OK'
-                                    ? 'bg-[#12B76A]/15 text-[#32D583]'
-                                    : 'bg-[#E82127]/20 text-[#FF8080]'
+                                className={`tabular-nums ${
+                                  veh.status === 'UNAUTHORIZED' || veh.status === 'INCIDENT'
+                                    ? 'text-[#FF8080] font-semibold'
+                                    : 'text-[#9BA3B0]'
                                 }`}
                               >
-                                {emp.permissionStatus} · {emp.lastHeartbeatAt}
+                                {veh.speedKmh > 0 ? `${veh.speedKmh}km/h` : '0km/h'}
                               </span>
                             </div>
-                          ))}
-                        </div>
-                      </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                      <div className="p-3 rounded-xl bg-[#191E2A] border border-white/5">
-                        <h4 className="text-xs font-mono uppercase text-[#9BA3B0] mb-2 flex items-center gap-1.5">
-                          <Bluetooth className="w-3.5 h-3.5 text-[#12B76A]" />
-                          4400 Northpark Dr (150m) · 키보관함 (3m) 출입 로그
-                        </h4>
-                        <div className="space-y-2">
-                          {geofenceLogs.slice(0, 5).map((log) => (
-                            <div key={log.id} className="text-[11px] border-b border-white/5 pb-1.5">
-                              <div className="flex items-center justify-between font-mono">
-                                <span className="text-[#F4F6F8] font-semibold">
-                                  [{log.timestamp}] {log.employeeName} ({log.zoneType})
+                  {/* TAB 2: No-Dashcam Smartphone Incident Timeline */}
+                  {activeTab === 'NO_DASHCAM_INCIDENTS' && (
+                    <div className="p-4 space-y-3 max-h-[420px] overflow-y-auto">
+                      {incidents.map((inc) => (
+                        <div
+                          key={inc.id}
+                          className="p-3.5 rounded-xl bg-[#191E2A] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#E82127]/20 text-[#FF8080] border border-[#E82127]/40">
+                                {inc.occurredAt}
+                              </span>
+                              <span className="text-xs font-mono font-semibold text-[#3E6AE1]">
+                                {inc.plateNumber}
+                              </span>
+                              <span className="text-xs font-semibold text-[#F4F6F8]">
+                                {isEng ? 'Driver:' : '운전자:'} {formatEmpName(inc.driverName, lang)}
+                              </span>
+                              {inc.coPassengerNames.length > 0 && (
+                                <span className="text-[11px] text-[#F79009] font-mono">
+                                  + {inc.coPassengerNames.join(', ')}
                                 </span>
-                                <span
-                                  className={
-                                    log.permissionState === 'OK' ? 'text-[#12B76A]' : 'text-[#E82127]'
-                                  }
-                                >
-                                  {log.permissionState}
-                                </span>
-                              </div>
-                              <p className="text-[#9BA3B0] mt-0.5">{log.note}</p>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                            <h4 className="text-sm font-semibold text-[#F4F6F8]">{inc.title}</h4>
+                            <p className="text-xs text-[#9BA3B0] leading-relaxed">{inc.description}</p>
+                            <div className="text-[11px] font-mono text-[#636B78] pt-1">
+                              📍 {inc.locationLabel}
+                              {inc.gForce &&
+                                ` · IMU: ${inc.gForce}G (Δv=${inc.deltaSpeedKmh}km/h, Yaw=${inc.gyroYawDegPerSec || 0}°/s)`}
+                            </div>
+                          </div>
 
-                {/* TAB 4: Auto-Generated Tax & Audit Logbook */}
-                {activeTab === 'TAX_LOGBOOK' && (
-                  <div className="p-4 max-h-[420px] overflow-y-auto">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs text-[#9BA3B0]">
-                        차량 반납(수동 반납 또는 4400 Northpark Dr 차고지 복귀 자동 반납) 시 GPS 주행거리가 자동 적산되어 기록됩니다.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleExportTaxCsv}
-                        className="px-3 py-1.5 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-medium flex items-center gap-1.5 shrink-0"
-                      >
-                        <FileSpreadsheet className="w-3.5 h-3.5" />
-                        엑셀(CSV) 다운로드
-                      </button>
+                          <div className="flex md:flex-col items-end gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedVehicleId(inc.vehicleId);
+                              }}
+                              className="px-3 py-1.5 rounded-lg bg-[#3E6AE1]/20 hover:bg-[#3E6AE1]/30 text-[#7EA0FF] border border-[#3E6AE1]/40 text-xs font-mono"
+                            >
+                              {isEng ? 'Focus Telemetry' : '차량 텔레메트리 보기'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAdminConsole()}
+                              className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[#9BA3B0] text-[11px] font-mono"
+                            >
+                              {isEng ? 'Admin Action' : '관리자 처분 화면 이동'}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-white/10 text-[11px] font-mono text-[#9BA3B0]">
-                            <th className="py-2 px-2">일자</th>
-                            <th className="py-2 px-2">차량번호</th>
-                            <th className="py-2 px-2">부서 / 운전자</th>
-                            <th className="py-2 px-2">반출유형</th>
-                            <th className="py-2 px-2">운행목적</th>
-                            <th className="py-2 px-2">시간</th>
-                            <th className="py-2 px-2 text-right">주행거리</th>
-                            <th className="py-2 px-2 text-center">반납검증</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5 font-mono">
-                          {taxLogs.map((row) => (
-                            <tr key={row.id} className="hover:bg-white/[0.02]">
-                              <td className="py-2 px-2 text-[#9BA3B0]">{row.date}</td>
-                              <td className="py-2 px-2 text-[#F4F6F8] font-semibold">
-                                {row.plateNumber}
-                              </td>
-                              <td className="py-2 px-2 font-sans">
-                                {row.driverName} ({row.department})
-                              </td>
-                              <td className="py-2 px-2">
+                  )}
+
+                  {/* TAB 3: 3-Layer Anti-Evasion & Ghost Trip Suspect Correlation */}
+                  {activeTab === 'ANTI_EVASION' && (
+                    <div className="p-4 space-y-4 max-h-[420px] overflow-y-auto">
+                      {ghostTrips.map((gt) => (
+                        <div
+                          key={gt.id}
+                          className="p-3.5 rounded-xl bg-[#F79009]/10 border border-[#F79009]/40 space-y-2.5"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4 text-[#F79009]" />
+                              <span className="text-xs font-semibold text-[#FDB022]">
+                                {isEng
+                                  ? `Ghost Trip Detected: ${gt.plateNumber} (${gt.modelName})`
+                                  : `유령 주행(Ghost Trip) 자동 탐지: ${gt.plateNumber} (${gt.modelName})`}
+                              </span>
+                            </div>
+                            <span className="text-xs font-mono text-[#FDB022]">
+                              {isEng
+                                ? `Gap: ${gt.windowStart} ~ ${gt.windowEnd} · Unaccounted +${gt.unaccountedKm}km`
+                                : `공백 시간: ${gt.windowStart} ~ ${gt.windowEnd} · 미기록 주행거리 +${gt.unaccountedKm}km`}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                            {gt.suspectEmployees.map((sus) => (
+                              <div
+                                key={sus.employeeId}
+                                className="p-2.5 rounded-lg bg-[#0B0D10]/90 border border-white/10"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-semibold text-[#F4F6F8]">
+                                    {formatEmpName(sus.name, lang)} ({formatDeptName(sus.department, lang)})
+                                  </span>
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${
+                                      sus.confidenceScore >= 80
+                                        ? 'bg-[#E82127]/20 text-[#FF8080]'
+                                        : 'bg-white/10 text-[#9BA3B0]'
+                                    }`}
+                                  >
+                                    {isEng ? `Match ${sus.confidenceScore}%` : `일치율 ${sus.confidenceScore}%`}
+                                  </span>
+                                </div>
+                                <ul className="mt-1.5 space-y-1 text-[11px] text-[#9BA3B0] list-disc list-inside">
+                                  {sus.evidence.map((ev, i) => (
+                                    <li key={i}>{ev}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="p-3 rounded-xl bg-[#191E2A] border border-white/5">
+                          <h4 className="text-xs font-mono uppercase text-[#9BA3B0] mb-2 flex items-center gap-1.5">
+                            <UserCheck className="w-3.5 h-3.5 text-[#3E6AE1]" />
+                            {isEng ? 'Driver App Permission Heartbeat' : '운전자 앱 권한 하트비트 감시 현황'}
+                          </h4>
+                          <div className="space-y-1.5">
+                            {employees.map((emp) => (
+                              <div
+                                key={emp.id}
+                                className="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-none"
+                              >
+                                <span>
+                                  {formatEmpName(emp.name, lang)}{' '}
+                                  <span className="text-[11px] text-[#9BA3B0]">
+                                    ({formatDeptName(emp.department, lang)})
+                                  </span>
+                                </span>
                                 <span
-                                  className={`px-2 py-0.5 rounded text-[10px] ${
-                                    row.authType === 'PRE_REGISTERED'
+                                  className={`px-2 py-0.5 rounded font-mono text-[10px] ${
+                                    emp.permissionStatus === 'OK'
                                       ? 'bg-[#12B76A]/15 text-[#32D583]'
-                                      : row.authType === 'LATE_REGISTERED'
-                                        ? 'bg-[#F79009]/20 text-[#FDB022]'
-                                        : 'bg-[#E82127]/20 text-[#FF8080]'
+                                      : 'bg-[#E82127]/20 text-[#FF8080]'
                                   }`}
                                 >
-                                  {row.authType === 'PRE_REGISTERED'
-                                    ? '사전승인'
-                                    : row.authType === 'LATE_REGISTERED'
-                                      ? '선출발후보고'
-                                      : '무단반출'}
+                                  {emp.permissionStatus} · {emp.lastHeartbeatAt}
                                 </span>
-                              </td>
-                              <td className="py-2 px-2 font-sans">{row.purpose}</td>
-                              <td className="py-2 px-2 text-[#9BA3B0]">
-                                {row.startTime}~{row.endTime}
-                              </td>
-                              <td className="py-2 px-2 text-right text-[#F4F6F8] tabular-nums">
-                                {row.distanceKm.toFixed(1)} km
-                              </td>
-                              <td className="py-2 px-2 text-center text-[#12B76A]">
-                                <CheckCircle className="w-3.5 h-3.5 inline" />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
 
-            {/* Right 4 Cols: Interactive BYOD Employee Smartphone Simulator + Live Push Stream */}
-            <div className="lg:col-span-4 space-y-5">
-              <EmployeePhoneSimulator
-                vehicles={vehicles}
-                employees={employees}
-                reservations={reservations}
-                onCreateRequest={handleCreateRequest}
-                onApproveRequest={handleApproveRequest}
-                onStartUsingVehicle={handleStartUsingVehicle}
-                onReturnVehicle={handleReturnVehicle}
-                onAuthorizedCheckout={handleAuthorizedCheckout}
-                onUnauthorizedKeyTheft={handleUnauthorizedKeyTheft}
-                onLateReasonSubmit={handleLateReasonSubmit}
-                onSimulateCrashOrDrop={handleSimulateCrashOrDrop}
-                onTogglePermissionEvasion={handleTogglePermissionEvasion}
-                onAutoReturnToGarage={handleAutoReturnToGarage}
-              />
-
-              {/* Bilateral Real-Time Alert Stream */}
-              <div
-                className="rounded-xl bg-[#131720] p-4 border border-white/10"
-                style={{
-                  boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px',
-                }}
-              >
-                <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
-                  <span className="text-xs font-semibold text-[#F4F6F8] flex items-center gap-1.5">
-                    <BellRing className="w-3.5 h-3.5 text-[#E82127]" />
-                    실시간 양방향 푸시 알림 스트림 (관리자 ↔ 운전자)
-                  </span>
-                  <span className="text-[10px] font-mono text-[#9BA3B0]">
-                    {pushStream.length} EVENTS
-                  </span>
-                </div>
-
-                <div className="mt-3 space-y-2 max-h-[260px] overflow-y-auto pr-1">
-                  {pushStream.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`p-2.5 rounded-lg border text-xs ${
-                        item.level === 'CRITICAL'
-                          ? 'bg-[#E82127]/10 border-[#E82127]/30 text-[#FFD6D6]'
-                          : 'bg-[#191E2A] border-white/5 text-[#D0D5DD]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-[10px] font-mono mb-1">
-                        <span
-                          className={`px-1.5 py-0.5 rounded ${
-                            item.target === 'MANAGER'
-                              ? 'bg-[#3E6AE1]/30 text-[#9BC1FF]'
-                              : 'bg-[#F79009]/30 text-[#FDB022]'
-                          }`}
-                        >
-                          {item.target === 'MANAGER' ? '관리자 수신' : '운전자 휴대폰 알림'}
-                        </span>
-                        <span className="text-[#9BA3B0]">{item.time}</span>
+                        <div className="p-3 rounded-xl bg-[#191E2A] border border-white/5">
+                          <h4 className="text-xs font-mono uppercase text-[#9BA3B0] mb-2 flex items-center gap-1.5">
+                            <Bluetooth className="w-3.5 h-3.5 text-[#12B76A]" />
+                            {isEng
+                              ? '4400 Northpark Dr (150m) & Keybox (3m) Logs'
+                              : '4400 Northpark Dr (150m) · 키보관함 (3m) 출입 로그'}
+                          </h4>
+                          <div className="space-y-2">
+                            {geofenceLogs.slice(0, 5).map((log) => (
+                              <div key={log.id} className="text-[11px] border-b border-white/5 pb-1.5">
+                                <div className="flex items-center justify-between font-mono">
+                                  <span className="text-[#F4F6F8] font-semibold">
+                                    [{log.timestamp}] {formatEmpName(log.employeeName, lang)} ({log.zoneType})
+                                  </span>
+                                  <span
+                                    className={
+                                      log.permissionState === 'OK' ? 'text-[#12B76A]' : 'text-[#E82127]'
+                                    }
+                                  >
+                                    {log.permissionState}
+                                  </span>
+                                </div>
+                                <p className="text-[#9BA3B0] mt-0.5">{log.note}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <p className="leading-relaxed">{item.message}</p>
                     </div>
-                  ))}
+                  )}
+
+                  {/* TAB 4: Auto-Generated Tax & Audit Logbook */}
+                  {activeTab === 'TAX_LOGBOOK' && (
+                    <div className="p-4 max-h-[420px] overflow-y-auto">
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs text-[#9BA3B0]">
+                          {isEng
+                            ? 'IRS Sec. 274(d) compliant mileage logbook automatically generated upon garage geofence return.'
+                            : '차량 반납(수동 반납 또는 4400 Northpark Dr 차고지 복귀 자동 반납) 시 GPS 주행거리가 자동 적산되어 기록됩니다.'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleExportTaxCsv}
+                          className="px-3 py-1.5 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-medium flex items-center gap-1.5 shrink-0"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5" />
+                          {isEng ? 'Download CSV' : '엑셀(CSV) 다운로드'}
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-white/10 text-[11px] font-mono text-[#9BA3B0]">
+                              <th className="py-2 px-2">{isEng ? 'Date' : '일자'}</th>
+                              <th className="py-2 px-2">{isEng ? 'Vehicle' : '차량번호'}</th>
+                              <th className="py-2 px-2">{isEng ? 'Driver / Dept' : '부서 / 운전자'}</th>
+                              <th className="py-2 px-2">{isEng ? 'Auth Type' : '반출유형'}</th>
+                              <th className="py-2 px-2">{isEng ? 'Purpose' : '운행목적'}</th>
+                              <th className="py-2 px-2">{isEng ? 'Time' : '시간'}</th>
+                              <th className="py-2 px-2 text-right">{isEng ? 'Distance' : '주행거리'}</th>
+                              <th className="py-2 px-2 text-center">{isEng ? 'Verified' : '반납검증'}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5 font-mono">
+                            {taxLogs.map((row) => (
+                              <tr key={row.id} className="hover:bg-white/[0.02]">
+                                <td className="py-2 px-2 text-[#9BA3B0]">{row.date}</td>
+                                <td className="py-2 px-2 text-[#F4F6F8] font-semibold">
+                                  {row.plateNumber}
+                                </td>
+                                <td className="py-2 px-2 font-sans">
+                                  {formatEmpName(row.driverName, lang)} ({formatDeptName(row.department, lang)})
+                                </td>
+                                <td className="py-2 px-2">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-[10px] ${
+                                      row.authType === 'PRE_REGISTERED'
+                                        ? 'bg-[#12B76A]/15 text-[#32D583]'
+                                        : row.authType === 'LATE_REGISTERED'
+                                          ? 'bg-[#F79009]/20 text-[#FDB022]'
+                                          : 'bg-[#E82127]/20 text-[#FF8080]'
+                                    }`}
+                                  >
+                                    {row.authType === 'PRE_REGISTERED'
+                                      ? isEng
+                                        ? 'Approved'
+                                        : '사전승인'
+                                      : row.authType === 'LATE_REGISTERED'
+                                        ? isEng
+                                          ? 'Late Entry'
+                                          : '선출발후보고'
+                                        : isEng
+                                          ? 'Unauth'
+                                          : '무단반출'}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-2 font-sans">
+                                  {formatTripPurpose(row.purpose, lang)}
+                                </td>
+                                <td className="py-2 px-2 text-[#9BA3B0]">
+                                  {row.startTime}~{row.endTime}
+                                </td>
+                                <td className="py-2 px-2 text-right text-[#F4F6F8] tabular-nums">
+                                  {row.distanceKm.toFixed(1)} km
+                                </td>
+                                <td className="py-2 px-2 text-center text-[#12B76A]">
+                                  <CheckCircle className="w-3.5 h-3.5 inline" />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right 4 Cols: Interactive BYOD Employee Smartphone Simulator + Live Push Stream */}
+              <div className="lg:col-span-4 space-y-5">
+                <EmployeePhoneSimulator
+                  lang={lang}
+                  vehicles={vehicles}
+                  employees={employees}
+                  reservations={reservations}
+                  onCreateRequest={handleCreateRequest}
+                  onApproveRequest={handleApproveRequest}
+                  onStartUsingVehicle={handleStartUsingVehicle}
+                  onReturnVehicle={handleReturnVehicle}
+                  onAuthorizedCheckout={handleAuthorizedCheckout}
+                  onUnauthorizedKeyTheft={handleUnauthorizedKeyTheft}
+                  onLateReasonSubmit={handleLateReasonSubmit}
+                  onSimulateCrashOrDrop={handleSimulateCrashOrDrop}
+                  onTogglePermissionEvasion={handleTogglePermissionEvasion}
+                  onAutoReturnToGarage={handleAutoReturnToGarage}
+                />
+
+                {/* Bilateral Real-Time Alert Stream */}
+                <div
+                  className="rounded-xl bg-[#131720] p-4 border border-white/10"
+                  style={{
+                    boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px',
+                  }}
+                >
+                  <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
+                    <span className="text-xs font-semibold text-[#F4F6F8] flex items-center gap-1.5">
+                      <BellRing className="w-3.5 h-3.5 text-[#E82127]" />
+                      {isEng
+                        ? 'Live Push Stream (Manager ↔ Driver)'
+                        : '실시간 양방향 푸시 알림 스트림 (관리자 ↔ 운전자)'}
+                    </span>
+                    <span className="text-[10px] font-mono text-[#9BA3B0]">
+                      {pushStream.length} EVENTS
+                    </span>
+                  </div>
+
+                  <div className="mt-3 space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                    {pushStream.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-2.5 rounded-lg border text-xs ${
+                          item.level === 'CRITICAL'
+                            ? 'bg-[#E82127]/10 border-[#E82127]/30 text-[#FFD6D6]'
+                            : 'bg-[#191E2A] border-white/5 text-[#D0D5DD]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-[10px] font-mono mb-1">
+                          <span
+                            className={`px-1.5 py-0.5 rounded ${
+                              item.target === 'MANAGER'
+                                ? 'bg-[#3E6AE1]/30 text-[#9BC1FF]'
+                                : 'bg-[#F79009]/30 text-[#FDB022]'
+                            }`}
+                          >
+                            {item.target === 'MANAGER'
+                              ? isEng
+                                ? 'TO MANAGER'
+                                : '관리자 수신'
+                              : isEng
+                                ? 'TO DRIVER'
+                                : '운전자 휴대폰 알림'}
+                          </span>
+                          <span className="text-[#9BA3B0]">{item.time}</span>
+                        </div>
+                        <p className="leading-relaxed">{item.message}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           </div>
         )}
       </main>
@@ -2318,10 +2434,12 @@ export default function FleetGuardCockpitPage() {
                 <KeyRound className="w-5 h-5 text-[#E82127]" />
               </div>
               <h3 className="text-base font-semibold text-[#F4F6F8]">
-                관리자 콘솔 보안 PIN 인증
+                {isEng ? 'Admin Console Security PIN' : '관리자 콘솔 보안 PIN 인증'}
               </h3>
               <p className="text-xs text-[#9BA3B0]">
-                관리자 화면(차량·임직원 CSV 등록, 사고 처분, 정책 변경) 접속을 위해 4자리 보안 PIN을 입력하세요.
+                {isEng
+                  ? 'Enter the 4-digit security PIN to access the Admin Console.'
+                  : '관리자 화면(차량·임직원 CSV 등록, 사고 처분, 정책 변경) 접속을 위해 4자리 보안 PIN을 입력하세요.'}
               </p>
             </div>
 
@@ -2347,7 +2465,7 @@ export default function FleetGuardCockpitPage() {
                     handleVerifyAdminPin(val);
                   }
                 }}
-                placeholder="PIN 4자리 입력"
+                placeholder={isEng ? '4-Digit PIN' : 'PIN 4자리 입력'}
                 className="w-full text-center tracking-[0.8em] text-xl font-mono font-semibold rounded-xl bg-[#0B0D10] border border-white/15 py-3 text-[#F4F6F8] focus:outline-none focus:border-[#3E6AE1]"
               />
 
@@ -2377,7 +2495,7 @@ export default function FleetGuardCockpitPage() {
                   }}
                   className="py-3 rounded-xl bg-[#191E2A] hover:bg-white/10 border border-white/10 text-xs font-mono text-[#9BA3B0] transition"
                 >
-                  지우기
+                  {isEng ? 'Clear' : '지우기'}
                 </button>
                 <button
                   type="button"
@@ -2390,19 +2508,21 @@ export default function FleetGuardCockpitPage() {
                   type="submit"
                   className="py-3 rounded-xl bg-[#E82127] hover:bg-[#C91B20] text-xs font-semibold text-white transition"
                 >
-                  확인
+                  {isEng ? 'Verify' : '확인'}
                 </button>
               </div>
             </form>
 
             <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#9BA3B0]">
-              <span className="font-mono">보안 등급: Fleet Admin (비공개 PIN)</span>
+              <span className="font-mono">
+                {isEng ? 'Role: Fleet Admin (Private PIN)' : '보안 등급: Fleet Admin (비공개 PIN)'}
+              </span>
               <button
                 type="button"
                 onClick={() => setShowPinModal(false)}
                 className="text-[#9BA3B0] hover:text-white underline"
               >
-                취소 및 닫기
+                {isEng ? 'Cancel & Close' : '취소 및 닫기'}
               </button>
             </div>
           </div>

@@ -16,6 +16,7 @@ import {
   Vehicle,
   VehicleReservation,
 } from '@/types/fleet';
+import { AppLang, formatDeptName, formatEmpName, formatTripPurpose } from '@/utils/i18n';
 
 interface ReservationWorkflowPanelProps {
   reservations: VehicleReservation[];
@@ -39,6 +40,7 @@ interface ReservationWorkflowPanelProps {
     parkingZone: string,
     keyReturnedToBox: boolean
   ) => void;
+  lang?: AppLang;
 }
 
 export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> = ({
@@ -52,7 +54,9 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
   onRejectRequest,
   onStartUsingVehicle,
   onReturnVehicle,
+  lang = 'KOR',
 }) => {
+  const isEng = lang === 'ENG';
   const [stageFilter, setStageFilter] = useState<'ALL' | ReservationStage>('ALL');
   const [showRequestForm, setShowRequestForm] = useState<boolean>(false);
 
@@ -96,11 +100,34 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/[0.08]">
         <div className="flex flex-wrap items-center gap-1">
           {[
-            { id: 'ALL' as const, label: `전체 ${reservations.length}` },
-            { id: 'REQUESTED' as const, label: `승인대기 ${stageCounts.REQUESTED}` },
-            { id: 'APPROVED' as const, label: `승인완료 ${stageCounts.APPROVED}` },
-            { id: 'IN_USE' as const, label: `운행중 ${stageCounts.IN_USE}` },
-            { id: 'RETURNED' as const, label: `반납완료 ${stageCounts.RETURNED}` },
+            {
+              id: 'ALL' as const,
+              label: isEng ? `All ${reservations.length}` : `전체 ${reservations.length}`,
+            },
+            {
+              id: 'REQUESTED' as const,
+              label: isEng
+                ? `Pending ${stageCounts.REQUESTED}`
+                : `승인대기 ${stageCounts.REQUESTED}`,
+            },
+            {
+              id: 'APPROVED' as const,
+              label: isEng
+                ? `Approved ${stageCounts.APPROVED}`
+                : `승인완료 ${stageCounts.APPROVED}`,
+            },
+            {
+              id: 'IN_USE' as const,
+              label: isEng
+                ? `In Use ${stageCounts.IN_USE}`
+                : `운행중 ${stageCounts.IN_USE}`,
+            },
+            {
+              id: 'RETURNED' as const,
+              label: isEng
+                ? `Returned ${stageCounts.RETURNED}`
+                : `반납완료 ${stageCounts.RETURNED}`,
+            },
           ].map((item) => (
             <button
               key={item.id}
@@ -129,7 +156,13 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
             style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            {autoApproveWhenManagerAway ? '자동승인 ON' : '수동승인'}
+            {autoApproveWhenManagerAway
+              ? isEng
+                ? 'Auto-Approve ON'
+                : '자동승인 ON'
+              : isEng
+                ? 'Manual Approval'
+                : '수동승인'}
           </button>
 
           <button
@@ -138,7 +171,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
             className="px-3 py-1 rounded-md bg-[#0A72EF] hover:bg-[#0060DF] text-white text-xs font-medium flex items-center gap-1 transition"
           >
             <ClipboardPlus className="w-3.5 h-3.5" />
-            배차 신청
+            {isEng ? 'New Request' : '배차 신청'}
           </button>
         </div>
       </div>
@@ -159,7 +192,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
             >
               {employees.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.name.split(' (')[0]} ({e.department.split(' (')[0]})
+                  {formatEmpName(e.name, lang)} ({formatDeptName(e.department, lang)})
                 </option>
               ))}
             </select>
@@ -172,7 +205,9 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
             >
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
-                  #{v.fleetNumber}호차 · {v.plateNumber}
+                  {isEng
+                    ? `Unit #${v.fleetNumber} · ${v.plateNumber}`
+                    : `#${v.fleetNumber}호차 · ${v.plateNumber}`}
                 </option>
               ))}
             </select>
@@ -183,10 +218,14 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
               className="rounded-md bg-[#0A0A0A] px-2.5 py-1.5 text-[#FAFAFA]"
               style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
             >
-              <option value="거래처방문">거래처방문</option>
-              <option value="일반업무/외근">일반업무/외근</option>
-              <option value="긴급출동/현장지원">긴급출동/현장지원</option>
-              <option value="출퇴근(승인)">출퇴근(승인)</option>
+              <option value="거래처방문">{isEng ? 'Client Visit' : '거래처방문'}</option>
+              <option value="일반업무/외근">{isEng ? 'Field Business' : '일반업무/외근'}</option>
+              <option value="긴급출동/현장지원">
+                {isEng ? 'Urgent Support' : '긴급출동/현장지원'}
+              </option>
+              <option value="출퇴근(승인)">
+                {isEng ? 'Approved Commute' : '출퇴근(승인)'}
+              </option>
             </select>
 
             <input
@@ -195,7 +234,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
               onChange={(e) => setDestination(e.target.value)}
               className="rounded-md bg-[#0A0A0A] px-2.5 py-1.5 text-[#FAFAFA]"
               style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
-              placeholder="행선지"
+              placeholder={isEng ? 'Destination' : '행선지'}
               required
             />
 
@@ -206,14 +245,14 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                 onChange={(e) => setTimeWindow(e.target.value)}
                 className="w-full rounded-md bg-[#0A0A0A] px-2 py-1.5 text-[#FAFAFA]"
                 style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
-                placeholder="시간"
+                placeholder={isEng ? 'Time' : '시간'}
                 required
               />
               <button
                 type="submit"
                 className="px-3 py-1.5 rounded-md bg-[#FAFAFA] text-[#0A0A0A] font-semibold shrink-0"
               >
-                등록
+                {isEng ? 'Submit' : '등록'}
               </button>
             </div>
           </div>
@@ -248,24 +287,38 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                   }`}
                 >
                   {res.stage === 'REQUESTED'
-                    ? '승인대기'
+                    ? isEng
+                      ? 'Pending'
+                      : '승인대기'
                     : res.stage === 'APPROVED'
-                      ? '승인완료'
+                      ? isEng
+                        ? 'Approved'
+                        : '승인완료'
                       : res.stage === 'IN_USE'
-                        ? '운행중'
+                        ? isEng
+                          ? 'In Use'
+                          : '운행중'
                         : res.stage === 'RETURNED'
-                          ? '반납완료'
-                          : '반려'}
+                          ? isEng
+                            ? 'Returned'
+                            : '반납완료'
+                          : isEng
+                            ? 'Rejected'
+                            : '반려'}
                 </span>
 
                 <span className="font-mono font-semibold text-[#FAFAFA]">
-                  #{res.fleetNumber}호차 · {res.plateNumber}
+                  {isEng
+                    ? `Unit #${res.fleetNumber} · ${res.plateNumber}`
+                    : `#${res.fleetNumber}호차 · ${res.plateNumber}`}
                 </span>
-                <span className="text-[#FAFAFA]">{res.employeeName.split(' (')[0]}</span>
+                <span className="text-[#FAFAFA]">
+                  {formatEmpName(res.employeeName, lang)}
+                </span>
                 <span className="text-[#71717A]">·</span>
                 <span className="text-[#A1A1AA]">{res.destination}</span>
                 <span className="text-[11px] font-mono text-[#71717A]">
-                  ({res.plannedTimeWindow})
+                  ({formatTripPurpose(res.purpose, lang)} · {res.plannedTimeWindow})
                 </span>
               </div>
 
@@ -278,7 +331,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                       className="px-2.5 py-1 rounded-md bg-[#10B981] text-white text-xs font-medium flex items-center gap-1"
                     >
                       <CheckCircle2 className="w-3 h-3" />
-                      승인
+                      {isEng ? 'Approve' : '승인'}
                     </button>
                     <button
                       type="button"
@@ -286,7 +339,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                       className="px-2.5 py-1 rounded-md bg-[#FF5B4F]/15 text-[#FF5B4F] text-xs font-medium flex items-center gap-1"
                     >
                       <XCircle className="w-3 h-3" />
-                      반려
+                      {isEng ? 'Reject' : '반려'}
                     </button>
                   </>
                 )}
@@ -298,7 +351,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                     className="px-3 py-1 rounded-md bg-[#0A72EF] text-white text-xs font-medium flex items-center gap-1"
                   >
                     <Play className="w-3 h-3" />
-                    운행 시작
+                    {isEng ? 'Start Trip' : '운행 시작'}
                   </button>
                 )}
 
@@ -330,7 +383,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                       className="px-2.5 py-1 rounded-md bg-[#10B981] text-white text-xs font-medium flex items-center gap-1"
                     >
                       <RotateCcw className="w-3 h-3" />
-                      반납 완료
+                      {isEng ? 'Return' : '반납 완료'}
                     </button>
                   </div>
                 )}
@@ -339,7 +392,9 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                   <span className="text-[11px] font-mono text-[#34D399]">
                     {res.endOdometerKm
                       ? `+${(res.endOdometerKm - res.startOdometerKm).toFixed(1)}km`
-                      : '반납됨'}
+                      : isEng
+                        ? 'Returned'
+                        : '반납됨'}
                   </span>
                 )}
               </div>
