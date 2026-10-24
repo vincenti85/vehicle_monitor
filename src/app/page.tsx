@@ -1474,38 +1474,38 @@ export default function FleetGuardCockpitPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] text-[#FAFAFA] pb-12">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] pb-12">
       {/* Vercel Geist Minimal Header with 4 Separated Tabs + KOR/ENG Toggle */}
       <header
-        className="sticky top-0 z-40 bg-[#000000]/90 backdrop-blur-xl px-4 lg:px-8 py-2.5"
-        style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 1px 0px 0px' }}
+        className="sticky top-0 z-40 bg-[#FFFFFF]/90 backdrop-blur-xl px-4 lg:px-8 py-2.5"
+        style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 1px 0px 0px' }}
       >
         <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* Left: Minimal Brand */}
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#FAFAFA] flex items-center justify-center">
-              <Radar className="w-4 h-4 text-[#000000]" />
+            <div className="w-7 h-7 rounded-lg bg-[#0A0A0A] flex items-center justify-center">
+              <Radar className="w-4 h-4 text-[#FAFAFA]" />
             </div>
-            <h1 className="text-sm font-semibold tracking-tight text-[#FAFAFA]">
+            <h1 className="text-sm font-semibold tracking-tight text-[#0A0A0A]">
               FLEETGUARD 30
             </h1>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#111111] text-[#A1A1AA]">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#FFFFFF] text-[#52525B]">
               Opelika, AL
             </span>
           </div>
 
           {/* Center: 4 Primary Navigation Tabs */}
           <div
-            className="flex flex-wrap items-center bg-[#0A0A0A] p-1 rounded-lg gap-1"
-            style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+            className="flex flex-wrap items-center bg-[#FAFAFA] p-1 rounded-lg gap-1"
+            style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
           >
             <button
               type="button"
               onClick={() => setViewMode('EMPLOYEE_OPS')}
               className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
                 viewMode === 'EMPLOYEE_OPS'
-                  ? 'bg-[#FAFAFA] text-[#0A0A0A] font-semibold'
-                  : 'text-[#A1A1AA] hover:text-[#FAFAFA]'
+                  ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
+                  : 'text-[#52525B] hover:text-[#0A0A0A]'
               }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
@@ -1516,8 +1516,8 @@ export default function FleetGuardCockpitPage() {
               onClick={() => setViewMode('LIVE_MONITOR')}
               className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
                 viewMode === 'LIVE_MONITOR'
-                  ? 'bg-[#FAFAFA] text-[#0A0A0A] font-semibold'
-                  : 'text-[#A1A1AA] hover:text-[#FAFAFA]'
+                  ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
+                  : 'text-[#52525B] hover:text-[#0A0A0A]'
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
@@ -1528,14 +1528,14 @@ export default function FleetGuardCockpitPage() {
               onClick={handleOpenAdminConsole}
               className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
                 viewMode === 'ADMIN_CONSOLE'
-                  ? 'bg-[#FAFAFA] text-[#0A0A0A] font-semibold'
-                  : 'text-[#A1A1AA] hover:text-[#FAFAFA]'
+                  ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
+                  : 'text-[#52525B] hover:text-[#0A0A0A]'
               }`}
             >
               {isAdminUnlocked ? (
                 <Settings2 className="w-3.5 h-3.5" />
               ) : (
-                <Lock className="w-3.5 h-3.5 text-[#FBBF24]" />
+                <Lock className="w-3.5 h-3.5 text-[#B45309]" />
               )}
               {isEng
                 ? `3. Admin Console ${isAdminUnlocked ? '' : '(PIN)'}`
@@ -1546,8 +1546,8 @@ export default function FleetGuardCockpitPage() {
               onClick={() => setViewMode('GUIDE_MANUAL')}
               className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
                 viewMode === 'GUIDE_MANUAL'
-                  ? 'bg-[#FAFAFA] text-[#0A0A0A] font-semibold'
-                  : 'text-[#A1A1AA] hover:text-[#FAFAFA]'
+                  ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
+                  : 'text-[#52525B] hover:text-[#0A0A0A]'
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
@@ -1559,8 +1559,8 @@ export default function FleetGuardCockpitPage() {
           <div className="flex items-center gap-1.5">
             {/* Top-Level KOR / ENG Language Switcher */}
             <div
-              className="flex items-center bg-[#0A0A0A] p-0.5 rounded-md text-[11px] font-mono"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.14) 0px 0px 0px 1px' }}
+              className="flex items-center bg-[#FAFAFA] p-0.5 rounded-md text-[11px] font-mono"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.14) 0px 0px 0px 1px' }}
               role="group"
               aria-label="Language Selector"
             >
@@ -1570,8 +1570,8 @@ export default function FleetGuardCockpitPage() {
                 onClick={() => setLang('KOR')}
                 className={`px-2 py-0.5 rounded font-semibold transition ${
                   lang === 'KOR'
-                    ? 'bg-[#FAFAFA] text-[#0A0A0A]'
-                    : 'text-[#71717A] hover:text-[#FAFAFA]'
+                    ? 'bg-[#0A0A0A] text-[#FAFAFA]'
+                    : 'text-[#71717A] hover:text-[#0A0A0A]'
                 }`}
               >
                 KOR
@@ -1582,7 +1582,7 @@ export default function FleetGuardCockpitPage() {
                 className={`px-2 py-0.5 rounded font-semibold transition ${
                   lang === 'ENG'
                     ? 'bg-[#0A72EF] text-white'
-                    : 'text-[#71717A] hover:text-[#FAFAFA]'
+                    : 'text-[#71717A] hover:text-[#0A0A0A]'
                 }`}
               >
                 ENG
@@ -1590,15 +1590,15 @@ export default function FleetGuardCockpitPage() {
             </div>
 
             <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0A0A0A] text-[11px] font-mono"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FAFAFA] text-[11px] font-mono"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
                   dbSyncState === 'SAVING' ? 'bg-[#FBBF24] animate-pulse' : 'bg-[#10B981]'
                 }`}
               />
-              <span className="text-[#A1A1AA]">
+              <span className="text-[#52525B]">
                 {dbSyncState === 'SAVING'
                   ? isEng
                     ? 'Saving'
@@ -1611,7 +1611,7 @@ export default function FleetGuardCockpitPage() {
                 type="button"
                 onClick={handleResetDatabase}
                 title={isEng ? 'Reset DB' : 'DB 초기화'}
-                className="ml-1 text-[#71717A] hover:text-[#FAFAFA]"
+                className="ml-1 text-[#71717A] hover:text-[#0A0A0A]"
               >
                 <RefreshCw className="w-3 h-3" />
               </button>
@@ -1622,10 +1622,10 @@ export default function FleetGuardCockpitPage() {
               onClick={() => setLiveTelemetryTick((p) => !p)}
               className={`px-2.5 py-1 rounded-md text-[11px] font-mono flex items-center gap-1 transition ${
                 liveTelemetryTick
-                  ? 'bg-[#10B981]/15 text-[#34D399]'
-                  : 'bg-[#0A0A0A] text-[#71717A]'
+                  ? 'bg-[#10B981]/15 text-[#047857]'
+                  : 'bg-[#FAFAFA] text-[#71717A]'
               }`}
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               <Activity className="w-3 h-3" />
               {liveTelemetryTick ? 'LIVE' : 'PAUSED'}
@@ -1634,8 +1634,8 @@ export default function FleetGuardCockpitPage() {
             <button
               type="button"
               onClick={handleExportTaxCsv}
-              className="px-2.5 py-1 rounded-md bg-[#0A0A0A] hover:bg-white/[0.06] text-[11px] font-mono text-[#FAFAFA] flex items-center gap-1 transition"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              className="px-2.5 py-1 rounded-md bg-[#FAFAFA] hover:bg-white/[0.06] text-[11px] font-mono text-[#0A0A0A] flex items-center gap-1 transition"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               <Download className="w-3 h-3 text-[#0A72EF]" />
               CSV
@@ -1652,26 +1652,26 @@ export default function FleetGuardCockpitPage() {
           <div className="space-y-4">
             {/* Single-Line Compact Status Bar */}
             <div
-              className="rounded-xl bg-[#0A0A0A] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              className="rounded-xl bg-[#FAFAFA] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               <div className="flex flex-wrap items-center gap-3 font-mono">
-                <span className="text-[#FAFAFA] font-semibold font-sans">
+                <span className="text-[#0A0A0A] font-semibold font-sans">
                   {isEng
                     ? 'Employee Vehicle Request & Return'
                     : '임직원 차량 신청 · 반납'}
                 </span>
-                <span className="text-white/15">|</span>
-                <span className="text-[#34D399]">
+                <span className="text-black/15">|</span>
+                <span className="text-[#047857]">
                   {isEng ? `Available ${counts.idle}` : `대기 ${counts.idle}대`}
                 </span>
-                <span className="text-[#FBBF24]">
+                <span className="text-[#B45309]">
                   {isEng ? `Pending ${counts.pendingApproval}` : `승인대기 ${counts.pendingApproval}건`}
                 </span>
-                <span className="text-[#60A5FA]">
+                <span className="text-[#1D4ED8]">
                   {isEng ? `Approved ${counts.approvedReady}` : `승인완료 ${counts.approvedReady}건`}
                 </span>
-                <span className="text-[#A1A1AA]">
+                <span className="text-[#52525B]">
                   {isEng ? `In Use ${counts.authorized}` : `운행중 ${counts.authorized}대`}
                 </span>
               </div>
@@ -1679,7 +1679,7 @@ export default function FleetGuardCockpitPage() {
               <button
                 type="button"
                 onClick={() => setViewMode('GUIDE_MANUAL')}
-                className="text-xs font-mono text-[#60A5FA] hover:underline flex items-center gap-1"
+                className="text-xs font-mono text-[#1D4ED8] hover:underline flex items-center gap-1"
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 {isEng
@@ -1713,11 +1713,11 @@ export default function FleetGuardCockpitPage() {
               {/* Right 8 Cols: Reservation Board + Compact Feed */}
               <div className="lg:col-span-8 space-y-4">
                 <div
-                  className="rounded-xl bg-[#0A0A0A] overflow-hidden"
-                  style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                  className="rounded-xl bg-[#FAFAFA] overflow-hidden"
+                  style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
                   <div className="px-4 py-2.5 border-b border-white/[0.08] flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#FAFAFA]">
+                    <span className="text-xs font-semibold text-[#0A0A0A]">
                       {isEng
                         ? 'Dispatch Request · Approval · Active · Return Board'
                         : '배차 신청 · 승인 · 운행 · 반납 목록'}
@@ -1748,12 +1748,12 @@ export default function FleetGuardCockpitPage() {
 
                 {/* Compact 3-Item Recent Log */}
                 <div
-                  className="rounded-xl bg-[#0A0A0A] p-3.5"
-                  style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                  className="rounded-xl bg-[#FAFAFA] p-3.5"
+                  style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
                   <div className="flex items-center justify-between pb-2 border-b border-white/[0.08] text-xs">
-                    <span className="font-semibold text-[#FAFAFA] flex items-center gap-1.5">
-                      <BellRing className="w-3.5 h-3.5 text-[#10B981]" />
+                    <span className="font-semibold text-[#0A0A0A] flex items-center gap-1.5">
+                      <BellRing className="w-3.5 h-3.5 text-[#059669]" />
                       {isEng ? 'Recent Notifications' : '최근 알림'}
                     </span>
                     <span className="text-[10px] font-mono text-[#71717A]">
@@ -1764,9 +1764,9 @@ export default function FleetGuardCockpitPage() {
                     {pushStream.slice(0, 4).map((item) => (
                       <div
                         key={item.id}
-                        className="px-2.5 py-1.5 rounded-md bg-[#111111] flex items-center justify-between gap-2 text-xs"
+                        className="px-2.5 py-1.5 rounded-md bg-[#FFFFFF] flex items-center justify-between gap-2 text-xs"
                       >
-                        <span className="text-[#D4D4D8] truncate">{item.message}</span>
+                        <span className="text-[#3F3F46] truncate">{item.message}</span>
                         <span className="text-[10px] font-mono text-[#71717A] shrink-0">
                           {item.time}
                         </span>
@@ -1784,11 +1784,11 @@ export default function FleetGuardCockpitPage() {
           <div className="space-y-4">
             {/* Quick Action Cards for Manuals & Test Scenarios */}
             <div
-              className="rounded-xl bg-[#0A0A0A] p-4 flex flex-wrap items-center justify-between gap-3"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              className="rounded-xl bg-[#FAFAFA] p-4 flex flex-wrap items-center justify-between gap-3"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               <div>
-                <h2 className="text-sm font-semibold text-[#FAFAFA]">
+                <h2 className="text-sm font-semibold text-[#0A0A0A]">
                   {isEng
                     ? 'Guide · Manual · Test Scenario Center'
                     : '가이드 · 매뉴얼 · 테스트 시나리오 센터'}
@@ -1804,10 +1804,10 @@ export default function FleetGuardCockpitPage() {
                 <button
                   type="button"
                   onClick={() => setIsOnboardingOpen(true)}
-                  className="px-3 py-1.5 rounded-lg bg-[#111111] hover:bg-white/[0.08] text-xs font-medium text-[#FAFAFA] flex items-center gap-1.5 transition"
-                  style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-white/[0.08] text-xs font-medium text-[#0A0A0A] flex items-center gap-1.5 transition"
+                  style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#34D399]" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#047857]" />
                   {isEng ? 'New User 3-Step Guide' : '신규 이용자 3단계 가이드'}
                 </button>
                 <button
@@ -1835,10 +1835,10 @@ export default function FleetGuardCockpitPage() {
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-[#111111] hover:bg-white/[0.08] text-xs font-medium text-[#FAFAFA] flex items-center gap-1.5 transition"
-                  style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-white/[0.08] text-xs font-medium text-[#0A0A0A] flex items-center gap-1.5 transition"
+                  style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#FBBF24]" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#B45309]" />
                   {isEng ? 'Admin Setup Guide (.HTML)' : '관리자 초기 세팅 가이드 (.HTML)'}
                 </a>
               </div>
@@ -1885,15 +1885,15 @@ export default function FleetGuardCockpitPage() {
                   setStatusFilter('UNAUTHORIZED');
                   setActiveTab('FLEET_MATRIX');
                 }}
-                className="text-left rounded-xl bg-[#0A0A0A] p-3.5 hover:bg-[#111111] transition"
-                style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                className="text-left rounded-xl bg-[#FAFAFA] p-3.5 hover:bg-[#FFFFFF] transition"
+                style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
-                <div className="flex items-center justify-between text-xs font-mono text-[#FF5B4F]">
+                <div className="flex items-center justify-between text-xs font-mono text-[#DC2626]">
                   <span>{isEng ? 'Unauthorized Trips' : '미승인 무단운행'}</span>
                   <ShieldAlert className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-semibold font-mono tabular-nums text-[#FAFAFA]">
+                  <span className="text-2xl font-semibold font-mono tabular-nums text-[#0A0A0A]">
                     {counts.unauthorized}
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
@@ -1905,15 +1905,15 @@ export default function FleetGuardCockpitPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('NO_DASHCAM_INCIDENTS')}
-                className="text-left rounded-xl bg-[#0A0A0A] p-3.5 hover:bg-[#111111] transition"
-                style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                className="text-left rounded-xl bg-[#FAFAFA] p-3.5 hover:bg-[#FFFFFF] transition"
+                style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
-                <div className="flex items-center justify-between text-xs font-mono text-[#FBBF24]">
+                <div className="flex items-center justify-between text-xs font-mono text-[#B45309]">
                   <span>{isEng ? 'Crash & Permission Audit' : '충격·권한 감사'}</span>
                   <Zap className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-semibold font-mono tabular-nums text-[#FAFAFA]">
+                  <span className="text-2xl font-semibold font-mono tabular-nums text-[#0A0A0A]">
                     {counts.incident}
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
@@ -1927,15 +1927,15 @@ export default function FleetGuardCockpitPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('DISPATCH_WORKFLOW')}
-                className="text-left rounded-xl bg-[#0A0A0A] p-3.5 hover:bg-[#111111] transition"
-                style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                className="text-left rounded-xl bg-[#FAFAFA] p-3.5 hover:bg-[#FFFFFF] transition"
+                style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
-                <div className="flex items-center justify-between text-xs font-mono text-[#60A5FA]">
+                <div className="flex items-center justify-between text-xs font-mono text-[#1D4ED8]">
                   <span>{isEng ? 'Authorized Active' : '정식 승인 운행'}</span>
                   <Car className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-semibold font-mono tabular-nums text-[#FAFAFA]">
+                  <span className="text-2xl font-semibold font-mono tabular-nums text-[#0A0A0A]">
                     {counts.authorized}
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
@@ -1952,15 +1952,15 @@ export default function FleetGuardCockpitPage() {
                   setStatusFilter('IDLE');
                   setActiveTab('FLEET_MATRIX');
                 }}
-                className="text-left rounded-xl bg-[#0A0A0A] p-3.5 hover:bg-[#111111] transition"
-                style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                className="text-left rounded-xl bg-[#FAFAFA] p-3.5 hover:bg-[#FFFFFF] transition"
+                style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
-                <div className="flex items-center justify-between text-xs font-mono text-[#34D399]">
+                <div className="flex items-center justify-between text-xs font-mono text-[#047857]">
                   <span>{isEng ? 'Parked in Garage' : '차고지 대기중'}</span>
                   <ShieldCheck className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
-                  <span className="text-2xl font-semibold font-mono tabular-nums text-[#FAFAFA]">
+                  <span className="text-2xl font-semibold font-mono tabular-nums text-[#0A0A0A]">
                     {counts.idle}
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
@@ -1984,8 +1984,8 @@ export default function FleetGuardCockpitPage() {
 
                 {/* Minimal Cockpit Tabs */}
                 <div
-                  className="rounded-xl bg-[#0A0A0A] overflow-hidden"
-                  style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                  className="rounded-xl bg-[#FAFAFA] overflow-hidden"
+                  style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-2.5 border-b border-white/[0.08]">
                     <div className="flex flex-wrap gap-1">
@@ -2027,8 +2027,8 @@ export default function FleetGuardCockpitPage() {
                           onClick={() => setActiveTab(tab.id)}
                           className={`px-3 py-2.5 text-xs font-medium border-b-2 transition ${
                             activeTab === tab.id
-                              ? 'border-[#3E6AE1] text-[#F4F6F8] bg-[#191E2A]/60'
-                              : 'border-transparent text-[#9BA3B0] hover:text-[#F4F6F8]'
+                              ? 'border-[#3E6AE1] text-[#0A0A0A] bg-[#F4F4F5]/60'
+                              : 'border-transparent text-[#52525B] hover:text-[#0A0A0A]'
                           }`}
                         >
                           {tab.label}
@@ -2038,7 +2038,7 @@ export default function FleetGuardCockpitPage() {
 
                     {activeTab === 'FLEET_MATRIX' && (
                       <div className="flex items-center gap-1 pb-2">
-                        <Filter className="w-3.5 h-3.5 text-[#9BA3B0] mr-1" />
+                        <Filter className="w-3.5 h-3.5 text-[#52525B] mr-1" />
                         {(
                           [
                             { key: 'ALL', label: isEng ? 'All 30' : '전체 30대' },
@@ -2055,7 +2055,7 @@ export default function FleetGuardCockpitPage() {
                             className={`px-2 py-1 rounded text-[11px] font-mono transition ${
                               statusFilter === f.key
                                 ? 'bg-[#3E6AE1] text-white'
-                                : 'bg-[#191E2A] text-[#9BA3B0] hover:text-white'
+                                : 'bg-[#F4F4F5] text-[#52525B] hover:text-[#0A0A0A]'
                             }`}
                           >
                             {f.label}
@@ -2100,7 +2100,7 @@ export default function FleetGuardCockpitPage() {
                               ? 'bg-[#E82127]/10 border-[#E82127]/80'
                               : veh.status === 'AUTHORIZED'
                                 ? 'bg-[#3E6AE1]/10 border-[#3E6AE1]/50'
-                                : 'bg-[#191E2A] border-white/5 hover:border-white/20';
+                                : 'bg-[#F4F4F5] border-black/5 hover:border-black/20';
 
                         return (
                           <button
@@ -2108,12 +2108,12 @@ export default function FleetGuardCockpitPage() {
                             type="button"
                             onClick={() => setSelectedVehicleId(veh.id)}
                             className={`text-left p-2.5 rounded-xl border transition flex flex-col justify-between ${cardStyle} ${
-                              isSelected ? 'ring-2 ring-white' : ''
+                              isSelected ? 'ring-2 ring-[#0A0A0A]' : ''
                             }`}
                           >
                             <div>
                               <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-mono font-semibold text-[#9BA3B0]">
+                                <span className="text-[11px] font-mono font-semibold text-[#52525B]">
                                   {isEng
                                     ? `Unit #${veh.fleetNumber.toString().padStart(2, '0')}`
                                     : `#${veh.fleetNumber.toString().padStart(2, '0')}호차`}
@@ -2128,16 +2128,16 @@ export default function FleetGuardCockpitPage() {
                                   }`}
                                 />
                               </div>
-                              <div className="text-xs font-semibold text-[#F4F6F8] mt-1">
+                              <div className="text-xs font-semibold text-[#0A0A0A] mt-1">
                                 {veh.plateNumber}
                               </div>
-                              <div className="text-[10px] text-[#9BA3B0] truncate">
+                              <div className="text-[10px] text-[#52525B] truncate">
                                 {veh.modelName}
                               </div>
                             </div>
 
-                            <div className="mt-2.5 pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
-                              <span className="truncate max-w-[90px] text-[#F4F6F8]">
+                            <div className="mt-2.5 pt-2 border-t border-black/5 flex items-center justify-between text-[11px] font-mono">
+                              <span className="truncate max-w-[90px] text-[#0A0A0A]">
                                 {driver
                                   ? formatEmpName(driver.name, lang)
                                   : isEng
@@ -2147,8 +2147,8 @@ export default function FleetGuardCockpitPage() {
                               <span
                                 className={`tabular-nums ${
                                   veh.status === 'UNAUTHORIZED' || veh.status === 'INCIDENT'
-                                    ? 'text-[#FF8080] font-semibold'
-                                    : 'text-[#9BA3B0]'
+                                    ? 'text-[#DC2626] font-semibold'
+                                    : 'text-[#52525B]'
                                 }`}
                               >
                                 {veh.speedKmh > 0 ? `${veh.speedKmh}km/h` : '0km/h'}
@@ -2166,28 +2166,28 @@ export default function FleetGuardCockpitPage() {
                       {incidents.map((inc) => (
                         <div
                           key={inc.id}
-                          className="p-3.5 rounded-xl bg-[#191E2A] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3"
+                          className="p-3.5 rounded-xl bg-[#F4F4F5] border border-black/10 flex flex-col md:flex-row md:items-center justify-between gap-3"
                         >
                           <div className="space-y-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#E82127]/20 text-[#FF8080] border border-[#E82127]/40">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#E82127]/20 text-[#DC2626] border border-[#E82127]/40">
                                 {inc.occurredAt}
                               </span>
                               <span className="text-xs font-mono font-semibold text-[#3E6AE1]">
                                 {inc.plateNumber}
                               </span>
-                              <span className="text-xs font-semibold text-[#F4F6F8]">
+                              <span className="text-xs font-semibold text-[#0A0A0A]">
                                 {isEng ? 'Driver:' : '운전자:'} {formatEmpName(inc.driverName, lang)}
                               </span>
                               {inc.coPassengerNames.length > 0 && (
-                                <span className="text-[11px] text-[#F79009] font-mono">
+                                <span className="text-[11px] text-[#B45309] font-mono">
                                   + {inc.coPassengerNames.join(', ')}
                                 </span>
                               )}
                             </div>
-                            <h4 className="text-sm font-semibold text-[#F4F6F8]">{inc.title}</h4>
-                            <p className="text-xs text-[#9BA3B0] leading-relaxed">{inc.description}</p>
-                            <div className="text-[11px] font-mono text-[#636B78] pt-1">
+                            <h4 className="text-sm font-semibold text-[#0A0A0A]">{inc.title}</h4>
+                            <p className="text-xs text-[#52525B] leading-relaxed">{inc.description}</p>
+                            <div className="text-[11px] font-mono text-[#6B7280] pt-1">
                               📍 {inc.locationLabel}
                               {inc.gForce &&
                                 ` · IMU: ${inc.gForce}G (Δv=${inc.deltaSpeedKmh}km/h, Yaw=${inc.gyroYawDegPerSec || 0}°/s)`}
@@ -2200,14 +2200,14 @@ export default function FleetGuardCockpitPage() {
                               onClick={() => {
                                 setSelectedVehicleId(inc.vehicleId);
                               }}
-                              className="px-3 py-1.5 rounded-lg bg-[#3E6AE1]/20 hover:bg-[#3E6AE1]/30 text-[#7EA0FF] border border-[#3E6AE1]/40 text-xs font-mono"
+                              className="px-3 py-1.5 rounded-lg bg-[#3E6AE1]/20 hover:bg-[#3E6AE1]/30 text-[#1D4ED8] border border-[#3E6AE1]/40 text-xs font-mono"
                             >
                               {isEng ? 'Focus Telemetry' : '차량 텔레메트리 보기'}
                             </button>
                             <button
                               type="button"
                               onClick={() => handleOpenAdminConsole()}
-                              className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[#9BA3B0] text-[11px] font-mono"
+                              className="px-3 py-1 rounded-lg bg-black/[0.03] hover:bg-black/5 text-[#52525B] text-[11px] font-mono"
                             >
                               {isEng ? 'Admin Action' : '관리자 처분 화면 이동'}
                             </button>
@@ -2227,14 +2227,14 @@ export default function FleetGuardCockpitPage() {
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <AlertTriangle className="w-4 h-4 text-[#F79009]" />
-                              <span className="text-xs font-semibold text-[#FDB022]">
+                              <AlertTriangle className="w-4 h-4 text-[#B45309]" />
+                              <span className="text-xs font-semibold text-[#B45309]">
                                 {isEng
                                   ? `Ghost Trip Detected: ${gt.plateNumber} (${gt.modelName})`
                                   : `유령 주행(Ghost Trip) 자동 탐지: ${gt.plateNumber} (${gt.modelName})`}
                               </span>
                             </div>
-                            <span className="text-xs font-mono text-[#FDB022]">
+                            <span className="text-xs font-mono text-[#B45309]">
                               {isEng
                                 ? `Gap: ${gt.windowStart} ~ ${gt.windowEnd} · Unaccounted +${gt.unaccountedKm}km`
                                 : `공백 시간: ${gt.windowStart} ~ ${gt.windowEnd} · 미기록 주행거리 +${gt.unaccountedKm}km`}
@@ -2245,23 +2245,23 @@ export default function FleetGuardCockpitPage() {
                             {gt.suspectEmployees.map((sus) => (
                               <div
                                 key={sus.employeeId}
-                                className="p-2.5 rounded-lg bg-[#0B0D10]/90 border border-white/10"
+                                className="p-2.5 rounded-lg bg-[#FAFAFA]/90 border border-black/10"
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs font-semibold text-[#F4F6F8]">
+                                  <span className="text-xs font-semibold text-[#0A0A0A]">
                                     {formatEmpName(sus.name, lang)} ({formatDeptName(sus.department, lang)})
                                   </span>
                                   <span
                                     className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold ${
                                       sus.confidenceScore >= 80
-                                        ? 'bg-[#E82127]/20 text-[#FF8080]'
-                                        : 'bg-white/10 text-[#9BA3B0]'
+                                        ? 'bg-[#E82127]/20 text-[#DC2626]'
+                                        : 'bg-black/5 text-[#52525B]'
                                     }`}
                                   >
                                     {isEng ? `Match ${sus.confidenceScore}%` : `일치율 ${sus.confidenceScore}%`}
                                   </span>
                                 </div>
-                                <ul className="mt-1.5 space-y-1 text-[11px] text-[#9BA3B0] list-disc list-inside">
+                                <ul className="mt-1.5 space-y-1 text-[11px] text-[#52525B] list-disc list-inside">
                                   {sus.evidence.map((ev, i) => (
                                     <li key={i}>{ev}</li>
                                   ))}
@@ -2273,8 +2273,8 @@ export default function FleetGuardCockpitPage() {
                       ))}
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="p-3 rounded-xl bg-[#191E2A] border border-white/5">
-                          <h4 className="text-xs font-mono uppercase text-[#9BA3B0] mb-2 flex items-center gap-1.5">
+                        <div className="p-3 rounded-xl bg-[#F4F4F5] border border-black/5">
+                          <h4 className="text-xs font-mono uppercase text-[#52525B] mb-2 flex items-center gap-1.5">
                             <UserCheck className="w-3.5 h-3.5 text-[#3E6AE1]" />
                             {isEng ? 'Driver App Permission Heartbeat' : '운전자 앱 권한 하트비트 감시 현황'}
                           </h4>
@@ -2282,19 +2282,19 @@ export default function FleetGuardCockpitPage() {
                             {employees.map((emp) => (
                               <div
                                 key={emp.id}
-                                className="flex items-center justify-between text-xs py-1 border-b border-white/5 last:border-none"
+                                className="flex items-center justify-between text-xs py-1 border-b border-black/5 last:border-none"
                               >
                                 <span>
                                   {formatEmpName(emp.name, lang)}{' '}
-                                  <span className="text-[11px] text-[#9BA3B0]">
+                                  <span className="text-[11px] text-[#52525B]">
                                     ({formatDeptName(emp.department, lang)})
                                   </span>
                                 </span>
                                 <span
                                   className={`px-2 py-0.5 rounded font-mono text-[10px] ${
                                     emp.permissionStatus === 'OK'
-                                      ? 'bg-[#12B76A]/15 text-[#32D583]'
-                                      : 'bg-[#E82127]/20 text-[#FF8080]'
+                                      ? 'bg-[#12B76A]/15 text-[#047857]'
+                                      : 'bg-[#E82127]/20 text-[#DC2626]'
                                   }`}
                                 >
                                   {emp.permissionStatus} · {emp.lastHeartbeatAt}
@@ -2304,29 +2304,29 @@ export default function FleetGuardCockpitPage() {
                           </div>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-[#191E2A] border border-white/5">
-                          <h4 className="text-xs font-mono uppercase text-[#9BA3B0] mb-2 flex items-center gap-1.5">
-                            <Bluetooth className="w-3.5 h-3.5 text-[#12B76A]" />
+                        <div className="p-3 rounded-xl bg-[#F4F4F5] border border-black/5">
+                          <h4 className="text-xs font-mono uppercase text-[#52525B] mb-2 flex items-center gap-1.5">
+                            <Bluetooth className="w-3.5 h-3.5 text-[#059669]" />
                             {isEng
                               ? '4400 Northpark Dr (150m) & Keybox (3m) Logs'
                               : '4400 Northpark Dr (150m) · 키보관함 (3m) 출입 로그'}
                           </h4>
                           <div className="space-y-2">
                             {geofenceLogs.slice(0, 5).map((log) => (
-                              <div key={log.id} className="text-[11px] border-b border-white/5 pb-1.5">
+                              <div key={log.id} className="text-[11px] border-b border-black/5 pb-1.5">
                                 <div className="flex items-center justify-between font-mono">
-                                  <span className="text-[#F4F6F8] font-semibold">
+                                  <span className="text-[#0A0A0A] font-semibold">
                                     [{log.timestamp}] {formatEmpName(log.employeeName, lang)} ({log.zoneType})
                                   </span>
                                   <span
                                     className={
-                                      log.permissionState === 'OK' ? 'text-[#12B76A]' : 'text-[#E82127]'
+                                      log.permissionState === 'OK' ? 'text-[#059669]' : 'text-[#E82127]'
                                     }
                                   >
                                     {log.permissionState}
                                   </span>
                                 </div>
-                                <p className="text-[#9BA3B0] mt-0.5">{log.note}</p>
+                                <p className="text-[#52525B] mt-0.5">{log.note}</p>
                               </div>
                             ))}
                           </div>
@@ -2339,7 +2339,7 @@ export default function FleetGuardCockpitPage() {
                   {activeTab === 'TAX_LOGBOOK' && (
                     <div className="p-4 max-h-[420px] overflow-y-auto">
                       <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs text-[#9BA3B0]">
+                        <p className="text-xs text-[#52525B]">
                           {isEng
                             ? 'IRS Sec. 274(d) compliant mileage logbook automatically generated upon garage geofence return.'
                             : '차량 반납(수동 반납 또는 4400 Northpark Dr 차고지 복귀 자동 반납) 시 GPS 주행거리가 자동 적산되어 기록됩니다.'}
@@ -2356,7 +2356,7 @@ export default function FleetGuardCockpitPage() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse text-xs">
                           <thead>
-                            <tr className="border-b border-white/10 text-[11px] font-mono text-[#9BA3B0]">
+                            <tr className="border-b border-black/10 text-[11px] font-mono text-[#52525B]">
                               <th className="py-2 px-2">{isEng ? 'Date' : '일자'}</th>
                               <th className="py-2 px-2">{isEng ? 'Vehicle' : '차량번호'}</th>
                               <th className="py-2 px-2">{isEng ? 'Driver / Dept' : '부서 / 운전자'}</th>
@@ -2367,11 +2367,11 @@ export default function FleetGuardCockpitPage() {
                               <th className="py-2 px-2 text-center">{isEng ? 'Verified' : '반납검증'}</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-white/5 font-mono">
+                          <tbody className="divide-y divide-black/5 font-mono">
                             {taxLogs.map((row) => (
                               <tr key={row.id} className="hover:bg-white/[0.02]">
-                                <td className="py-2 px-2 text-[#9BA3B0]">{row.date}</td>
-                                <td className="py-2 px-2 text-[#F4F6F8] font-semibold">
+                                <td className="py-2 px-2 text-[#52525B]">{row.date}</td>
+                                <td className="py-2 px-2 text-[#0A0A0A] font-semibold">
                                   {row.plateNumber}
                                 </td>
                                 <td className="py-2 px-2 font-sans">
@@ -2381,10 +2381,10 @@ export default function FleetGuardCockpitPage() {
                                   <span
                                     className={`px-2 py-0.5 rounded text-[10px] ${
                                       row.authType === 'PRE_REGISTERED'
-                                        ? 'bg-[#12B76A]/15 text-[#32D583]'
+                                        ? 'bg-[#12B76A]/15 text-[#047857]'
                                         : row.authType === 'LATE_REGISTERED'
-                                          ? 'bg-[#F79009]/20 text-[#FDB022]'
-                                          : 'bg-[#E82127]/20 text-[#FF8080]'
+                                          ? 'bg-[#F79009]/20 text-[#B45309]'
+                                          : 'bg-[#E82127]/20 text-[#DC2626]'
                                     }`}
                                   >
                                     {row.authType === 'PRE_REGISTERED'
@@ -2403,13 +2403,13 @@ export default function FleetGuardCockpitPage() {
                                 <td className="py-2 px-2 font-sans">
                                   {formatTripPurpose(row.purpose, lang)}
                                 </td>
-                                <td className="py-2 px-2 text-[#9BA3B0]">
+                                <td className="py-2 px-2 text-[#52525B]">
                                   {row.startTime}~{row.endTime}
                                 </td>
-                                <td className="py-2 px-2 text-right text-[#F4F6F8] tabular-nums">
+                                <td className="py-2 px-2 text-right text-[#0A0A0A] tabular-nums">
                                   {row.distanceKm.toFixed(1)} km
                                 </td>
-                                <td className="py-2 px-2 text-center text-[#12B76A]">
+                                <td className="py-2 px-2 text-center text-[#059669]">
                                   <CheckCircle className="w-3.5 h-3.5 inline" />
                                 </td>
                               </tr>
@@ -2443,19 +2443,19 @@ export default function FleetGuardCockpitPage() {
 
                 {/* Bilateral Real-Time Alert Stream */}
                 <div
-                  className="rounded-xl bg-[#131720] p-4 border border-white/10"
+                  className="rounded-xl bg-[#FFFFFF] p-4 border border-black/10"
                   style={{
-                    boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px',
+                    boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px',
                   }}
                 >
-                  <div className="flex items-center justify-between pb-2.5 border-b border-white/10">
-                    <span className="text-xs font-semibold text-[#F4F6F8] flex items-center gap-1.5">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-black/10">
+                    <span className="text-xs font-semibold text-[#0A0A0A] flex items-center gap-1.5">
                       <BellRing className="w-3.5 h-3.5 text-[#E82127]" />
                       {isEng
                         ? 'Live Push Stream (Manager ↔ Driver)'
                         : '실시간 양방향 푸시 알림 스트림 (관리자 ↔ 운전자)'}
                     </span>
-                    <span className="text-[10px] font-mono text-[#9BA3B0]">
+                    <span className="text-[10px] font-mono text-[#52525B]">
                       {pushStream.length} EVENTS
                     </span>
                   </div>
@@ -2466,16 +2466,16 @@ export default function FleetGuardCockpitPage() {
                         key={item.id}
                         className={`p-2.5 rounded-lg border text-xs ${
                           item.level === 'CRITICAL'
-                            ? 'bg-[#E82127]/10 border-[#E82127]/30 text-[#FFD6D6]'
-                            : 'bg-[#191E2A] border-white/5 text-[#D0D5DD]'
+                            ? 'bg-[#E82127]/10 border-[#E82127]/30 text-[#B91C1C]'
+                            : 'bg-[#F4F4F5] border-black/5 text-[#3F3F46]'
                         }`}
                       >
                         <div className="flex items-center justify-between text-[10px] font-mono mb-1">
                           <span
                             className={`px-1.5 py-0.5 rounded ${
                               item.target === 'MANAGER'
-                                ? 'bg-[#3E6AE1]/30 text-[#9BC1FF]'
-                                : 'bg-[#F79009]/30 text-[#FDB022]'
+                                ? 'bg-[#3E6AE1]/30 text-[#1D4ED8]'
+                                : 'bg-[#F79009]/30 text-[#B45309]'
                             }`}
                           >
                             {item.target === 'MANAGER'
@@ -2486,7 +2486,7 @@ export default function FleetGuardCockpitPage() {
                                 ? 'TO DRIVER'
                                 : '운전자 휴대폰 알림'}
                           </span>
-                          <span className="text-[#9BA3B0]">{item.time}</span>
+                          <span className="text-[#52525B]">{item.time}</span>
                         </div>
                         <p className="leading-relaxed">{item.message}</p>
                       </div>
@@ -2501,22 +2501,22 @@ export default function FleetGuardCockpitPage() {
 
       {/* Admin Security PIN 4400 Keypad Modal */}
       {showPinModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
           <div
-            className="w-full max-w-sm rounded-2xl bg-[#131720] border border-white/15 p-6 space-y-5"
+            className="w-full max-w-sm rounded-2xl bg-[#FFFFFF] border border-black/15 p-6 space-y-5"
             style={{
               boxShadow:
-                'rgba(0, 0, 0, 0.85) 0px 24px 60px, rgba(255, 255, 255, 0.1) 0px 0px 0px 1px',
+                'rgba(0, 0, 0, 0.14) 0px 24px 60px, rgba(0, 0, 0, 0.1) 0px 0px 0px 1px',
             }}
           >
             <div className="text-center space-y-1.5">
               <div className="w-11 h-11 rounded-2xl bg-[#E82127]/20 border border-[#E82127]/40 flex items-center justify-center mx-auto">
                 <KeyRound className="w-5 h-5 text-[#E82127]" />
               </div>
-              <h3 className="text-base font-semibold text-[#F4F6F8]">
+              <h3 className="text-base font-semibold text-[#0A0A0A]">
                 {isEng ? 'Admin Console Security PIN' : '관리자 콘솔 보안 PIN 인증'}
               </h3>
-              <p className="text-xs text-[#9BA3B0]">
+              <p className="text-xs text-[#52525B]">
                 {isEng
                   ? 'Enter the 4-digit security PIN to access the Admin Console.'
                   : '관리자 화면(차량·임직원 CSV 등록, 사고 처분, 정책 변경) 접속을 위해 4자리 보안 PIN을 입력하세요.'}
@@ -2546,11 +2546,11 @@ export default function FleetGuardCockpitPage() {
                   }
                 }}
                 placeholder={isEng ? '4-Digit PIN' : 'PIN 4자리 입력'}
-                className="w-full text-center tracking-[0.8em] text-xl font-mono font-semibold rounded-xl bg-[#0B0D10] border border-white/15 py-3 text-[#F4F6F8] focus:outline-none focus:border-[#3E6AE1]"
+                className="w-full text-center tracking-[0.8em] text-xl font-mono font-semibold rounded-xl bg-[#FAFAFA] border border-black/15 py-3 text-[#0A0A0A] focus:outline-none focus:border-[#3E6AE1]"
               />
 
               {pinError && (
-                <p className="text-center text-xs text-[#FF8080] font-medium">
+                <p className="text-center text-xs text-[#DC2626] font-medium">
                   {pinError}
                 </p>
               )}
@@ -2562,7 +2562,7 @@ export default function FleetGuardCockpitPage() {
                     key={digit}
                     type="button"
                     onClick={() => handleDigitClick(digit)}
-                    className="py-3 rounded-xl bg-[#191E2A] hover:bg-white/10 border border-white/10 text-base font-mono font-semibold text-[#F4F6F8] transition active:scale-95"
+                    className="py-3 rounded-xl bg-[#F4F4F5] hover:bg-black/5 border border-black/10 text-base font-mono font-semibold text-[#0A0A0A] transition active:scale-95"
                   >
                     {digit}
                   </button>
@@ -2573,14 +2573,14 @@ export default function FleetGuardCockpitPage() {
                     setPinInput('');
                     setPinError(null);
                   }}
-                  className="py-3 rounded-xl bg-[#191E2A] hover:bg-white/10 border border-white/10 text-xs font-mono text-[#9BA3B0] transition"
+                  className="py-3 rounded-xl bg-[#F4F4F5] hover:bg-black/5 border border-black/10 text-xs font-mono text-[#52525B] transition"
                 >
                   {isEng ? 'Clear' : '지우기'}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDigitClick('0')}
-                  className="py-3 rounded-xl bg-[#191E2A] hover:bg-white/10 border border-white/10 text-base font-mono font-semibold text-[#F4F6F8] transition active:scale-95"
+                  className="py-3 rounded-xl bg-[#F4F4F5] hover:bg-black/5 border border-black/10 text-base font-mono font-semibold text-[#0A0A0A] transition active:scale-95"
                 >
                   0
                 </button>
@@ -2593,14 +2593,14 @@ export default function FleetGuardCockpitPage() {
               </div>
             </form>
 
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#9BA3B0]">
+            <div className="pt-2 border-t border-black/10 flex items-center justify-between text-[11px] text-[#52525B]">
               <span className="font-mono">
                 {isEng ? 'Role: Fleet Admin (Private PIN)' : '보안 등급: Fleet Admin (비공개 PIN)'}
               </span>
               <button
                 type="button"
                 onClick={() => setShowPinModal(false)}
-                className="text-[#9BA3B0] hover:text-white underline"
+                className="text-[#52525B] hover:text-[#0A0A0A] underline"
               >
                 {isEng ? 'Cancel & Close' : '취소 및 닫기'}
               </button>

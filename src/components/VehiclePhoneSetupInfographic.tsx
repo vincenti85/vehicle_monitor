@@ -34,7 +34,7 @@ const HOTSPOTS: HotspotItem[] = [
     subtitleEng: 'Scan the QR tag on the car key-fob with your smartphone camera',
     xPercent: 36,
     yPercent: 64,
-    color: '#32D583',
+    color: '#047857',
     actionStepsKor: [
       '4400 Northpark Dr 키보관함에서 배정된 차량 키(QR 키링 부착)를 수령합니다.',
       '스마트폰 기본 카메라(또는 임직원 웹앱 상단 [⚡ 차키 QR 1초 출발])로 차키 QR을 비춥니다.',
@@ -88,7 +88,7 @@ const HOTSPOTS: HotspotItem[] = [
     subtitleEng: '3-Axis Accelerometer (G) + 3-Axis Gyroscope (°/s) with 0 in-car dashcams',
     xPercent: 56,
     yPercent: 32,
-    color: '#F79009',
+    color: '#B45309',
     actionStepsKor: [
       '운행 시작과 동시에 스마트폰 내장 6축 IMU(가속도계 + 자이로스코프)와 GPS가 백그라운드에서 켜집니다.',
       '주행 중 2.5G 이상 충격 + 자이로 회전(≥25°/s) + 2초 내 급감속(Δv ≤ -20km/h) 동시 발생 시 실제 차량 충돌 사고로 자동 재구성합니다.',
@@ -115,7 +115,7 @@ const HOTSPOTS: HotspotItem[] = [
     subtitleEng: 'Hands-free return upon entering 4400 Northpark Dr (150m) & turning engine OFF',
     xPercent: 42,
     yPercent: 36,
-    color: '#A855F7',
+    color: '#7E22CE',
     actionStepsKor: [
       '운행 종료 후 4400 Northpark Dr(Opelika, AL) 차고지 반경 150m 내 진입 후 시동을 끄면 버튼을 누르지 않아도 [자동 반납] 됩니다.',
       '반납과 동시에 출발~도착 주행거리(km)가 사내 법인차량 운행기록부(내부 관리·회계 비용증빙용 CSV, 외부 기관 자동전송 없음)에 자동 기입됩니다.',
@@ -149,13 +149,13 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
 
   return (
     <section
-      className="rounded-xl bg-[#0A0A0A] p-5 space-y-5"
-      style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+      className="rounded-xl bg-[#FAFAFA] p-5 space-y-5"
+      style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
     >
       {/* Top Infographic Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
         <div>
-          <h2 className="text-base font-semibold text-[#FAFAFA] flex items-center gap-2">
+          <h2 className="text-base font-semibold text-[#0A0A0A] flex items-center gap-2">
             <Car className="w-4 h-4 text-[#0A72EF]" />
             {isEng
               ? 'Vehicle ↔ Smartphone Initial Setup & Sensor Infographic'
@@ -179,8 +179,8 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
                 onClick={() => setActiveHotspotId(spot.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition ${
                   isSelected
-                    ? 'bg-[#FAFAFA] text-[#0A0A0A] font-semibold'
-                    : 'bg-[#111111] text-[#A1A1AA] hover:text-[#FAFAFA]'
+                    ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
+                    : 'bg-[#FFFFFF] text-[#52525B] hover:text-[#0A0A0A]'
                 }`}
               >
                 <span className="font-mono text-[11px]">{spot.stepNumber}</span>
@@ -195,10 +195,10 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Left 7 Cols: Interactive Vehicle Cutaway SVG Diagram */}
         <div
-          className="lg:col-span-7 rounded-xl bg-[#111111] p-4 relative overflow-hidden flex flex-col justify-between min-h-[370px]"
-          style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+          className="lg:col-span-7 rounded-xl bg-[#FFFFFF] p-4 relative overflow-hidden flex flex-col justify-between min-h-[370px]"
+          style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
         >
-          <div className="flex items-center justify-between text-xs font-mono text-[#A1A1AA] z-10">
+          <div className="flex items-center justify-between text-xs font-mono text-[#52525B] z-10">
             <span>OPELIKA AL FLEET #01~#30</span>
             <span>{isEng ? 'Click ①~④ on vehicle' : '차량 위 ①~④ 클릭'}</span>
           </div>
@@ -212,13 +212,13 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
             >
               <defs>
                 <linearGradient id="carBodyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#162033" />
-                  <stop offset="50%" stopColor="#1E2B45" />
-                  <stop offset="100%" stopColor="#131B2E" />
+                  <stop offset="0%" stopColor="#EEF2FF" />
+                  <stop offset="50%" stopColor="#E0E7FF" />
+                  <stop offset="100%" stopColor="#EEF2FF" />
                 </linearGradient>
                 <linearGradient id="cabinGlassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0B0F19" stopOpacity="0.92" />
-                  <stop offset="100%" stopColor="#162238" stopOpacity="0.88" />
+                  <stop offset="0%" stopColor="#F8FAFC" stopOpacity="0.92" />
+                  <stop offset="100%" stopColor="#EFF6FF" stopOpacity="0.88" />
                 </linearGradient>
               </defs>
 
@@ -238,7 +238,7 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
                 x="400"
                 y="36"
                 textAnchor="middle"
-                fill="#7EA0FF"
+                fill="#1D4ED8"
                 fontSize="11"
                 fontFamily="monospace"
               >
@@ -247,48 +247,48 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
                   : '4400 Northpark Dr 차고지 지오펜스 (반경 150m 진입 · 시동 OFF 시 자동 반납)'}
               </text>
 
-              <rect x="205" y="68" width="76" height="24" rx="8" fill="#090B0E" stroke="#475467" strokeWidth="2" />
-              <rect x="515" y="68" width="76" height="24" rx="8" fill="#090B0E" stroke="#475467" strokeWidth="2" />
-              <rect x="205" y="308" width="76" height="24" rx="8" fill="#090B0E" stroke="#475467" strokeWidth="2" />
-              <rect x="515" y="308" width="76" height="24" rx="8" fill="#090B0E" stroke="#475467" strokeWidth="2" />
+              <rect x="205" y="68" width="76" height="24" rx="8" fill="#F4F4F5" stroke="#A1A1AA" strokeWidth="2" />
+              <rect x="515" y="68" width="76" height="24" rx="8" fill="#F4F4F5" stroke="#A1A1AA" strokeWidth="2" />
+              <rect x="205" y="308" width="76" height="24" rx="8" fill="#F4F4F5" stroke="#A1A1AA" strokeWidth="2" />
+              <rect x="515" y="308" width="76" height="24" rx="8" fill="#F4F4F5" stroke="#A1A1AA" strokeWidth="2" />
 
               <path
                 d="M 135 140 Q 115 200 135 260 L 185 295 Q 220 312 280 312 L 560 312 Q 635 312 660 275 Q 678 200 660 125 Q 635 88 560 88 L 280 88 Q 220 88 185 105 Z"
                 fill="url(#carBodyGrad)"
-                stroke="#688FF5"
+                stroke="#3B82F6"
                 strokeWidth="2.5"
               />
 
-              <text x="195" y="204" textAnchor="middle" fill="#9BC1FF" fontSize="11" fontFamily="monospace" fontWeight="bold">
+              <text x="195" y="204" textAnchor="middle" fill="#1D4ED8" fontSize="11" fontFamily="monospace" fontWeight="bold">
                 FRONT
               </text>
 
               <path
                 d="M 255 122 L 315 106 L 535 106 L 585 126 L 585 274 L 535 294 L 315 294 L 255 278 Z"
                 fill="url(#cabinGlassGrad)"
-                stroke="#475467"
+                stroke="#A1A1AA"
                 strokeWidth="2"
               />
 
-              <rect x="275" y="115" width="36" height="170" rx="10" fill="#192338" stroke="#688FF5" strokeWidth="1.5" />
-              <circle cx="315" cy="245" r="20" fill="none" stroke="#9BC1FF" strokeWidth="4" />
+              <rect x="275" y="115" width="36" height="170" rx="10" fill="#EFF6FF" stroke="#3B82F6" strokeWidth="1.5" />
+              <circle cx="315" cy="245" r="20" fill="none" stroke="#3B82F6" strokeWidth="4" />
 
-              <rect x="350" y="214" width="74" height="64" rx="12" fill="#1D2939" stroke="#32D583" strokeWidth="2" />
-              <text x="387" y="246" textAnchor="middle" fill="#32D583" fontSize="11" fontWeight="bold">
+              <rect x="350" y="214" width="74" height="64" rx="12" fill="#ECFDF5" stroke="#10B981" strokeWidth="2" />
+              <text x="387" y="246" textAnchor="middle" fill="#047857" fontSize="11" fontWeight="bold">
                 {isEng ? 'Driver' : '운전석'}
               </text>
-              <text x="387" y="261" textAnchor="middle" fill="#9BA3B0" fontSize="9" fontFamily="monospace">
+              <text x="387" y="261" textAnchor="middle" fill="#52525B" fontSize="9" fontFamily="monospace">
                 RSSI -52dBm
               </text>
 
-              <rect x="350" y="122" width="74" height="64" rx="12" fill="#161E2E" stroke="#475467" strokeWidth="1.5" />
-              <text x="387" y="154" textAnchor="middle" fill="#9BA3B0" fontSize="11">
+              <rect x="350" y="122" width="74" height="64" rx="12" fill="#F1F5F9" stroke="#A1A1AA" strokeWidth="1.5" />
+              <text x="387" y="154" textAnchor="middle" fill="#52525B" fontSize="11">
                 {isEng ? 'Passenger' : '조수석'}
               </text>
 
-              <rect x="468" y="122" width="65" height="156" rx="12" fill="#141B29" stroke="#344054" strokeWidth="1.5" />
-              <rect x="302" y="182" width="48" height="36" rx="6" fill="#0F172A" stroke="#3E6AE1" strokeWidth="2" />
-              <text x="326" y="203" textAnchor="middle" fill="#9BC1FF" fontSize="9" fontFamily="monospace">
+              <rect x="468" y="122" width="65" height="156" rx="12" fill="#F1F5F9" stroke="#D4D4D8" strokeWidth="1.5" />
+              <rect x="302" y="182" width="48" height="36" rx="6" fill="#EFF6FF" stroke="#3E6AE1" strokeWidth="2" />
+              <text x="326" y="203" textAnchor="middle" fill="#1D4ED8" fontSize="9" fontFamily="monospace">
                 BT·IMU
               </text>
             </svg>
@@ -303,8 +303,8 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
                   style={{ left: `${spot.xPercent}%`, top: `${spot.yPercent}%` }}
                   className={`-translate-x-1/2 -translate-y-1/2 absolute z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-xs font-bold transition-all ${
                     isSelected
-                      ? 'bg-[#FAFAFA] text-[#0A0A0A] scale-110 shadow-xl'
-                      : 'bg-[#0A0A0A]/90 text-[#FAFAFA] border border-white/30 hover:scale-105'
+                      ? 'bg-[#0A0A0A] text-[#FAFAFA] scale-110 shadow-xl'
+                      : 'bg-[#FAFAFA]/90 text-[#0A0A0A] border border-black/30 hover:scale-105'
                   }`}
                 >
                   <span
@@ -338,17 +338,17 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
 
         {/* Right 5 Cols: Active Hotspot Detail */}
         <div
-          className="lg:col-span-5 rounded-xl bg-[#111111] p-4 flex flex-col justify-between space-y-3"
-          style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+          className="lg:col-span-5 rounded-xl bg-[#FFFFFF] p-4 flex flex-col justify-between space-y-3"
+          style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
         >
           <div className="space-y-3">
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.06] text-[#60A5FA]">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.06] text-[#1D4ED8]">
               POINT {activeHotspot.stepNumber} ·{' '}
               {isEng ? activeHotspot.badgeEng : activeHotspot.badgeKor}
             </span>
 
             <div>
-              <h3 className="text-sm font-semibold text-[#FAFAFA]">
+              <h3 className="text-sm font-semibold text-[#0A0A0A]">
                 {isEng ? activeHotspot.titleEng : activeHotspot.titleKor}
               </h3>
               <p className="text-xs text-[#71717A] mt-0.5">
@@ -361,18 +361,18 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
                 (step, idx) => (
                   <div
                     key={idx}
-                    className="p-2.5 rounded-lg bg-[#0A0A0A] flex items-start gap-2 text-xs"
-                    style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+                    className="p-2.5 rounded-lg bg-[#FAFAFA] flex items-start gap-2 text-xs"
+                    style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
                   >
-                    <span className="font-mono text-[#60A5FA] font-bold">{idx + 1}.</span>
-                    <span className="text-[#D4D4D8] leading-relaxed">{step}</span>
+                    <span className="font-mono text-[#1D4ED8] font-bold">{idx + 1}.</span>
+                    <span className="text-[#3F3F46] leading-relaxed">{step}</span>
                   </div>
                 )
               )}
             </div>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-[#10B981]/10 text-xs text-[#34D399] flex items-start gap-2">
+          <div className="p-2.5 rounded-lg bg-[#10B981]/10 text-xs text-[#047857] flex items-start gap-2">
             <Sparkles className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>
               {isEng ? activeHotspot.zeroHardwarePointEng : activeHotspot.zeroHardwarePointKor}
@@ -383,27 +383,27 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
 
       {/* 1-Time Smartphone Setup Guide (iOS / Android) */}
       <div
-        className="rounded-xl bg-[#111111] p-4 space-y-3"
-        style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+        className="rounded-xl bg-[#FFFFFF] p-4 space-y-3"
+        style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
       >
         <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">
             <Smartphone className="w-4 h-4 text-[#0A72EF]" />
-            <h3 className="text-xs font-semibold text-[#FAFAFA]">
+            <h3 className="text-xs font-semibold text-[#0A0A0A]">
               {isEng
                 ? '1-Time Smartphone Setup Guide (30 Seconds)'
                 : '핸드폰 최초 1회 설정 매뉴얼 (30초 완료)'}
             </h3>
           </div>
 
-          <div className="flex rounded-lg bg-[#0A0A0A] p-0.5 text-xs">
+          <div className="flex rounded-lg bg-[#FAFAFA] p-0.5 text-xs">
             <button
               type="button"
               onClick={() => setPhoneOsTab('IOS')}
               className={`px-3 py-1 rounded-md font-medium transition ${
                 phoneOsTab === 'IOS'
-                  ? 'bg-[#FAFAFA] text-[#0A0A0A]'
-                  : 'text-[#71717A] hover:text-[#FAFAFA]'
+                  ? 'bg-[#0A0A0A] text-[#FAFAFA]'
+                  : 'text-[#71717A] hover:text-[#0A0A0A]'
               }`}
             >
               🍎 iPhone (Safari)
@@ -413,8 +413,8 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
               onClick={() => setPhoneOsTab('ANDROID')}
               className={`px-3 py-1 rounded-md font-medium transition ${
                 phoneOsTab === 'ANDROID'
-                  ? 'bg-[#FAFAFA] text-[#0A0A0A]'
-                  : 'text-[#71717A] hover:text-[#FAFAFA]'
+                  ? 'bg-[#0A0A0A] text-[#FAFAFA]'
+                  : 'text-[#71717A] hover:text-[#0A0A0A]'
               }`}
             >
               🤖 Android (Chrome)
@@ -424,31 +424,31 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
 
         {phoneOsTab === 'ANDROID' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 rounded-lg bg-[#0A0A0A] space-y-1">
-              <div className="font-semibold text-[#34D399]">
+            <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
+              <div className="font-semibold text-[#047857]">
                 {isEng ? '1. Install Web App' : '1. 웹앱 설치'}
               </div>
-              <p className="text-[#A1A1AA]">
+              <p className="text-[#52525B]">
                 {isEng
                   ? 'Open URL in Chrome → Tap top-right [⋮] → Select [Add to Home screen / Install app].'
                   : 'Chrome 접속 → 우측 상단 [⋮] 터치 → [홈 화면에 추가 / 앱 설치] 선택'}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#0A0A0A] space-y-1">
-              <div className="font-semibold text-[#60A5FA]">
+            <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
+              <div className="font-semibold text-[#1D4ED8]">
                 {isEng ? '2. Allow Permissions' : '2. 근처 기기·위치 허용'}
               </div>
-              <p className="text-[#A1A1AA]">
+              <p className="text-[#52525B]">
                 {isEng
                   ? 'Tap [Connect Phone Sensors] → Allow Location (While using app), Nearby devices (Bluetooth), and Motion sensors.'
                   : '[휴대폰 센서 연결] 터치 → 위치(앱 사용 중) + 근처 기기(블루투스) + 동작 센서 [허용]'}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#0A0A0A] space-y-1">
-              <div className="font-semibold text-[#FBBF24]">
+            <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
+              <div className="font-semibold text-[#B45309]">
                 {isEng ? '3. Auto-Connect on Boarding' : '3. 탑승 시 자동 연결'}
               </div>
-              <p className="text-[#A1A1AA]">
+              <p className="text-[#52525B]">
                 {isEng
                   ? 'Scan the Key QR tag (1 sec) or start engine (ACC ON) for automatic Bluetooth matching.'
                   : '차키 QR 스캔(1초) 또는 시동(ACC ON) 시 블루투스 즉시 자동 매칭'}
@@ -457,31 +457,31 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 rounded-lg bg-[#0A0A0A] space-y-1">
-              <div className="font-semibold text-[#60A5FA]">
+            <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
+              <div className="font-semibold text-[#1D4ED8]">
                 {isEng ? '1. Add to Home Screen' : '1. 홈 화면에 추가'}
               </div>
-              <p className="text-[#A1A1AA]">
+              <p className="text-[#52525B]">
                 {isEng
                   ? 'Open URL in iOS Safari → Tap bottom [Share ↑] → Select [Add to Home Screen].'
                   : 'Safari 접속 → 하단 [공유 ↑] 터치 → [홈 화면에 추가] 선택'}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#0A0A0A] space-y-1">
-              <div className="font-semibold text-[#34D399]">
+            <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
+              <div className="font-semibold text-[#047857]">
                 {isEng ? '2. Allow Motion & Location' : '2. 센서 권한 허용'}
               </div>
-              <p className="text-[#A1A1AA]">
+              <p className="text-[#52525B]">
                 {isEng
                   ? 'Tap [Connect Phone Sensors] → Allow Motion & Orientation (6-axis IMU) and Location.'
                   : '[휴대폰 센서 연결] 터치 → 동작 및 방향(6축 센서) + 위치 [허용]'}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#0A0A0A] space-y-1">
-              <div className="font-semibold text-[#FBBF24]">
+            <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
+              <div className="font-semibold text-[#B45309]">
                 {isEng ? '3. 1-Sec Key QR Boarding' : '3. 탑승 시 QR 스캔'}
               </div>
-              <p className="text-[#A1A1AA]">
+              <p className="text-[#52525B]">
                 {isEng
                   ? 'Scan the car key-fob QR tag (or tap [⚡ 1-Sec Key QR Start]) to start driving immediately.'
                   : '차키 QR 태그 스캔(또는 [⚡ 차키 QR 1초 출발]) 후 즉시 운행 시작'}

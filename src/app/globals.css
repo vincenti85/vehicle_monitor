@@ -3,28 +3,28 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background-color: #0B0D10;
-  color: #F4F6F8;
+  background-color: #FAFAFA;
+  color: #0A0A0A;
   font-feature-settings: "liga" 1, "tnum" 1;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom sleek dark scrollbar for cockpit panels */
+/* Custom slim light scrollbar for cockpit panels */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0B0D10;
+  background: #FAFAFA;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #262E3D;
+  background: #D4D4D8;
   border-radius: 9999px;
 }
 

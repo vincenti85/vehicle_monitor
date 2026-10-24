@@ -95,7 +95,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
   };
 
   return (
-    <div className="p-4 space-y-3 bg-[#0A0A0A]">
+    <div className="p-4 space-y-3 bg-[#FAFAFA]">
       {/* Minimal Filter & Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/[0.08]">
         <div className="flex flex-wrap items-center gap-1">
@@ -135,8 +135,8 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
               onClick={() => setStageFilter(item.id)}
               className={`px-2.5 py-1 rounded-md text-xs font-mono transition ${
                 stageFilter === item.id
-                  ? 'bg-[#FAFAFA] text-[#0A0A0A] font-semibold'
-                  : 'bg-[#111111] text-[#A1A1AA] hover:text-[#FAFAFA]'
+                  ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
+                  : 'bg-[#FFFFFF] text-[#52525B] hover:text-[#0A0A0A]'
               }`}
             >
               {item.label}
@@ -150,10 +150,10 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
             onClick={onToggleAutoApprove}
             className={`px-2.5 py-1 rounded-md text-xs font-mono flex items-center gap-1 transition ${
               autoApproveWhenManagerAway
-                ? 'bg-[#10B981]/15 text-[#34D399]'
-                : 'bg-[#111111] text-[#71717A]'
+                ? 'bg-[#10B981]/15 text-[#047857]'
+                : 'bg-[#FFFFFF] text-[#71717A]'
             }`}
-            style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+            style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             {autoApproveWhenManagerAway
@@ -180,15 +180,15 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
       {showRequestForm && (
         <form
           onSubmit={handleFormSubmit}
-          className="p-3 rounded-lg bg-[#111111] space-y-2.5"
-          style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+          className="p-3 rounded-lg bg-[#FFFFFF] space-y-2.5"
+          style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
         >
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 text-xs">
             <select
               value={empId}
               onChange={(e) => setEmpId(e.target.value)}
-              className="rounded-md bg-[#0A0A0A] px-2.5 py-1.5 text-[#FAFAFA]"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              className="rounded-md bg-[#FAFAFA] px-2.5 py-1.5 text-[#0A0A0A]"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               {employees.map((e) => (
                 <option key={e.id} value={e.id}>
@@ -200,8 +200,8 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
             <select
               value={vehId}
               onChange={(e) => setVehId(e.target.value)}
-              className="rounded-md bg-[#0A0A0A] px-2.5 py-1.5 text-[#FAFAFA]"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              className="rounded-md bg-[#FAFAFA] px-2.5 py-1.5 text-[#0A0A0A]"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
@@ -215,8 +215,8 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
             <select
               value={purpose}
               onChange={(e) => setPurpose(e.target.value as TripPurpose)}
-              className="rounded-md bg-[#0A0A0A] px-2.5 py-1.5 text-[#FAFAFA]"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              className="rounded-md bg-[#FAFAFA] px-2.5 py-1.5 text-[#0A0A0A]"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               <option value="거래처방문">{isEng ? 'Client Visit' : '거래처방문'}</option>
               <option value="일반업무/외근">{isEng ? 'Field Business' : '일반업무/외근'}</option>
@@ -232,8 +232,8 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
               type="text"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className="rounded-md bg-[#0A0A0A] px-2.5 py-1.5 text-[#FAFAFA]"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+              className="rounded-md bg-[#FAFAFA] px-2.5 py-1.5 text-[#0A0A0A]"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               placeholder={isEng ? 'Destination' : '행선지'}
               required
             />
@@ -243,14 +243,14 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                 type="text"
                 value={timeWindow}
                 onChange={(e) => setTimeWindow(e.target.value)}
-                className="w-full rounded-md bg-[#0A0A0A] px-2 py-1.5 text-[#FAFAFA]"
-                style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                className="w-full rounded-md bg-[#FAFAFA] px-2 py-1.5 text-[#0A0A0A]"
+                style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 placeholder={isEng ? 'Time' : '시간'}
                 required
               />
               <button
                 type="submit"
-                className="px-3 py-1.5 rounded-md bg-[#FAFAFA] text-[#0A0A0A] font-semibold shrink-0"
+                className="px-3 py-1.5 rounded-md bg-[#0A0A0A] text-[#FAFAFA] font-semibold shrink-0"
               >
                 {isEng ? 'Submit' : '등록'}
               </button>
@@ -269,21 +269,21 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
           return (
             <div
               key={res.id}
-              className="p-3 rounded-lg bg-[#111111] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+              className="p-3 rounded-lg bg-[#FFFFFF] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
             >
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span
                   className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-medium ${
                     res.stage === 'REQUESTED'
-                      ? 'bg-[#FBBF24]/15 text-[#FBBF24]'
+                      ? 'bg-[#FBBF24]/15 text-[#B45309]'
                       : res.stage === 'APPROVED'
-                        ? 'bg-[#0A72EF]/15 text-[#60A5FA]'
+                        ? 'bg-[#0A72EF]/15 text-[#1D4ED8]'
                         : res.stage === 'IN_USE'
                           ? 'bg-[#0A72EF] text-white'
                           : res.stage === 'RETURNED'
-                            ? 'bg-[#10B981]/15 text-[#34D399]'
-                            : 'bg-[#FF5B4F]/15 text-[#FF5B4F]'
+                            ? 'bg-[#10B981]/15 text-[#047857]'
+                            : 'bg-[#FF5B4F]/15 text-[#DC2626]'
                   }`}
                 >
                   {res.stage === 'REQUESTED'
@@ -307,16 +307,16 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                             : '반려'}
                 </span>
 
-                <span className="font-mono font-semibold text-[#FAFAFA]">
+                <span className="font-mono font-semibold text-[#0A0A0A]">
                   {isEng
                     ? `Unit #${res.fleetNumber} · ${res.plateNumber}`
                     : `#${res.fleetNumber}호차 · ${res.plateNumber}`}
                 </span>
-                <span className="text-[#FAFAFA]">
+                <span className="text-[#0A0A0A]">
                   {formatEmpName(res.employeeName, lang)}
                 </span>
                 <span className="text-[#71717A]">·</span>
-                <span className="text-[#A1A1AA]">{res.destination}</span>
+                <span className="text-[#52525B]">{res.destination}</span>
                 <span className="text-[11px] font-mono text-[#71717A]">
                   ({formatTripPurpose(res.purpose, lang)} · {res.plannedTimeWindow})
                 </span>
@@ -336,7 +336,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                     <button
                       type="button"
                       onClick={() => onRejectRequest(res.id)}
-                      className="px-2.5 py-1 rounded-md bg-[#FF5B4F]/15 text-[#FF5B4F] text-xs font-medium flex items-center gap-1"
+                      className="px-2.5 py-1 rounded-md bg-[#FF5B4F]/15 text-[#DC2626] text-xs font-medium flex items-center gap-1"
                     >
                       <XCircle className="w-3 h-3" />
                       {isEng ? 'Reject' : '반려'}
@@ -362,8 +362,8 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                       onChange={(e) =>
                         setReturnZoneMap((prev) => ({ ...prev, [res.id]: e.target.value }))
                       }
-                      className="rounded-md bg-[#0A0A0A] px-2 py-1 text-[11px] text-[#FAFAFA]"
-                      style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                      className="rounded-md bg-[#FAFAFA] px-2 py-1 text-[11px] text-[#0A0A0A]"
+                      style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                     >
                       <option
                         value={`Northpark Lot A #${res.fleetNumber.toString().padStart(2, '0')}`}
@@ -389,7 +389,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                 )}
 
                 {res.stage === 'RETURNED' && (
-                  <span className="text-[11px] font-mono text-[#34D399]">
+                  <span className="text-[11px] font-mono text-[#047857]">
                     {res.endOdometerKm
                       ? `+${(res.endOdometerKm - res.startOdometerKm).toFixed(1)}km`
                       : isEng

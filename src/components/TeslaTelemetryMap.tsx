@@ -52,9 +52,9 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
       {/* Left 8 Cols: Vercel Geist Minimalist Map */}
       <div
-        className="xl:col-span-8 relative h-[320px] rounded-xl overflow-hidden bg-[#0A0A0A] select-none"
+        className="xl:col-span-8 relative h-[320px] rounded-xl overflow-hidden bg-[#FAFAFA] select-none"
         style={{
-          boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px',
+          boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px',
         }}
       >
         <svg className="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
@@ -63,40 +63,40 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
               <path
                 d="M 48 0 L 0 0 0 48"
                 fill="none"
-                stroke="#262626"
+                stroke="#E4E4E7"
                 strokeWidth="1"
               />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#geist-grid)" />
-          <path d="M 0 170 Q 340 165 900 130" fill="none" stroke="#1F1F1F" strokeWidth="6" />
-          <path d="M 390 0 L 415 360" fill="none" stroke="#1F1F1F" strokeWidth="5" />
+          <path d="M 0 170 Q 340 165 900 130" fill="none" stroke="#E4E4E7" strokeWidth="6" />
+          <path d="M 390 0 L 415 360" fill="none" stroke="#E4E4E7" strokeWidth="5" />
         </svg>
 
         {/* Minimal Top Pill Header */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
           <span
-            className="px-2.5 py-1 rounded-full bg-[#111111]/90 text-[11px] font-mono text-[#A1A1AA]"
-            style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+            className="px-2.5 py-1 rounded-full bg-[#FFFFFF]/90 text-[11px] font-mono text-[#52525B]"
+            style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
           >
             4400 Northpark Dr · 150m Geofence
           </span>
 
           <div
-            className="flex items-center gap-2.5 px-3 py-1 rounded-full bg-[#111111]/90 text-[11px] font-mono"
-            style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+            className="flex items-center gap-2.5 px-3 py-1 rounded-full bg-[#FFFFFF]/90 text-[11px] font-mono"
+            style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
           >
-            <span className="flex items-center gap-1 text-[#FF5B4F]">
+            <span className="flex items-center gap-1 text-[#DC2626]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#FF5B4F]" />
               {isEng ? `Alert ${alertCount}` : `이상 ${alertCount}`}
             </span>
-            <span className="text-white/15">·</span>
+            <span className="text-black/15">·</span>
             <span className="flex items-center gap-1 text-[#0A72EF]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#0A72EF]" />
               {isEng ? `Active ${activeCount}` : `운행 ${activeCount}`}
             </span>
-            <span className="text-white/15">·</span>
-            <span className="flex items-center gap-1 text-[#10B981]">
+            <span className="text-black/15">·</span>
+            <span className="flex items-center gap-1 text-[#059669]">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
               {isEng ? `Idle ${idleCount}` : `대기 ${idleCount}`}
             </span>
@@ -105,7 +105,7 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
 
         {/* Minimal Center Geofence Ring */}
         <div
-          className="absolute rounded-full border border-dashed border-white/15 flex items-center justify-center pointer-events-none"
+          className="absolute rounded-full border border-dashed border-black/15 flex items-center justify-center pointer-events-none"
           style={{
             width: '130px',
             height: '130px',
@@ -140,7 +140,7 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
                   isAlert
                     ? 'bg-[#FF5B4F] text-white'
                     : 'bg-[#0A72EF] text-white'
-                } ${isSelected ? 'ring-2 ring-white' : ''}`}
+                } ${isSelected ? 'ring-2 ring-[#0A0A0A]' : ''}`}
               >
                 {veh.status === 'INCIDENT' ? (
                   <Zap className="w-3 h-3" />
@@ -159,9 +159,9 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
 
       {/* Right 4 Cols: Minimalist Selected Vehicle Card */}
       <div
-        className="xl:col-span-4 rounded-xl bg-[#0A0A0A] p-4 flex flex-col justify-between"
+        className="xl:col-span-4 rounded-xl bg-[#FAFAFA] p-4 flex flex-col justify-between"
         style={{
-          boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px',
+          boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px',
         }}
       >
         <div className="space-y-3">
@@ -169,12 +169,12 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
           <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-[#A1A1AA]">
+                <span className="text-xs font-mono text-[#52525B]">
                   {isEng
                     ? `Unit #${selectedVehicle.fleetNumber.toString().padStart(2, '0')}`
                     : `#${selectedVehicle.fleetNumber.toString().padStart(2, '0')}호차`}
                 </span>
-                <h3 className="text-base font-semibold tracking-tight text-[#FAFAFA] font-mono">
+                <h3 className="text-base font-semibold tracking-tight text-[#0A0A0A] font-mono">
                   {selectedVehicle.plateNumber}
                 </h3>
               </div>
@@ -185,10 +185,10 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
               className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium ${
                 selectedVehicle.status === 'INCIDENT' ||
                 selectedVehicle.status === 'UNAUTHORIZED'
-                  ? 'bg-[#FF5B4F]/15 text-[#FF5B4F]'
+                  ? 'bg-[#FF5B4F]/15 text-[#DC2626]'
                   : selectedVehicle.status === 'AUTHORIZED'
-                    ? 'bg-[#0A72EF]/15 text-[#60A5FA]'
-                    : 'bg-[#10B981]/15 text-[#34D399]'
+                    ? 'bg-[#0A72EF]/15 text-[#1D4ED8]'
+                    : 'bg-[#10B981]/15 text-[#047857]'
               }`}
             >
               {selectedVehicle.status === 'INCIDENT'
@@ -212,41 +212,41 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
           {/* Row 2: 3 Key Numbers (Speed · Distance · Sensor) */}
           <div className="grid grid-cols-3 gap-2">
             <div
-              className="rounded-lg bg-[#111111] p-2.5"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+              className="rounded-lg bg-[#FFFFFF] p-2.5"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
             >
               <span className="text-[10px] font-mono text-[#71717A] block">
                 {isEng ? 'SPEED' : '속도'}
               </span>
-              <span className="text-lg font-semibold font-mono tabular-nums text-[#FAFAFA]">
+              <span className="text-lg font-semibold font-mono tabular-nums text-[#0A0A0A]">
                 {selectedVehicle.speedKmh}
                 <small className="text-[10px] text-[#71717A] ml-0.5">km/h</small>
               </span>
             </div>
 
             <div
-              className="rounded-lg bg-[#111111] p-2.5"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+              className="rounded-lg bg-[#FFFFFF] p-2.5"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
             >
               <span className="text-[10px] font-mono text-[#71717A] block">
                 {isEng ? 'ODOMETER' : '누적거리'}
               </span>
-              <span className="text-lg font-semibold font-mono tabular-nums text-[#FAFAFA]">
+              <span className="text-lg font-semibold font-mono tabular-nums text-[#0A0A0A]">
                 {selectedVehicle.cumulativeGpsKm.toLocaleString()}
                 <small className="text-[10px] text-[#71717A] ml-0.5">km</small>
               </span>
             </div>
 
             <div
-              className="rounded-lg bg-[#111111] p-2.5"
-              style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+              className="rounded-lg bg-[#FFFFFF] p-2.5"
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
             >
               <span className="text-[10px] font-mono text-[#71717A] block">
                 {isEng ? 'IMU SENSOR' : '충격센서'}
               </span>
               <span
                 className={`text-lg font-semibold font-mono tabular-nums ${
-                  selectedVehicle.currentGForce >= 2.5 ? 'text-[#FF5B4F]' : 'text-[#34D399]'
+                  selectedVehicle.currentGForce >= 2.5 ? 'text-[#DC2626]' : 'text-[#047857]'
                 }`}
               >
                 {selectedVehicle.currentGForce >= 2.5
@@ -260,23 +260,23 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
 
           {/* Row 3: Compact 3-Line Metadata */}
           <div
-            className="rounded-lg bg-[#111111] p-3 space-y-1.5 text-xs"
-            style={{ boxShadow: 'rgba(255, 255, 255, 0.06) 0px 0px 0px 1px' }}
+            className="rounded-lg bg-[#FFFFFF] p-3 space-y-1.5 text-xs"
+            style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
           >
             <div className="flex items-center justify-between">
               <span className="text-[#71717A]">{isEng ? 'Driver' : '운전자'}</span>
-              <span className="font-medium text-[#FAFAFA]">
+              <span className="font-medium text-[#0A0A0A]">
                 {getEmployeeShortName(selectedVehicle.currentDriverId)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[#71717A]">{isEng ? 'Zone / Status' : '위치/상태'}</span>
-              <span className="text-[#A1A1AA] truncate max-w-[180px]">
+              <span className="text-[#52525B] truncate max-w-[180px]">
                 {formatParkingZone(selectedVehicle.parkingZone, lang)}
               </span>
             </div>
             {latestIncidentForSelected && (
-              <div className="flex items-center justify-between pt-1 border-t border-white/[0.06] text-[#FF5B4F]">
+              <div className="flex items-center justify-between pt-1 border-t border-white/[0.06] text-[#DC2626]">
                 <span>{isEng ? 'Last Event' : '최근 이벤트'}</span>
                 <span className="font-mono text-[11px]">
                   PEAK {latestIncidentForSelected.gForce}G ({latestIncidentForSelected.occurredAt})
@@ -288,7 +288,7 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
 
         {/* Minimal Speed Bar Sparkline */}
         <div className="pt-2">
-          <div className="h-9 bg-[#111111] rounded-lg px-2 py-1.5 flex items-end gap-1">
+          <div className="h-9 bg-[#FFFFFF] rounded-lg px-2 py-1.5 flex items-end gap-1">
             {(
               latestIncidentForSelected?.speedTrace || [
                 20, 32, 40, 46, 50, 52, 54, 52, 50, selectedVehicle.speedKmh,

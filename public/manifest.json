@@ -4,8 +4,8 @@
   "description": "4400 Northpark Dr, Opelika, AL 36801 — Zero-Subscription Corporate Fleet (30 Vehicles) Dispatch & No-Dashcam Smartphone Telemetry System",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B0D10",
-  "theme_color": "#0B0D10",
+  "background_color": "#FAFAFA",
+  "theme_color": "#FAFAFA",
   "orientation": "any",
   "icons": [
     {

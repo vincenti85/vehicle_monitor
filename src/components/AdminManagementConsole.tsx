@@ -361,12 +361,12 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
       />
 
       {csvFeedback && (
-        <div className="p-3.5 rounded-xl bg-[#12B76A]/15 border border-[#12B76A]/40 text-xs text-[#32D583] flex items-center justify-between">
+        <div className="p-3.5 rounded-xl bg-[#12B76A]/15 border border-[#12B76A]/40 text-xs text-[#047857] flex items-center justify-between">
           <span className="font-medium">{csvFeedback}</span>
           <button
             type="button"
             onClick={() => setCsvFeedback(null)}
-            className="text-[11px] underline text-white/80 hover:text-white"
+            className="text-[11px] underline text-black/80 hover:text-[#0A0A0A]"
           >
             닫기
           </button>
@@ -375,46 +375,46 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
 
       {/* Top Admin Console Banner: Explaining No-Dashcam + Smartphone-Only Management */}
       <div
-        className="rounded-2xl bg-[#131720] p-5 border border-white/10 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+        className="rounded-2xl bg-[#FFFFFF] p-5 border border-black/10 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
         style={{
-          boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px',
+          boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px',
         }}
       >
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#3E6AE1]/20 text-[#9BC1FF] border border-[#3E6AE1]/40">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#3E6AE1]/20 text-[#1D4ED8] border border-[#3E6AE1]/40">
               FLEET ADMIN CONSOLE (보안 PIN 인증됨)
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#12B76A]/15 text-[#32D583] border border-[#12B76A]/30">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-[#12B76A]/15 text-[#047857] border border-[#12B76A]/30">
               차량 내 블랙박스·OBD 단말기 0대 (100% 스마트폰 센서 재구성)
             </span>
             <button
               type="button"
               onClick={onOpenManual}
-              className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#191E2A] hover:bg-white/10 text-[#F4F6F8] border border-white/15 inline-flex items-center gap-1 transition"
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#F4F4F5] hover:bg-black/5 text-[#0A0A0A] border border-black/15 inline-flex items-center gap-1 transition"
             >
-              <BookOpen className="w-3 h-3 text-[#7EA0FF]" />
+              <BookOpen className="w-3 h-3 text-[#1D4ED8]" />
               신청·승인 매뉴얼 보기/다운로드
             </button>
             <button
               type="button"
               onClick={onLockAdminConsole}
-              className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-[#E82127]/20 hover:bg-[#E82127]/35 text-[#FF8080] border border-[#E82127]/40 inline-flex items-center gap-1 transition"
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-mono bg-[#E82127]/20 hover:bg-[#E82127]/35 text-[#DC2626] border border-[#E82127]/40 inline-flex items-center gap-1 transition"
             >
               <Lock className="w-3 h-3" />
               관리자 화면 잠금
             </button>
           </div>
-          <h2 className="text-lg font-semibold text-[#F4F6F8]">
+          <h2 className="text-lg font-semibold text-[#0A0A0A]">
             법인차량 30대 통합 관리자 운영 콘솔 (4400 Northpark Dr, Opelika, AL 36801)
           </h2>
-          <p className="text-xs text-[#9BA3B0]">
+          <p className="text-xs text-[#52525B]">
             차량·사용자 CSV 일괄 입력, 순정 블루투스 등록·실사 계기판 대조(유령 주행 적발), 임직원 운전 자격 통제, 무블랙박스 스마트폰 6축 센서 사고 처분 및 정책을 관리합니다.
           </p>
         </div>
 
         {/* 4 Admin Sub-Navigation Buttons */}
-        <div className="flex flex-wrap gap-1.5 bg-[#0B0D10] p-1.5 rounded-xl border border-white/10 shrink-0">
+        <div className="flex flex-wrap gap-1.5 bg-[#FAFAFA] p-1.5 rounded-xl border border-black/10 shrink-0">
           {[
             {
               id: 'VEHICLE_MASTER' as AdminSection,
@@ -446,7 +446,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                 className={`px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5 transition ${
                   section === tab.id
                     ? 'bg-[#3E6AE1] text-white shadow'
-                    : 'text-[#9BA3B0] hover:text-white'
+                    : 'text-[#52525B] hover:text-[#0A0A0A]'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
@@ -459,14 +459,14 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
 
       {/* SECTION 1: 30-Vehicle Master & Physical Odometer Audit */}
       {section === 'VEHICLE_MASTER' && (
-        <div className="rounded-2xl bg-[#131720] p-5 border border-white/10 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-white/10">
+        <div className="rounded-2xl bg-[#FFFFFF] p-5 border border-black/10 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-black/10">
             <div>
-              <h3 className="text-sm font-semibold text-[#F4F6F8] flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-[#0A0A0A] flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-[#3E6AE1]" />
                 법인차량 30대 블루투스 MAC 매핑 및 실제 계기판(Odometer) 실사 대조
               </h3>
-              <p className="text-xs text-[#9BA3B0] mt-0.5">
+              <p className="text-xs text-[#52525B] mt-0.5">
                 차량에 블랙박스나 GPS 단말기가 없으므로, 정기 점검 시 실제 계기판 수치를 입력해 스마트폰 GPS 합산 주행거리와의 오차(유령 주행)를 즉시 색출합니다.
               </p>
             </div>
@@ -475,7 +475,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadPrintableQrSheet}
-                className="px-2.5 py-1.5 rounded-lg bg-[#12B76A]/20 hover:bg-[#12B76A]/35 border border-[#12B76A]/40 text-xs font-semibold text-[#32D583] flex items-center gap-1.5 transition"
+                className="px-2.5 py-1.5 rounded-lg bg-[#12B76A]/20 hover:bg-[#12B76A]/35 border border-[#12B76A]/40 text-xs font-semibold text-[#047857] flex items-center gap-1.5 transition"
               >
                 <QrCode className="w-3.5 h-3.5" />
                 30대 무설정 QR 키고리 시트 인쇄
@@ -483,9 +483,9 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadVehicleCsvTemplate}
-                className="px-2.5 py-1.5 rounded-lg bg-[#191E2A] hover:bg-white/10 border border-white/15 text-xs text-[#F4F6F8] flex items-center gap-1.5 transition"
+                className="px-2.5 py-1.5 rounded-lg bg-[#F4F4F5] hover:bg-black/5 border border-black/15 text-xs text-[#0A0A0A] flex items-center gap-1.5 transition"
               >
-                <Download className="w-3.5 h-3.5 text-[#7EA0FF]" />
+                <Download className="w-3.5 h-3.5 text-[#1D4ED8]" />
                 간편 CSV 양식(번호판·차종만)
               </button>
               <button
@@ -497,13 +497,13 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                 차량 CSV 일괄 업로드
               </button>
               <div className="relative w-full md:w-60">
-                <Search className="w-3.5 h-3.5 text-[#9BA3B0] absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-[#52525B] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={vehSearch}
                   onChange={(e) => setVehSearch(e.target.value)}
                   placeholder="호차, 번호판(AL 41...), 차종 검색"
-                  className="w-full rounded-lg bg-[#0B0D10] border border-white/10 pl-8 pr-3 py-1.5 text-xs text-[#F4F6F8]"
+                  className="w-full rounded-lg bg-[#FAFAFA] border border-black/10 pl-8 pr-3 py-1.5 text-xs text-[#0A0A0A]"
                 />
               </div>
             </div>
@@ -511,7 +511,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
 
           <div className="overflow-x-auto max-h-[540px] overflow-y-auto">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 bg-[#0F131B] border-b border-white/10 text-[11px] font-mono text-[#9BA3B0]">
+              <thead className="sticky top-0 bg-[#F8FAFC] border-b border-black/10 text-[11px] font-mono text-[#52525B]">
                 <tr>
                   <th className="py-2.5 px-3">호차 / 번호판</th>
                   <th className="py-2.5 px-3">차종 (Opelika AL 플릿)</th>
@@ -522,7 +522,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   <th className="py-2.5 px-3 text-center">차량 잠금(배차차단)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-black/5">
                 {filteredVehicles.map((veh) => {
                   const isEditing = editingVehId === veh.id;
                   const gapKm = Number(
@@ -533,12 +533,12 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   return (
                     <tr key={veh.id} className="hover:bg-white/[0.02]">
                       <td className="py-2.5 px-3 font-mono">
-                        <span className="text-[#9BA3B0] mr-1.5">
+                        <span className="text-[#52525B] mr-1.5">
                           #{veh.fleetNumber.toString().padStart(2, '0')}
                         </span>
-                        <span className="font-semibold text-[#F4F6F8]">{veh.plateNumber}</span>
+                        <span className="font-semibold text-[#0A0A0A]">{veh.plateNumber}</span>
                       </td>
-                      <td className="py-2.5 px-3 text-[#D0D5DD]">{veh.modelName}</td>
+                      <td className="py-2.5 px-3 text-[#3F3F46]">{veh.modelName}</td>
                       <td className="py-2.5 px-3 font-mono text-[11px]">
                         {isEditing ? (
                           <div className="flex items-center gap-1.5">
@@ -546,13 +546,13 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                               type="text"
                               value={macInput}
                               onChange={(e) => setMacInput(e.target.value)}
-                              className="w-32 rounded bg-[#0B0D10] border border-[#3E6AE1] px-1.5 py-0.5 text-[11px] text-white"
+                              className="w-32 rounded bg-[#FAFAFA] border border-[#3E6AE1] px-1.5 py-0.5 text-[11px] text-[#0A0A0A]"
                             />
                             <input
                               type="text"
                               value={bleInput}
                               onChange={(e) => setBleInput(e.target.value)}
-                              className="w-28 rounded bg-[#0B0D10] border border-[#3E6AE1] px-1.5 py-0.5 text-[11px] text-white"
+                              className="w-28 rounded bg-[#FAFAFA] border border-[#3E6AE1] px-1.5 py-0.5 text-[11px] text-[#0A0A0A]"
                             />
                             <button
                               type="button"
@@ -567,8 +567,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <span className="text-[#9BC1FF]">{veh.btMacAddress}</span>
-                            <span className="text-[#636B78]">({veh.bleBeaconUuid})</span>
+                            <span className="text-[#1D4ED8]">{veh.btMacAddress}</span>
+                            <span className="text-[#6B7280]">({veh.bleBeaconUuid})</span>
                             <button
                               type="button"
                               onClick={() => {
@@ -576,7 +576,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                                 setMacInput(veh.btMacAddress);
                                 setBleInput(veh.bleBeaconUuid);
                               }}
-                              className="text-[10px] text-[#9BA3B0] underline hover:text-white"
+                              className="text-[10px] text-[#52525B] underline hover:text-[#0A0A0A]"
                             >
                               수정
                             </button>
@@ -587,20 +587,20 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                         <span
                           className={`px-2 py-0.5 rounded text-[10px] font-mono mr-2 ${
                             veh.status === 'UNAUTHORIZED' || veh.status === 'INCIDENT'
-                              ? 'bg-[#E82127]/20 text-[#FF8080]'
+                              ? 'bg-[#E82127]/20 text-[#DC2626]'
                               : veh.status === 'AUTHORIZED'
-                                ? 'bg-[#3E6AE1]/20 text-[#9BC1FF]'
-                                : 'bg-[#12B76A]/15 text-[#32D583]'
+                                ? 'bg-[#3E6AE1]/20 text-[#1D4ED8]'
+                                : 'bg-[#12B76A]/15 text-[#047857]'
                           }`}
                         >
                           {veh.status}
                         </span>
-                        <span className="text-[11px] text-[#9BA3B0]">{veh.parkingZone}</span>
+                        <span className="text-[11px] text-[#52525B]">{veh.parkingZone}</span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-[#F4F6F8]">
+                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-[#0A0A0A]">
                         {veh.cumulativeGpsKm.toFixed(1)} km
                         {hasGhostDiscrepancy && (
-                          <span className="block text-[10px] text-[#F79009]">
+                          <span className="block text-[10px] text-[#B45309]">
                             ⚠️ 실사오차 +{gapKm}km
                           </span>
                         )}
@@ -618,7 +618,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                                 [veh.id]: e.target.value,
                               }))
                             }
-                            className="w-24 rounded bg-[#0B0D10] border border-white/10 px-2 py-1 text-xs font-mono text-[#F4F6F8]"
+                            className="w-24 rounded bg-[#FAFAFA] border border-black/10 px-2 py-1 text-xs font-mono text-[#0A0A0A]"
                           />
                           <button
                             type="button"
@@ -630,7 +630,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                                 onAuditVehicleOdometer(veh.id, val);
                               }
                             }}
-                            className="px-2.5 py-1 rounded bg-[#191E2A] hover:bg-[#3E6AE1] text-[#F4F6F8] border border-white/10 text-[11px] font-mono transition"
+                            className="px-2.5 py-1 rounded bg-[#F4F4F5] hover:bg-[#3E6AE1] text-[#0A0A0A] border border-black/10 text-[11px] font-mono transition"
                           >
                             실사 대조
                           </button>
@@ -642,8 +642,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                           onClick={() => onToggleVehicleLock(veh.id)}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-mono inline-flex items-center gap-1 border transition ${
                             veh.isLockedByAdmin
-                              ? 'bg-[#E82127]/20 border-[#E82127]/50 text-[#FF8080]'
-                              : 'bg-[#191E2A] border-white/10 text-[#32D583]'
+                              ? 'bg-[#E82127]/20 border-[#E82127]/50 text-[#DC2626]'
+                              : 'bg-[#F4F4F5] border-black/10 text-[#047857]'
                           }`}
                         >
                           {veh.isLockedByAdmin ? (
@@ -668,14 +668,14 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
 
       {/* SECTION 2: Employee Governance & Permission Control */}
       {section === 'EMPLOYEE_GOVERNANCE' && (
-        <div className="rounded-2xl bg-[#131720] p-5 border border-white/10 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+        <div className="rounded-2xl bg-[#FFFFFF] p-5 border border-black/10 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-black/10">
             <div>
-              <h3 className="text-sm font-semibold text-[#F4F6F8] flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-[#12B76A]" />
+              <h3 className="text-sm font-semibold text-[#0A0A0A] flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-[#059669]" />
                 임직원 운전 자격 · 스마트폰 권한 하트비트 감사 · 배차 차단 관리
               </h3>
-              <p className="text-xs text-[#9BA3B0] mt-0.5">
+              <p className="text-xs text-[#52525B] mt-0.5">
                 블루투스/위치 권한을 고의로 끄거나 무단 반출 이력이 있는 직원의 배차 신청 자격을 즉시 정지하거나 권한 복구 푸시를 발송합니다.
               </p>
             </div>
@@ -684,9 +684,9 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               <button
                 type="button"
                 onClick={handleDownloadEmployeeCsvTemplate}
-                className="px-2.5 py-1.5 rounded-lg bg-[#191E2A] hover:bg-white/10 border border-white/15 text-xs text-[#F4F6F8] flex items-center gap-1.5 transition"
+                className="px-2.5 py-1.5 rounded-lg bg-[#F4F4F5] hover:bg-black/5 border border-black/15 text-xs text-[#0A0A0A] flex items-center gap-1.5 transition"
               >
-                <Download className="w-3.5 h-3.5 text-[#32D583]" />
+                <Download className="w-3.5 h-3.5 text-[#047857]" />
                 사용자 CSV 양식 다운로드
               </button>
               <button
@@ -722,46 +722,46 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                 setNewEmpName('');
                 setShowAddEmp(false);
               }}
-              className="p-4 rounded-xl bg-[#191E2A] border border-[#3E6AE1]/40 grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs items-end"
+              className="p-4 rounded-xl bg-[#F4F4F5] border border-[#3E6AE1]/40 grid grid-cols-1 sm:grid-cols-5 gap-3 text-xs items-end"
             >
               <div>
-                <label className="block text-[11px] font-mono text-[#9BA3B0] mb-1">성명</label>
+                <label className="block text-[11px] font-mono text-[#52525B] mb-1">성명</label>
                 <input
                   type="text"
                   value={newEmpName}
                   onChange={(e) => setNewEmpName(e.target.value)}
                   placeholder="예: 장민호 과장 (M.H. Jang)"
-                  className="w-full rounded bg-[#0B0D10] border border-white/10 px-2.5 py-1.5 text-white"
+                  className="w-full rounded bg-[#FAFAFA] border border-black/10 px-2.5 py-1.5 text-[#0A0A0A]"
                   required
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-mono text-[#9BA3B0] mb-1">직급</label>
+                <label className="block text-[11px] font-mono text-[#52525B] mb-1">직급</label>
                 <input
                   type="text"
                   value={newEmpRole}
                   onChange={(e) => setNewEmpRole(e.target.value)}
-                  className="w-full rounded bg-[#0B0D10] border border-white/10 px-2.5 py-1.5 text-white"
+                  className="w-full rounded bg-[#FAFAFA] border border-black/10 px-2.5 py-1.5 text-[#0A0A0A]"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-mono text-[#9BA3B0] mb-1">부서</label>
+                <label className="block text-[11px] font-mono text-[#52525B] mb-1">부서</label>
                 <input
                   type="text"
                   value={newEmpDept}
                   onChange={(e) => setNewEmpDept(e.target.value)}
-                  className="w-full rounded bg-[#0B0D10] border border-white/10 px-2.5 py-1.5 text-white"
+                  className="w-full rounded bg-[#FAFAFA] border border-black/10 px-2.5 py-1.5 text-[#0A0A0A]"
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-mono text-[#9BA3B0] mb-1">
+                <label className="block text-[11px] font-mono text-[#52525B] mb-1">
                   미국 연락처 (334)
                 </label>
                 <input
                   type="text"
                   value={newEmpPhone}
                   onChange={(e) => setNewEmpPhone(e.target.value)}
-                  className="w-full rounded bg-[#0B0D10] border border-white/10 px-2.5 py-1.5 text-white"
+                  className="w-full rounded bg-[#FAFAFA] border border-black/10 px-2.5 py-1.5 text-[#0A0A0A]"
                 />
               </div>
               <button
@@ -784,34 +784,34 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                       ? 'bg-[#E82127]/10 border-[#E82127]/40'
                       : emp.permissionStatus !== 'OK'
                         ? 'bg-[#F79009]/10 border-[#F79009]/40'
-                        : 'bg-[#191E2A] border-white/10'
+                        : 'bg-[#F4F4F5] border-black/10'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#F4F6F8]">{emp.name}</span>
-                        <span className="text-xs text-[#9BA3B0]">{emp.phone}</span>
+                        <span className="text-sm font-semibold text-[#0A0A0A]">{emp.name}</span>
+                        <span className="text-xs text-[#52525B]">{emp.phone}</span>
                       </div>
-                      <p className="text-xs text-[#9BA3B0] mt-0.5">{emp.department}</p>
+                      <p className="text-xs text-[#52525B] mt-0.5">{emp.department}</p>
                     </div>
 
                     <span
                       className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
                         emp.permissionStatus === 'OK'
-                          ? 'bg-[#12B76A]/20 text-[#32D583]'
-                          : 'bg-[#E82127]/25 text-[#FF8080]'
+                          ? 'bg-[#12B76A]/20 text-[#047857]'
+                          : 'bg-[#E82127]/25 text-[#DC2626]'
                       }`}
                     >
                       앱 권한: {emp.permissionStatus}
                     </span>
                   </div>
 
-                  <div className="text-[11px] font-mono text-[#9BA3B0] flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5">
+                  <div className="text-[11px] font-mono text-[#52525B] flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-black/5">
                     <span>최근 하트비트: {emp.lastHeartbeatAt}</span>
                     <span>
                       키보관함(3m) 접근: {emp.lastKeyboxAccessAt || '기록 없음'} · 위반:{' '}
-                      <strong className="text-[#FDB022]">{emp.violationCount || 0}회</strong>
+                      <strong className="text-[#B45309]">{emp.violationCount || 0}회</strong>
                     </span>
                   </div>
 
@@ -820,7 +820,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                       <button
                         type="button"
                         onClick={() => onSendPermissionWarningPush(emp.id)}
-                        className="px-2.5 py-1 rounded-lg bg-[#F79009]/20 hover:bg-[#F79009]/35 border border-[#F79009]/50 text-[#FDB022] text-xs flex items-center gap-1"
+                        className="px-2.5 py-1 rounded-lg bg-[#F79009]/20 hover:bg-[#F79009]/35 border border-[#F79009]/50 text-[#B45309] text-xs flex items-center gap-1"
                       >
                         <Bell className="w-3 h-3" />
                         권한 복구 독촉 푸시
@@ -832,7 +832,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                       onClick={() => onToggleEmployeeDispatch(emp.id)}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
                         isAllowed
-                          ? 'bg-[#E82127]/20 hover:bg-[#E82127]/35 border border-[#E82127]/40 text-[#FF8080]'
+                          ? 'bg-[#E82127]/20 hover:bg-[#E82127]/35 border border-[#E82127]/40 text-[#DC2626]'
                           : 'bg-[#12B76A] hover:bg-[#0E9F5A] text-white'
                       }`}
                     >
@@ -856,13 +856,13 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
 
       {/* SECTION 3: No-Dashcam Smartphone Telemetry Incident Reconstruction & Resolution */}
       {section === 'NO_DASHCAM_INCIDENTS' && (
-        <div className="rounded-2xl bg-[#131720] p-5 border border-white/10 space-y-4">
-          <div className="pb-3 border-b border-white/10">
-            <h3 className="text-sm font-semibold text-[#F4F6F8] flex items-center gap-2">
+        <div className="rounded-2xl bg-[#FFFFFF] p-5 border border-black/10 space-y-4">
+          <div className="pb-3 border-b border-black/10">
+            <h3 className="text-sm font-semibold text-[#0A0A0A] flex items-center gap-2">
               <Compass className="w-4 h-4 text-[#E82127]" />
               무블랙박스 스마트폰 6축 IMU 센서 기반 사고·무단운행 재구성 및 행정 처분 대장
             </h3>
-            <p className="text-xs text-[#9BA3B0] mt-0.5">
+            <p className="text-xs text-[#52525B] mt-0.5">
               차량에 블랙박스 카메라가 없어도 스마트폰의 가속도계(G-Force) + 자이로스코프(차체 회전 각속도 °/s) + 충격 전후 30초 GPS 속도 급감 그래프 + 블루투스 신호 강도(RSSI)를 결합해 사고 당시의 운전자와 충격 방향을 100% 재구성합니다.
             </p>
           </div>
@@ -876,8 +876,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   key={inc.id}
                   className={`p-4 rounded-xl border space-y-3 ${
                     inc.resolved
-                      ? 'bg-[#191E2A]/50 border-white/10'
-                      : 'bg-[#191E2A] border-[#E82127]/50'
+                      ? 'bg-[#F4F4F5]/50 border-black/10'
+                      : 'bg-[#F4F4F5] border-[#E82127]/50'
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -885,59 +885,59 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                       <span
                         className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
                           inc.resolved
-                            ? 'bg-[#12B76A]/20 text-[#32D583]'
+                            ? 'bg-[#12B76A]/20 text-[#047857]'
                             : 'bg-[#E82127] text-white'
                         }`}
                       >
                         {inc.resolved ? '조치 완료 (RESOLVED)' : '미결 · 관리자 조치 필요'}
                       </span>
-                      <span className="text-xs font-mono text-[#9BA3B0]">{inc.occurredAt}</span>
-                      <span className="text-xs font-mono font-semibold text-[#9BC1FF]">
+                      <span className="text-xs font-mono text-[#52525B]">{inc.occurredAt}</span>
+                      <span className="text-xs font-mono font-semibold text-[#1D4ED8]">
                         {inc.plateNumber}
                       </span>
-                      <span className="text-xs font-semibold text-[#F4F6F8]">
+                      <span className="text-xs font-semibold text-[#0A0A0A]">
                         운전자: {inc.driverName}
                       </span>
                     </div>
 
-                    <span className="text-[11px] font-mono text-[#9BA3B0]">
+                    <span className="text-[11px] font-mono text-[#52525B]">
                       📍 {inc.locationLabel}
                     </span>
                   </div>
 
-                  <h4 className="text-sm font-semibold text-[#F4F6F8]">{inc.title}</h4>
-                  <p className="text-xs text-[#9BA3B0] leading-relaxed">{inc.description}</p>
+                  <h4 className="text-sm font-semibold text-[#0A0A0A]">{inc.title}</h4>
+                  <p className="text-xs text-[#52525B] leading-relaxed">{inc.description}</p>
 
                   {/* Smartphone 6-Axis IMU Telemetry Reconstruction Box (Replacing Dashcam) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-lg bg-[#0B0D10] border border-white/5 text-xs font-mono">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3 rounded-lg bg-[#FAFAFA] border border-black/5 text-xs font-mono">
                     <div>
-                      <span className="text-[10px] text-[#636B78] block">
+                      <span className="text-[10px] text-[#6B7280] block">
                         스마트폰 가속도 피크 / 속도변화
                       </span>
-                      <span className="text-[#FF8080] font-semibold">
+                      <span className="text-[#DC2626] font-semibold">
                         {inc.gForce ? `${inc.gForce}G (Δv=${inc.deltaSpeedKmh}km/h)` : '해당 없음'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#636B78] block">
+                      <span className="text-[10px] text-[#6B7280] block">
                         스마트폰 자이로 회전각 (Yaw Rate)
                       </span>
-                      <span className="text-[#FDB022] font-semibold">
+                      <span className="text-[#B45309] font-semibold">
                         {inc.gyroYawDegPerSec ? `${inc.gyroYawDegPerSec}°/sec` : '정상 범위'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#636B78] block">
+                      <span className="text-[10px] text-[#6B7280] block">
                         6축 센서 역산 충격 벡터 추정
                       </span>
-                      <span className="text-[#9BC1FF]">
+                      <span className="text-[#1D4ED8]">
                         {inc.impactDirection || '주행/지오펜스 이벤트'}
                       </span>
                     </div>
                   </div>
 
                   {/* Admin Action Bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-white/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-black/10">
                     <input
                       type="text"
                       value={currentNote}
@@ -945,7 +945,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                         setNoteInputs((prev) => ({ ...prev, [inc.id]: e.target.value }))
                       }
                       placeholder="관리자 감사 및 사후 조치 코멘트 입력 (예: 경위서 수령, 범퍼 수리비 청구 등)"
-                      className="flex-1 rounded-lg bg-[#0B0D10] border border-white/10 px-3 py-1.5 text-xs text-[#F4F6F8]"
+                      className="flex-1 rounded-lg bg-[#FAFAFA] border border-black/10 px-3 py-1.5 text-xs text-[#0A0A0A]"
                     />
                     <div className="flex items-center gap-2 shrink-0">
                       {!inc.resolved && (
@@ -959,7 +959,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                                 true
                               )
                             }
-                            className="px-3 py-1.5 rounded-lg bg-[#E82127]/20 hover:bg-[#E82127]/35 border border-[#E82127]/50 text-[#FF8080] text-xs font-medium"
+                            className="px-3 py-1.5 rounded-lg bg-[#E82127]/20 hover:bg-[#E82127]/35 border border-[#E82127]/50 text-[#DC2626] text-xs font-medium"
                           >
                             운전자 배차정지 + 마감
                           </button>
@@ -989,24 +989,24 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
 
       {/* SECTION 4: 1-Click Zero-Config Preset Mode + Collapsible Advanced Settings */}
       {section === 'SYSTEM_POLICY' && (
-        <div className="rounded-2xl bg-[#131720] p-5 border border-white/10 space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/10">
+        <div className="rounded-2xl bg-[#FFFFFF] p-5 border border-black/10 space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-black/10">
             <div>
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#32D583]" />
-                <h3 className="text-sm font-semibold text-[#F4F6F8]">
+                <Sparkles className="w-4 h-4 text-[#047857]" />
+                <h3 className="text-sm font-semibold text-[#0A0A0A]">
                   원클릭 초간단 초기 설정 (1-Click Zero-Config 프리셋)
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#12B76A]/15 text-[#32D583] border border-[#12B76A]/30">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#12B76A]/15 text-[#047857] border border-[#12B76A]/30">
                   슬라이더 조작 불필요 · 클릭 1번으로 30대 즉시 세팅 완료
                 </span>
               </div>
-              <p className="text-xs text-[#9BA3B0] mt-0.5">
+              <p className="text-xs text-[#52525B] mt-0.5">
                 복잡한 센서 수치나 지오펜스 반경을 직접 입력할 필요 없이, 우리 회사 운영 방식에 맞는 카드 1개만 클릭하면 9가지 세부 설정이 자동으로 최적화됩니다.
               </p>
             </div>
             {policySavedBanner && (
-              <span className="px-3 py-1 rounded-full bg-[#12B76A]/20 text-[#32D583] text-xs font-mono">
+              <span className="px-3 py-1 rounded-full bg-[#12B76A]/20 text-[#047857] text-xs font-mono">
                 ✅ 선택한 프리셋 정책이 30대 전체에 즉시 적용되었습니다
               </span>
             )}
@@ -1020,7 +1020,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               className={`text-left p-4 rounded-2xl border transition space-y-2 ${
                 activePreset === 'AUTONOMOUS'
                   ? 'bg-[#12B76A]/15 border-[#12B76A] shadow-lg shadow-[#12B76A]/10'
-                  : 'bg-[#191E2A] border-white/10 hover:border-white/25'
+                  : 'bg-[#F4F4F5] border-black/10 hover:border-black/25'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -1028,16 +1028,16 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   추천 기본값 · 1클릭 적용
                 </span>
                 {activePreset === 'AUTONOMOUS' && (
-                  <CheckCircle2 className="w-4 h-4 text-[#32D583]" />
+                  <CheckCircle2 className="w-4 h-4 text-[#047857]" />
                 )}
               </div>
-              <h4 className="text-sm font-semibold text-[#F4F6F8]">
+              <h4 className="text-sm font-semibold text-[#0A0A0A]">
                 🟢 모드 A: 관리자 부재 시 자율 운행 모드
               </h4>
-              <p className="text-xs text-[#9BA3B0] leading-relaxed">
+              <p className="text-xs text-[#52525B] leading-relaxed">
                 키 관리자가 상주하지 않는 환경에 최적화. 직원이 신청하면 <strong>즉시 자동 승인</strong>되며, 앱 미신청 출발(<code>15km/h+</code>)만 골라내어 경보를 울립니다.
               </p>
-              <div className="pt-1 text-[10px] font-mono text-[#32D583]">
+              <div className="pt-1 text-[10px] font-mono text-[#047857]">
                 자동승인 ON · 무단감지 15km/h · 충격 2.5G · 차고지 150m 자동반납
               </div>
             </button>
@@ -1048,24 +1048,24 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               className={`text-left p-4 rounded-2xl border transition space-y-2 ${
                 activePreset === 'STANDARD'
                   ? 'bg-[#3E6AE1]/15 border-[#3E6AE1] shadow-lg shadow-[#3E6AE1]/10'
-                  : 'bg-[#191E2A] border-white/10 hover:border-white/25'
+                  : 'bg-[#F4F4F5] border-black/10 hover:border-black/25'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#3E6AE1]/30 text-[#9BC1FF]">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#3E6AE1]/30 text-[#1D4ED8]">
                   표준 관리형 · 1클릭 적용
                 </span>
                 {activePreset === 'STANDARD' && (
-                  <CheckCircle2 className="w-4 h-4 text-[#7EA0FF]" />
+                  <CheckCircle2 className="w-4 h-4 text-[#1D4ED8]" />
                 )}
               </div>
-              <h4 className="text-sm font-semibold text-[#F4F6F8]">
+              <h4 className="text-sm font-semibold text-[#0A0A0A]">
                 🔵 모드 B: 관리자 사전 승인 표준 모드
               </h4>
-              <p className="text-xs text-[#9BA3B0] leading-relaxed">
+              <p className="text-xs text-[#52525B] leading-relaxed">
                 직원이 차량을 신청하면 관리자가 원클릭 승인한 후 키를 수령해 출발하는 표준 기업 배차 모드입니다.
               </p>
-              <div className="pt-1 text-[10px] font-mono text-[#9BC1FF]">
+              <div className="pt-1 text-[10px] font-mono text-[#1D4ED8]">
                 사전승인 필수 · 무단감지 15km/h · 충격 2.5G · 차고지 150m 자동반납
               </div>
             </button>
@@ -1076,35 +1076,35 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               className={`text-left p-4 rounded-2xl border transition space-y-2 ${
                 activePreset === 'STRICT'
                   ? 'bg-[#E82127]/15 border-[#E82127] shadow-lg shadow-[#E82127]/10'
-                  : 'bg-[#191E2A] border-white/10 hover:border-white/25'
+                  : 'bg-[#F4F4F5] border-black/10 hover:border-black/25'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#E82127]/30 text-[#FF8080]">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#E82127]/30 text-[#DC2626]">
                   고보안 통제형 · 1클릭 적용
                 </span>
                 {activePreset === 'STRICT' && (
-                  <CheckCircle2 className="w-4 h-4 text-[#FF8080]" />
+                  <CheckCircle2 className="w-4 h-4 text-[#DC2626]" />
                 )}
               </div>
-              <h4 className="text-sm font-semibold text-[#F4F6F8]">
+              <h4 className="text-sm font-semibold text-[#0A0A0A]">
                 🔴 모드 C: 무관용 고보안 감사 모드
               </h4>
-              <p className="text-xs text-[#9BA3B0] leading-relaxed">
+              <p className="text-xs text-[#52525B] leading-relaxed">
                 무단 반출이 빈번할 때 사용. 주차장 이동(<code>10km/h+</code>) 및 경미한 접촉(<code>2.0G+</code>)까지 즉시 포착하고 심야/주말 최고경보를 발령합니다.
               </p>
-              <div className="pt-1 text-[10px] font-mono text-[#FF8080]">
+              <div className="pt-1 text-[10px] font-mono text-[#DC2626]">
                 사전승인 필수 · 민감감지 10km/h · 충격 2.0G · 복귀 1분 자동반납
               </div>
             </button>
           </div>
 
           {/* Collapsible Advanced Sliders Toggle */}
-          <div className="pt-2 border-t border-white/10">
+          <div className="pt-2 border-t border-black/10">
             <button
               type="button"
               onClick={() => setShowAdvancedPolicy((p) => !p)}
-              className="px-3.5 py-2 rounded-xl bg-[#0B0D10] hover:bg-white/5 border border-white/10 text-xs font-medium text-[#9BA3B0] hover:text-white flex items-center gap-2 transition"
+              className="px-3.5 py-2 rounded-xl bg-[#FAFAFA] hover:bg-black/[0.03] border border-black/10 text-xs font-medium text-[#52525B] hover:text-[#0A0A0A] flex items-center gap-2 transition"
             >
               <Settings className="w-3.5 h-3.5 text-[#3E6AE1]" />
               {showAdvancedPolicy
@@ -1121,8 +1121,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
           {showAdvancedPolicy && (
             <div className="space-y-4 pt-2">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-                  <label className="font-mono text-[#9BA3B0] block">
+                <div className="p-3.5 rounded-xl bg-[#F4F4F5] border border-black/5 space-y-1.5">
+                  <label className="font-mono text-[#52525B] block">
                     본사 차고지 지오펜스 기준 주소
                   </label>
                   <input
@@ -1131,12 +1131,12 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                     onChange={(e) =>
                       setDraftPolicy({ ...draftPolicy, hqAddress: e.target.value })
                     }
-                    className="w-full rounded-lg bg-[#0B0D10] border border-white/10 px-2.5 py-2 text-[#F4F6F8]"
+                    className="w-full rounded-lg bg-[#FAFAFA] border border-black/10 px-2.5 py-2 text-[#0A0A0A]"
                   />
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-                  <label className="font-mono text-[#9BA3B0] block">
+                <div className="p-3.5 rounded-xl bg-[#F4F4F5] border border-black/5 space-y-1.5">
+                  <label className="font-mono text-[#52525B] block">
                     차고지 지오펜스 반경 (m) — 현재 {draftPolicy.garageGeofenceRadiusM}m
                   </label>
                   <input
@@ -1155,8 +1155,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   />
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-                  <label className="font-mono text-[#9BA3B0] block">
+                <div className="p-3.5 rounded-xl bg-[#F4F4F5] border border-black/5 space-y-1.5">
+                  <label className="font-mono text-[#52525B] block">
                     키 보관함 BLE 근접 판별 반경 (m) — 현재 {draftPolicy.keyboxBleRadiusM}m
                   </label>
                   <input
@@ -1175,8 +1175,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   />
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-                  <label className="font-mono text-[#9BA3B0] block">
+                <div className="p-3.5 rounded-xl bg-[#F4F4F5] border border-black/5 space-y-1.5">
+                  <label className="font-mono text-[#52525B] block">
                     미승인 출발 감지 임계 속도 — {draftPolicy.unauthorizedSpeedThresholdKmh} km/h
                   </label>
                   <input
@@ -1195,8 +1195,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   />
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-                  <label className="font-mono text-[#9BA3B0] block">
+                <div className="p-3.5 rounded-xl bg-[#F4F4F5] border border-black/5 space-y-1.5">
+                  <label className="font-mono text-[#52525B] block">
                     무블랙박스 사고 감지 충격 임계치 — {draftPolicy.crashGForceThreshold.toFixed(1)} G
                   </label>
                   <input
@@ -1215,8 +1215,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   />
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-[#191E2A] border border-white/5 space-y-1.5">
-                  <label className="font-mono text-[#9BA3B0] block">
+                <div className="p-3.5 rounded-xl bg-[#F4F4F5] border border-black/5 space-y-1.5">
+                  <label className="font-mono text-[#52525B] block">
                     차고지 복귀 후 자동 반납 대기 시간 — {draftPolicy.autoReturnIdleMinutes}분
                   </label>
                   <input
@@ -1237,7 +1237,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
-                <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
+                <label className="p-3 rounded-xl bg-[#F4F4F5] border border-black/5 flex items-center justify-between cursor-pointer">
                   <span>관리자 부재 시 배차 신청 자동 승인</span>
                   <input
                     type="checkbox"
@@ -1251,7 +1251,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   />
                 </label>
 
-                <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
+                <label className="p-3 rounded-xl bg-[#F4F4F5] border border-black/5 flex items-center justify-between cursor-pointer">
                   <span>블루투스/GPS 권한 꺼진 직원 배차 자동 차단</span>
                   <input
                     type="checkbox"
@@ -1265,7 +1265,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   />
                 </label>
 
-                <label className="p-3 rounded-xl bg-[#191E2A] border border-white/5 flex items-center justify-between cursor-pointer">
+                <label className="p-3 rounded-xl bg-[#F4F4F5] border border-black/5 flex items-center justify-between cursor-pointer">
                   <span>심야/주말(업무시간 외) 키 반출 시 즉시 최고경보</span>
                   <input
                     type="checkbox"

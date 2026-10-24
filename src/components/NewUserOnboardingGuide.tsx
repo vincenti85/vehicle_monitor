@@ -108,32 +108,32 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
       ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
       <div
-        className="w-full max-w-4xl max-h-[90vh] rounded-2xl bg-[#0A0A0A] border border-white/15 flex flex-col overflow-hidden"
+        className="w-full max-w-4xl max-h-[90vh] rounded-2xl bg-[#FAFAFA] border border-black/15 flex flex-col overflow-hidden"
         style={{
           boxShadow:
-            'rgba(0, 0, 0, 0.85) 0px 24px 60px, rgba(255, 255, 255, 0.1) 0px 0px 0px 1px',
+            'rgba(0, 0, 0, 0.14) 0px 24px 60px, rgba(0, 0, 0, 0.1) 0px 0px 0px 1px',
         }}
       >
         {/* Top Modal Header */}
-        <div className="p-5 bg-[#050505] border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+        <div className="p-5 bg-[#F4F4F5] border-b border-black/10 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0A72EF] to-[#10B981] flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+              <Sparkles className="w-5 h-5 text-[#0A0A0A]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-[#FAFAFA]">
+                <h2 className="text-base font-semibold text-[#0A0A0A]">
                   {isEng
                     ? 'New User 3-Step Quick Start Guide'
                     : '신규 이용자를 위한 3단계 빠른 시작 가이드 (Quick Start)'}
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#0A72EF]/20 text-[#60A5FA] border border-[#0A72EF]/40">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#0A72EF]/20 text-[#1D4ED8] border border-[#0A72EF]/40">
                   3-STEP ONBOARDING
                 </span>
               </div>
-              <p className="text-xs text-[#A1A1AA]">
+              <p className="text-xs text-[#52525B]">
                 {isEng
                   ? '4400 Northpark Dr, Opelika, AL · 30 Corporate Vehicles · 0 Dashcams (100% Smartphone Sensor Telemetry)'
                   : '4400 Northpark Dr, Opelika, AL 법인차량 30대 · 무블랙박스 스마트폰 센서 기반 배차 및 관제 솔루션'}
@@ -144,7 +144,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
           <div className="flex items-center gap-2">
             {/* Modal Language Switcher (KOR / ENG) */}
             <div
-              className="flex items-center bg-[#111111] p-0.5 rounded-md text-[11px] font-mono border border-white/10"
+              className="flex items-center bg-[#FFFFFF] p-0.5 rounded-md text-[11px] font-mono border border-black/10"
               role="group"
             >
               <Globe className="w-3 h-3 text-[#71717A] ml-1.5 mr-1" />
@@ -153,8 +153,8 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                 onClick={() => setModalLang('KOR')}
                 className={`px-2 py-0.5 rounded font-semibold transition ${
                   modalLang === 'KOR'
-                    ? 'bg-[#FAFAFA] text-[#0A0A0A]'
-                    : 'text-[#71717A] hover:text-[#FAFAFA]'
+                    ? 'bg-[#0A0A0A] text-[#FAFAFA]'
+                    : 'text-[#71717A] hover:text-[#0A0A0A]'
                 }`}
               >
                 KOR
@@ -165,7 +165,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                 className={`px-2 py-0.5 rounded font-semibold transition ${
                   modalLang === 'ENG'
                     ? 'bg-[#0A72EF] text-white'
-                    : 'text-[#71717A] hover:text-[#FAFAFA]'
+                    : 'text-[#71717A] hover:text-[#0A0A0A]'
                 }`}
               >
                 ENG
@@ -175,15 +175,15 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
             <button
               type="button"
               onClick={() => downloadManualAsHtml(modalLang)}
-              className="px-3 py-1.5 rounded-lg bg-[#111111] hover:bg-white/10 border border-white/15 text-xs font-medium text-[#FAFAFA] flex items-center gap-1.5 transition"
+              className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-black/5 border border-black/15 text-xs font-medium text-[#0A0A0A] flex items-center gap-1.5 transition"
             >
-              <Download className="w-3.5 h-3.5 text-[#34D399]" />
+              <Download className="w-3.5 h-3.5 text-[#047857]" />
               {isEng ? 'Download Guide (.HTML)' : '가이드/매뉴얼 다운로드'}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-[#A1A1AA] hover:text-white transition"
+              className="p-1.5 rounded-lg bg-black/[0.03] hover:bg-black/[0.07] text-[#52525B] hover:text-[#0A0A0A] transition"
             >
               <X className="w-4 h-4" />
             </button>
@@ -191,7 +191,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
         </div>
 
         {/* 3-Step Progress Stepper Bar */}
-        <div className="px-6 pt-5 pb-3 bg-[#0A0A0A] border-b border-white/10">
+        <div className="px-6 pt-5 pb-3 bg-[#FAFAFA] border-b border-black/10">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {steps.map((item) => {
               const Icon = item.icon;
@@ -207,7 +207,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                       ? 'bg-[#0A72EF]/15 border-[#0A72EF]'
                       : isDone
                         ? 'bg-[#10B981]/10 border-[#10B981]/40 hover:border-[#10B981]'
-                        : 'bg-[#111111] border-white/10 hover:border-white/25'
+                        : 'bg-[#FFFFFF] border-black/10 hover:border-black/25'
                   }`}
                 >
                   <div
@@ -216,7 +216,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                         ? 'bg-[#0A72EF] text-white'
                         : isDone
                           ? 'bg-[#10B981] text-white'
-                          : 'bg-[#050505] text-[#A1A1AA]'
+                          : 'bg-[#F4F4F5] text-[#52525B]'
                     }`}
                   >
                     {isDone && !isCurrent ? (
@@ -229,18 +229,18 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                     <span
                       className={`text-[10px] font-mono uppercase block ${
                         isCurrent
-                          ? 'text-[#60A5FA]'
+                          ? 'text-[#1D4ED8]'
                           : isDone
-                            ? 'text-[#34D399]'
-                            : 'text-[#A1A1AA]'
+                            ? 'text-[#047857]'
+                            : 'text-[#52525B]'
                       }`}
                     >
                       {item.badge}
                     </span>
-                    <p className="text-xs font-semibold text-[#FAFAFA] truncate mt-0.5">
+                    <p className="text-xs font-semibold text-[#0A0A0A] truncate mt-0.5">
                       {item.title}
                     </p>
-                    <p className="text-[11px] text-[#A1A1AA] truncate">{item.subtitle}</p>
+                    <p className="text-[11px] text-[#52525B] truncate">{item.subtitle}</p>
                   </div>
                 </button>
               );
@@ -249,19 +249,19 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
         </div>
 
         {/* Step Content Area */}
-        <div className="p-6 overflow-y-auto space-y-5 text-xs text-[#D4D4D8]">
+        <div className="p-6 overflow-y-auto space-y-5 text-xs text-[#3F3F46]">
           {activeStep === 1 && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#111111] border border-[#0A72EF]/30 space-y-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#0A72EF]/20 text-[#60A5FA]">
+              <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#0A72EF]/30 space-y-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#0A72EF]/20 text-[#1D4ED8]">
                   {isEng ? 'STEP 1 OBJECTIVE' : '1단계 핵심 목표'}
                 </span>
-                <h3 className="text-base font-semibold text-[#FAFAFA]">
+                <h3 className="text-base font-semibold text-[#0A0A0A]">
                   {isEng
                     ? 'Zero In-Car Dashcams or OBD Dongles — Start with Only Your Smartphone'
                     : '차량 내 블랙박스·OBD 단말기 없이 스마트폰 하나로 시작합니다'}
                 </h3>
-                <p className="text-xs text-[#A1A1AA] leading-relaxed">
+                <p className="text-xs text-[#52525B] leading-relaxed">
                   {isEng ? (
                     <>
                       FleetGuard 30 tracks all 30 corporate vehicles with <strong>$0 hardware & $0 monthly subscription cost</strong> by combining your smartphone&apos;s <strong>Factory Bluetooth MAC + 6-Axis IMU (Accelerometer/Gyroscope) + Conditional GPS</strong>.
@@ -275,12 +275,12 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <div className="flex items-center gap-2 text-[#60A5FA] font-semibold">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <div className="flex items-center gap-2 text-[#1D4ED8] font-semibold">
                     <Smartphone className="w-4 h-4" />
                     {isEng ? '① Add to Home Screen' : '① 모바일 홈 화면에 추가'}
                   </div>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
                         Open the web URL on <strong>Safari (iPhone)</strong> or <strong>Chrome (Android)</strong> and tap <strong>[Add to Home Screen]</strong> to run FleetGuard 30 like a native mobile app.
@@ -293,12 +293,12 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <div className="flex items-center gap-2 text-[#34D399] font-semibold">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <div className="flex items-center gap-2 text-[#047857] font-semibold">
                     <Bluetooth className="w-4 h-4" />
                     {isEng ? '② Allow Bluetooth & GPS' : '② 블루투스 · 위치 권한 허용'}
                   </div>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
                         When the engine starts, the app automatically matches the car&apos;s factory hands-free Bluetooth (MAC) and the HQ Keybox (3m BLE) to identify <strong>who is driving which unit</strong>.
@@ -311,12 +311,12 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <div className="flex items-center gap-2 text-[#FBBF24] font-semibold">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <div className="flex items-center gap-2 text-[#B45309] font-semibold">
                     <ShieldCheck className="w-4 h-4" />
                     {isEng ? '③ 6-Axis IMU Crash Sensor' : '③ 무블랙박스 6축 센서 활성화'}
                   </div>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
                         Replaces physical dashcams by detecting <code>≥2.5G</code> impact shock, gyroscope yaw rotation (<code>°/s</code>), and sudden deceleration to reconstruct the 30-second crash trace.
@@ -331,7 +331,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
               </div>
 
               <div className="p-3.5 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30 flex flex-wrap items-center justify-between gap-3">
-                <span className="text-xs text-[#34D399]">
+                <span className="text-xs text-[#047857]">
                   {isEng ? (
                     <>
                       💡 You can test live phone sensor pairing and vehicle requests directly in the <strong>[Employee Mobile App]</strong> on Tab 1.
@@ -358,16 +358,16 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
 
           {activeStep === 2 && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#111111] border border-[#10B981]/30 space-y-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#10B981]/20 text-[#34D399]">
+              <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#10B981]/30 space-y-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#10B981]/20 text-[#047857]">
                   {isEng ? 'STEP 2 OBJECTIVE' : '2단계 핵심 목표'}
                 </span>
-                <h3 className="text-base font-semibold text-[#FAFAFA]">
+                <h3 className="text-base font-semibold text-[#0A0A0A]">
                   {isEng
                     ? 'Request Vehicle → Manager Approval → Pick Up Key & Drive (Plus 1-Sec QR Start)'
                     : '차량 신청 → 관리자 승인 → 키 수령 후 사용 (긴급 시 1초 자율 반출 지원)'}
                 </h3>
-                <p className="text-xs text-[#A1A1AA] leading-relaxed">
+                <p className="text-xs text-[#52525B] leading-relaxed">
                   {isEng
                     ? 'Learn the standard 4-stage dispatch workflow, 1-second QR checkout when the manager is away, and how unreported departures are handled.'
                     : '정상적인 사전 배차 신청부터 키 관리자가 자리를 비웠을 때의 자율 반출, 그리고 미승인 출발 시의 경고 대응까지 한눈에 익힙니다.'}
@@ -375,16 +375,16 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#FBBF24]/20 text-[#FBBF24]">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#FBBF24]/20 text-[#B45309]">
                     {isEng ? 'Method A · Standard 4-Stage' : '방법 A · 정식 4단계 배차'}
                   </span>
-                  <p className="text-xs font-semibold text-[#FAFAFA]">
+                  <p className="text-xs font-semibold text-[#0A0A0A]">
                     {isEng
                       ? 'REQUESTED → APPROVED → IN_USE'
                       : '신청(REQUESTED) → 승인(APPROVED)'}
                   </p>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
                         Select your vehicle, destination (Auburn, Montgomery, etc.), and purpose. Once the manager clicks <strong>[Approve]</strong>, pick up the key fob and tap <strong>[Start Trip]</strong>.
@@ -397,14 +397,14 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#0A72EF]/20 text-[#60A5FA]">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#0A72EF]/20 text-[#1D4ED8]">
                     {isEng ? 'Method B · Manager Away' : '방법 B · 관리자 부재 시 긴급 외근'}
                   </span>
-                  <p className="text-xs font-semibold text-[#FAFAFA]">
+                  <p className="text-xs font-semibold text-[#0A0A0A]">
                     {isEng ? '1-Sec Key QR Start' : '1초 원터치 자율 반출'}
                   </p>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
                         Need a car urgently while the manager is away? Tap <strong>[⚡ 1-Sec Key QR Start]</strong> in the mobile app and drive out—your trip is immediately logged as authorized.
@@ -417,14 +417,14 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#E82127]/20 text-[#FF8080]">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#E82127]/20 text-[#DC2626]">
                     {isEng ? 'Caution · Unreported Key Theft' : '주의 · 보고 없이 키만 가지고 출발 시'}
                   </span>
-                  <p className="text-xs font-semibold text-[#FAFAFA]">
+                  <p className="text-xs font-semibold text-[#0A0A0A]">
                     {isEng ? 'Instant Red Alert at >15 km/h' : '15km/h 도달 즉시 양방향 Red Alert'}
                   </p>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
                         Driving out without registering triggers a bilateral Red Alert. Tap <strong>[Submit Late Reason]</strong> on your phone&apos;s warning banner to log your purpose retroactively.
@@ -445,7 +445,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                     onSelectDispatchTab();
                     onClose();
                   }}
-                  className="px-3.5 py-2 rounded-lg bg-[#111111] hover:bg-white/10 border border-white/15 text-xs font-medium text-[#60A5FA] flex items-center gap-1.5 transition"
+                  className="px-3.5 py-2 rounded-lg bg-[#FFFFFF] hover:bg-black/5 border border-black/15 text-xs font-medium text-[#1D4ED8] flex items-center gap-1.5 transition"
                 >
                   {isEng
                     ? '📋 Open Dispatch Request & Return Screen'
@@ -468,16 +468,16 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
 
           {activeStep === 3 && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#111111] border border-[#E82127]/30 space-y-2">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#E82127]/20 text-[#FF8080]">
+              <div className="p-4 rounded-xl bg-[#FFFFFF] border border-[#E82127]/30 space-y-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#E82127]/20 text-[#DC2626]">
                   {isEng ? 'STEP 3 OBJECTIVE' : '3단계 핵심 목표'}
                 </span>
-                <h3 className="text-base font-semibold text-[#FAFAFA]">
+                <h3 className="text-base font-semibold text-[#0A0A0A]">
                   {isEng
                     ? 'Hands-Free Garage Auto-Return & PIN-Protected Admin Console'
                     : '차고지 복귀 시 자동 반납 & 관리자 전용 콘솔(보안 PIN)로 완벽 통제'}
                 </h3>
-                <p className="text-xs text-[#A1A1AA] leading-relaxed">
+                <p className="text-xs text-[#52525B] leading-relaxed">
                   {isEng ? (
                     <>
                       Drivers simply park at the HQ garage to auto-generate IRS mileage logs, while Fleet Managers unlock the Admin Console with a <strong>4-digit Security PIN (<code>••••</code>)</strong> for CSV bulk imports and audits.
@@ -491,12 +491,12 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <div className="flex items-center gap-2 text-[#34D399] font-semibold">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <div className="flex items-center gap-2 text-[#047857] font-semibold">
                     <MapPin className="w-4 h-4" />
                     {isEng ? '① Hands-Free Garage Auto-Return' : '① 차고지 복귀 무조작 자동 반납'}
                   </div>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
                         Returning to the <code>4400 Northpark Dr</code> garage (150m geofence) and turning off the ignition (Bluetooth disconnect) automatically completes the return and logs IRS Sec. 274(d) mileage.
@@ -509,30 +509,30 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <div className="flex items-center gap-2 text-[#FF8080] font-semibold">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <div className="flex items-center gap-2 text-[#DC2626] font-semibold">
                     <KeyRound className="w-4 h-4" />
                     {isEng ? '② Admin Console Security PIN' : '② 관리자 화면 보안 PIN 접속'}
                   </div>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
-                        Click <strong>[3. Admin Console (PIN)]</strong> and enter the private 4-digit PIN (<code className="text-[#FBBF24] font-mono">••••</code>) to perform physical odometer audits, resolve incidents, or suspend drivers.
+                        Click <strong>[3. Admin Console (PIN)]</strong> and enter the private 4-digit PIN (<code className="text-[#B45309] font-mono">••••</code>) to perform physical odometer audits, resolve incidents, or suspend drivers.
                       </>
                     ) : (
                       <>
-                        상단 <strong>[관리자 설정 (PIN)]</strong> 클릭 후 관리자 전용 4자리 보안 PIN(<code className="text-[#FBBF24] font-mono">••••</code>)을 입력하면 계기판 실사 대조(유령 주행 색출), 사고 처분, 임직원 자격 정지가 가능합니다.
+                        상단 <strong>[관리자 설정 (PIN)]</strong> 클릭 후 관리자 전용 4자리 보안 PIN(<code className="text-[#B45309] font-mono">••••</code>)을 입력하면 계기판 실사 대조(유령 주행 색출), 사고 처분, 임직원 자격 정지가 가능합니다.
                       </>
                     )}
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-2">
-                  <div className="flex items-center gap-2 text-[#60A5FA] font-semibold">
+                <div className="p-4 rounded-xl bg-[#F4F4F5] border border-black/10 space-y-2">
+                  <div className="flex items-center gap-2 text-[#1D4ED8] font-semibold">
                     <FileSpreadsheet className="w-4 h-4" />
                     {isEng ? '③ Vehicle & Employee CSV Import' : '③ 차량 · 임직원 CSV 일괄 입력'}
                   </div>
-                  <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
+                  <p className="text-[11px] text-[#52525B] leading-relaxed">
                     {isEng ? (
                       <>
                         Download the <strong>[Vehicle CSV Template]</strong> or <strong>[Employee CSV Template]</strong> in the Admin Console, edit in Excel, and upload to batch-register records.
@@ -546,7 +546,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#111111] border border-white/15 flex flex-wrap items-center justify-between gap-3">
+              <div className="p-3.5 rounded-xl bg-[#FFFFFF] border border-black/15 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
@@ -565,9 +565,9 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                       onClose();
                       onOpenFullManual();
                     }}
-                    className="px-3.5 py-2 rounded-lg bg-[#050505] hover:bg-white/10 border border-white/15 text-[#FAFAFA] text-xs font-medium flex items-center gap-1.5 transition"
+                    className="px-3.5 py-2 rounded-lg bg-[#F4F4F5] hover:bg-black/5 border border-black/15 text-[#0A0A0A] text-xs font-medium flex items-center gap-1.5 transition"
                   >
-                    <BookOpen className="w-3.5 h-3.5 text-[#60A5FA]" />
+                    <BookOpen className="w-3.5 h-3.5 text-[#1D4ED8]" />
                     {isEng ? 'Open Full Manual' : '전체 상세 매뉴얼 보기'}
                   </button>
                 </div>
