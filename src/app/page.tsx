@@ -57,13 +57,11 @@ import {
   INITIAL_VEHICLES,
 } from '@/data/initialFleetData';
 import { TeslaTelemetryMap } from '@/components/TeslaTelemetryMap';
-import { EmployeePhoneSimulator } from '@/components/EmployeePhoneSimulator';
+import { EmployeePhoneSimulator, QrScanResult } from '@/components/EmployeePhoneSimulator';
+import { hasUnitParam, parseUnitParam } from '@/utils/vehicleQr';
+import type { FleetDataMode, FleetDatabaseSchema } from '@/lib/fleetDatabase';
 import { ReservationWorkflowPanel } from '@/components/ReservationWorkflowPanel';
-import {
-  AdminManagementConsole,
-  EmployeeCsvRow,
-  VehicleCsvRow,
-} from '@/components/AdminManagementConsole';
+import { AdminManagementConsole, EmployeeCsvRow } from '@/components/AdminManagementConsole';
 import { UserApprovalManualModal } from '@/components/UserApprovalManualModal';
 import { NewUserOnboardingGuide } from '@/components/NewUserOnboardingGuide';
 import { VehiclePhoneSetupInfographic } from '@/components/VehiclePhoneSetupInfographic';
@@ -202,41 +200,77 @@ export default function FleetGuardCockpitPage() {
     },
   ]);
 
-  const [dbSyncState, setDbSyncState] = useState<'HYDRATING' | 'SYNCED' | 'SAVING'>('HYDRATING');
+  const [dbSyncState, setDbSyncState] =
+    useState<'HYDRATING' | 'SYNCED' | 'SAVING' | 'ERROR'>('HYDRATING');
+  const [dbError, setDbError] = useState<string | null>(null);
   const [dbLastUpdated, setDbLastUpdated] = useState<string>('');
+  const [dataMode, setDataMode] = useState<FleetDataMode>('DEMO');
+  const [hydrateAttempt, setHydrateAttempt] = useState<number>(0);
   const isHydratedRef = useRef<boolean>(false);
 
-  // 1. Hydrate state from persistent backend DB (/api/fleet/state) on mount
+  // Applies a full server snapshot to client state (hydrate, demo reset, demo cleanup)
+  const applyDbSnapshot = (db: Partial<FleetDatabaseSchema>) => {
+    if (Array.isArray(db.vehicles) && db.vehicles.length > 0) setVehicles(db.vehicles);
+    if (Array.isArray(db.employees) && db.employees.length > 0) setEmployees(db.employees);
+    if (Array.isArray(db.reservations)) setReservations(db.reservations);
+    if (Array.isArray(db.incidents)) setIncidents(db.incidents);
+    if (Array.isArray(db.geofenceLogs)) setGeofenceLogs(db.geofenceLogs);
+    if (Array.isArray(db.ghostTrips)) setGhostTrips(db.ghostTrips);
+    if (Array.isArray(db.taxLogs)) setTaxLogs(db.taxLogs);
+    if (db.policyConfig) setPolicyConfig(db.policyConfig);
+    if (Array.isArray(db.pushStream)) setPushStream(db.pushStream);
+    setDataMode(db.dataMode === 'LIVE' ? 'LIVE' : 'DEMO');
+    setDbLastUpdated(db.lastUpdatedAt ? new Date(db.lastUpdatedAt).toLocaleTimeString() : '방금 전');
+  };
+
+  // 1. Hydrate state from persistent backend DB (/api/fleet/state) on mount.
+  // On failure stay un-hydrated: auto-save is blocked so the sample data on screen can
+  // never overwrite the real database.
   useEffect(() => {
     let cancelled = false;
     fetch('/api/fleet/state')
-      .then((res) => res.json())
-      .then((resData) => {
-        if (cancelled || !resData?.data) return;
-        const db = resData.data;
-        if (Array.isArray(db.vehicles) && db.vehicles.length > 0) setVehicles(db.vehicles);
-        if (Array.isArray(db.employees) && db.employees.length > 0) setEmployees(db.employees);
-        if (Array.isArray(db.reservations)) setReservations(db.reservations);
-        if (Array.isArray(db.incidents)) setIncidents(db.incidents);
-        if (Array.isArray(db.geofenceLogs)) setGeofenceLogs(db.geofenceLogs);
-        if (Array.isArray(db.ghostTrips)) setGhostTrips(db.ghostTrips);
-        if (Array.isArray(db.taxLogs)) setTaxLogs(db.taxLogs);
-        if (db.policyConfig) setPolicyConfig(db.policyConfig);
-        if (Array.isArray(db.pushStream) && db.pushStream.length > 0) {
-          setPushStream(db.pushStream);
+      .then(async (res) => {
+        const resData = await res.json().catch(() => null);
+        if (!res.ok || !resData?.data) {
+          throw new Error(resData?.error ?? `HTTP ${res.status}`);
         }
-        setDbLastUpdated(db.lastUpdatedAt ? new Date(db.lastUpdatedAt).toLocaleTimeString() : '방금 전');
+        return resData.data as FleetDatabaseSchema;
+      })
+      .then((db) => {
+        if (cancelled) return;
+        applyDbSnapshot(db);
         isHydratedRef.current = true;
+        setDbError(null);
         setDbSyncState('SYNCED');
       })
-      .catch(() => {
-        isHydratedRef.current = true;
-        setDbSyncState('SYNCED');
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        setDbError(err instanceof Error ? err.message : 'DB load failed');
+        setDbSyncState('ERROR');
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrateAttempt]);
+
+  // 1-b. Vehicle key-tag QR deep link (?unit=NN): once hydrated, preselect that vehicle
+  const [qrScan, setQrScan] = useState<QrScanResult | null>(null);
+  const qrHandledRef = useRef<boolean>(false);
+  useEffect(() => {
+    if (!isHydratedRef.current || qrHandledRef.current) return;
+    qrHandledRef.current = true;
+    const { search, pathname, hash } = window.location;
+    if (!hasUnitParam(search)) return;
+
+    const unit = parseUnitParam(search);
+    const veh = unit === null ? undefined : vehicles.find((v) => v.fleetNumber === unit);
+    setQrScan({ unit, vehicleId: veh?.id ?? null, scannedAt: Date.now() });
+    if (veh) setSelectedVehicleId(veh.id);
+    setViewMode('EMPLOYEE_OPS');
+    // Drop the param so a reload does not re-apply the scan
+    window.history.replaceState(null, '', `${pathname}${hash}`);
+  }, [dbSyncState, vehicles]);
 
   // Stable key of vehicle fields worth persisting. Excludes the fields the 2.5s live
   // telemetry tick oscillates, so admin edits (MAC/BLE, lock, odometer audit) trigger a
@@ -278,14 +312,19 @@ export default function FleetGuardCockpitPage() {
           },
         }),
       })
-        .then((res) => res.json())
-        .then((resData) => {
+        .then(async (res) => {
+          const resData = await res.json().catch(() => null);
+          if (!res.ok) throw new Error(resData?.error ?? `HTTP ${res.status}`);
           if (resData?.data?.lastUpdatedAt) {
             setDbLastUpdated(new Date(resData.data.lastUpdatedAt).toLocaleTimeString());
           }
+          setDbError(null);
           setDbSyncState('SYNCED');
         })
-        .catch(() => setDbSyncState('SYNCED'));
+        .catch((err: unknown) => {
+          setDbError(err instanceof Error ? err.message : 'DB save failed');
+          setDbSyncState('ERROR');
+        });
     }, 350);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -314,41 +353,73 @@ export default function FleetGuardCockpitPage() {
       });
       const resData = await res.json();
       if (!res.ok) {
+        const message =
+          res.status === 409
+            ? isEng
+              ? '🔒 [DB Reset Blocked] Live fleet data is protected; demo reset is disabled.'
+              : '🔒 [DB 초기화 차단] 실운영 데이터가 보호 중이라 데모 초기화를 할 수 없습니다.'
+            : isEng
+              ? '🔒 [DB Reset Denied] Unlock the Admin Console with the security PIN first.'
+              : '🔒 [DB 초기화 거부] 관리자 콘솔 보안 PIN 인증 후에만 초기화할 수 있습니다.';
         setPushStream((prev) => [
           {
             id: `push-reset-denied-${Date.now()}`,
             time: nowTimeStr(),
             target: 'MANAGER',
-            message: isEng
-              ? '🔒 [DB Reset Denied] Unlock the Admin Console with the security PIN first.'
-              : '🔒 [DB 초기화 거부] 관리자 콘솔 보안 PIN 인증 후에만 초기화할 수 있습니다.',
+            message,
             level: 'CRITICAL',
           },
           ...prev,
         ]);
         return;
       }
-      if (resData?.data) {
-        const db = resData.data;
-        setVehicles(db.vehicles);
-        setEmployees(db.employees);
-        setReservations(db.reservations);
-        setIncidents(db.incidents);
-        setGeofenceLogs(db.geofenceLogs);
-        setGhostTrips(db.ghostTrips);
-        setTaxLogs(db.taxLogs);
-        setPolicyConfig(db.policyConfig);
-        setPushStream(db.pushStream);
-        setDbLastUpdated(new Date(db.lastUpdatedAt).toLocaleTimeString());
-      }
+      if (resData?.data) applyDbSnapshot(resData.data);
     } finally {
       setDbSyncState('SYNCED');
     }
   };
 
-  // Subtle live telemetry oscillation for active vehicles
+  // Admin: switch from the sample fleet to real operations (clears all demo history)
+  const handleClearDemoData = async (
+    removeDemoEmployees: boolean
+  ): Promise<{ ok: boolean; message: string }> => {
+    if (!adminPin) {
+      return { ok: false, message: '관리자 PIN 인증이 필요합니다.' };
+    }
+    try {
+      const res = await fetch('/api/fleet/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
+        body: JSON.stringify({ action: 'CLEAR_DEMO', removeDemoEmployees }),
+      });
+      const resData = await res.json().catch(() => null);
+      if (!res.ok || !resData?.data) {
+        return { ok: false, message: resData?.error ?? `요청 실패 (HTTP ${res.status})` };
+      }
+      applyDbSnapshot(resData.data);
+      const kept = resData.keptDemoEmployeesBecauseNoRealOnes
+        ? ' 실제 임직원이 아직 없어 데모 임직원은 유지했습니다.'
+        : '';
+      return {
+        ok: true,
+        message: `실운영 모드로 전환했습니다. 데모 배차·사고·운행일지·알림을 비우고 차량을 모두 차고지 대기로 되돌렸습니다. 데모 임직원 ${resData.removedDemoEmployees}명 삭제.${kept}`,
+      };
+    } catch {
+      return { ok: false, message: '서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.' };
+    }
+  };
+
+  // Keep the selected vehicle valid when the fleet list is replaced by real data
   useEffect(() => {
-    if (!liveTelemetryTick) return;
+    if (vehicles.length > 0 && !vehicles.some((v) => v.id === selectedVehicleId)) {
+      setSelectedVehicleId(vehicles[0].id);
+    }
+  }, [vehicles, selectedVehicleId]);
+
+  // Subtle simulated telemetry for the DEMO fleet only. In LIVE mode positions and
+  // mileage must come from real devices, never from random values.
+  useEffect(() => {
+    if (!liveTelemetryTick || dataMode === 'LIVE') return;
     const timer = setInterval(() => {
       setVehicles((prev) =>
         prev.map((veh) => {
@@ -369,7 +440,7 @@ export default function FleetGuardCockpitPage() {
       );
     }, 2500);
     return () => clearInterval(timer);
-  }, [liveTelemetryTick]);
+  }, [liveTelemetryTick, dataMode]);
 
   const selectedVehicle = useMemo(
     () => vehicles.find((v) => v.id === selectedVehicleId) || vehicles[0],
@@ -851,64 +922,15 @@ export default function FleetGuardCockpitPage() {
     setEmployees((prev) => [newEmp, ...prev]);
   };
 
-  const handleBulkImportVehicles = (rows: VehicleCsvRow[]) => {
-    const timestamp = nowTimeStr();
-    setVehicles((prev) => {
-      const next = [...prev];
-      rows.forEach((row) => {
-        const idx = next.findIndex(
-          (v) =>
-            v.fleetNumber === row.fleetNumber ||
-            v.plateNumber.toLowerCase() === row.plateNumber.toLowerCase()
-        );
-        if (idx >= 0) {
-          next[idx] = {
-            ...next[idx],
-            plateNumber: row.plateNumber,
-            modelName: row.modelName,
-            btMacAddress: row.btMacAddress,
-            bleBeaconUuid: row.bleBeaconUuid,
-            cumulativeGpsKm: row.cumulativeGpsKm,
-            lastVerifiedOdometerKm: row.cumulativeGpsKm,
-            parkingZone: row.parkingZone,
-          };
-        } else {
-          next.push({
-            id: `veh-csv-${Date.now()}-${row.fleetNumber}`,
-            fleetNumber: row.fleetNumber,
-            plateNumber: row.plateNumber,
-            modelName: row.modelName,
-            btMacAddress: row.btMacAddress,
-            bleBeaconUuid: row.bleBeaconUuid,
-            status: 'IDLE',
-            speedKmh: 0,
-            headingDeg: 0,
-            currentGForce: 1.0,
-            rssiDbm: -95,
-            currentDriverId: null,
-            coPassengerIds: [],
-            driverSelectionReason: null,
-            tripPurpose: null,
-            tripStartedAt: null,
-            cumulativeGpsKm: row.cumulativeGpsKm,
-            lastVerifiedOdometerKm: row.cumulativeGpsKm,
-            parkingZone: row.parkingZone,
-            lat: 32.6912 + ((row.fleetNumber % 6) - 2.5) * 0.0012,
-            lng: -85.3298 + (Math.floor(row.fleetNumber / 6) - 2.5) * 0.0014,
-            isLockedByAdmin: false,
-            lastOdometerAuditAt: timestamp,
-          });
-        }
-      });
-      return next.sort((a, b) => a.fleetNumber - b.fleetNumber);
-    });
-
+  // Applies a vehicle CSV import plan computed (and previewed) in the Admin Console
+  const handleApplyVehicleImport = (nextVehicles: Vehicle[], summary: string) => {
+    setVehicles(nextVehicles);
     setPushStream((prev) => [
       {
         id: `push-vcsv-${Date.now()}`,
-        time: timestamp,
+        time: nowTimeStr(),
         target: 'MANAGER',
-        message: `📥 [차량 CSV 일괄 등록] 관리자가 CSV 업로드로 차량 ${rows.length}대 정보를 일괄 등록/업데이트했습니다.`,
+        message: `📥 [차량 CSV 등록] ${summary}`,
         level: 'INFO',
       },
       ...prev,
@@ -1595,46 +1617,94 @@ export default function FleetGuardCockpitPage() {
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  dbSyncState === 'SAVING' ? 'bg-[#FBBF24] animate-pulse' : 'bg-[#10B981]'
+                  dbSyncState === 'ERROR'
+                    ? 'bg-[#DC2626]'
+                    : dbSyncState === 'SAVING' || dbSyncState === 'HYDRATING'
+                      ? 'bg-[#FBBF24] animate-pulse'
+                      : 'bg-[#10B981]'
                 }`}
               />
-              <span className="text-[#52525B]">
-                {dbSyncState === 'SAVING'
-                  ? isEng
-                    ? 'Saving'
-                    : '저장중'
-                  : isEng
-                    ? 'DB Synced'
-                    : 'DB 동기화'}
-              </span>
-              <button
-                type="button"
-                onClick={handleResetDatabase}
-                title={isEng ? 'Reset DB' : 'DB 초기화'}
-                className="ml-1 text-[#71717A] hover:text-[#0A0A0A]"
+              <span
+                className={dbSyncState === 'ERROR' ? 'text-[#DC2626] font-semibold' : 'text-[#52525B]'}
+                title={dbError ?? undefined}
               >
-                <RefreshCw className="w-3 h-3" />
-              </button>
+                {dbSyncState === 'ERROR'
+                  ? isHydratedRef.current
+                    ? isEng
+                      ? 'Save failed'
+                      : 'DB 저장 실패'
+                    : isEng
+                      ? 'DB load failed'
+                      : 'DB 불러오기 실패'
+                  : dbSyncState === 'HYDRATING'
+                    ? isEng
+                      ? 'Loading'
+                      : '불러오는 중'
+                    : dbSyncState === 'SAVING'
+                      ? isEng
+                        ? 'Saving'
+                        : '저장중'
+                      : isEng
+                        ? 'DB Synced'
+                        : 'DB 동기화'}
+              </span>
+              {dbSyncState === 'ERROR' && !isHydratedRef.current && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDbSyncState('HYDRATING');
+                    setHydrateAttempt((n) => n + 1);
+                  }}
+                  className="ml-1 text-[#DC2626] underline"
+                >
+                  {isEng ? 'Retry' : '다시 시도'}
+                </button>
+              )}
+              {dataMode === 'DEMO' && dbSyncState !== 'ERROR' && (
+                <button
+                  type="button"
+                  onClick={handleResetDatabase}
+                  title={isEng ? 'Reset demo data' : '데모 데이터 초기화'}
+                  className="ml-1 text-[#71717A] hover:text-[#0A0A0A]"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
-            <button
-              type="button"
-              onClick={() => setLiveTelemetryTick((p) => !p)}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-mono flex items-center gap-1 transition ${
-                liveTelemetryTick
-                  ? 'bg-[#10B981]/15 text-[#047857]'
-                  : 'bg-[#FAFAFA] text-[#71717A]'
-              }`}
-              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
-            >
-              <Activity className="w-3 h-3" />
-              {liveTelemetryTick ? 'LIVE' : 'PAUSED'}
-            </button>
+            {dataMode === 'LIVE' ? (
+              <span
+                className="px-2.5 py-1 rounded-md text-[11px] font-mono flex items-center gap-1 bg-[#0A72EF]/10 text-[#1D4ED8]"
+                title={
+                  isEng
+                    ? 'Real fleet data. Simulated telemetry and demo reset are disabled.'
+                    : '실제 차량 데이터 운영 중. 모의 주행·데모 초기화가 꺼져 있습니다.'
+                }
+              >
+                <ShieldCheck className="w-3 h-3" />
+                {isEng ? 'LIVE DATA' : '실운영'}
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLiveTelemetryTick((p) => !p)}
+                title={isEng ? 'Simulated telemetry (demo data)' : '모의 주행 시뮬레이션 (데모 데이터)'}
+                className={`px-2.5 py-1 rounded-md text-[11px] font-mono flex items-center gap-1 transition ${
+                  liveTelemetryTick
+                    ? 'bg-[#10B981]/15 text-[#047857]'
+                    : 'bg-[#FAFAFA] text-[#71717A]'
+                }`}
+                style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
+              >
+                <Activity className="w-3 h-3" />
+                {liveTelemetryTick ? (isEng ? 'DEMO SIM' : '데모 시뮬') : 'PAUSED'}
+              </button>
+            )}
 
             <button
               type="button"
               onClick={handleExportTaxCsv}
-              className="px-2.5 py-1 rounded-md bg-[#FAFAFA] hover:bg-white/[0.06] text-[11px] font-mono text-[#0A0A0A] flex items-center gap-1 transition"
+              className="px-2.5 py-1 rounded-md bg-[#FAFAFA] hover:bg-black/[0.06] text-[11px] font-mono text-[#0A0A0A] flex items-center gap-1 transition"
               style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               <Download className="w-3 h-3 text-[#0A72EF]" />
@@ -1707,6 +1777,7 @@ export default function FleetGuardCockpitPage() {
                   onSimulateCrashOrDrop={handleSimulateCrashOrDrop}
                   onTogglePermissionEvasion={handleTogglePermissionEvasion}
                   onAutoReturnToGarage={handleAutoReturnToGarage}
+                  qrScan={qrScan}
                 />
               </div>
 
@@ -1716,7 +1787,7 @@ export default function FleetGuardCockpitPage() {
                   className="rounded-xl bg-[#FAFAFA] overflow-hidden"
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
-                  <div className="px-4 py-2.5 border-b border-white/[0.08] flex items-center justify-between">
+                  <div className="px-4 py-2.5 border-b border-black/[0.08] flex items-center justify-between">
                     <span className="text-xs font-semibold text-[#0A0A0A]">
                       {isEng
                         ? 'Dispatch Request · Approval · Active · Return Board'
@@ -1751,7 +1822,7 @@ export default function FleetGuardCockpitPage() {
                   className="rounded-xl bg-[#FAFAFA] p-3.5"
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
-                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.08] text-xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-black/[0.08] text-xs">
                     <span className="font-semibold text-[#0A0A0A] flex items-center gap-1.5">
                       <BellRing className="w-3.5 h-3.5 text-[#059669]" />
                       {isEng ? 'Recent Notifications' : '최근 알림'}
@@ -1804,7 +1875,7 @@ export default function FleetGuardCockpitPage() {
                 <button
                   type="button"
                   onClick={() => setIsOnboardingOpen(true)}
-                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-white/[0.08] text-xs font-medium text-[#0A0A0A] flex items-center gap-1.5 transition"
+                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-black/[0.08] text-xs font-medium text-[#0A0A0A] flex items-center gap-1.5 transition"
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#047857]" />
@@ -1835,11 +1906,21 @@ export default function FleetGuardCockpitPage() {
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-white/[0.08] text-xs font-medium text-[#0A0A0A] flex items-center gap-1.5 transition"
+                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-black/[0.08] text-xs font-medium text-[#0A0A0A] flex items-center gap-1.5 transition"
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-[#B45309]" />
                   {isEng ? 'Admin Setup Guide (.HTML)' : '관리자 초기 세팅 가이드 (.HTML)'}
+                </a>
+                <a
+                  href="/admin-guide/Vehicle_QR_Setup_OnePager_KOR.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-black/[0.08] text-xs font-medium text-[#0A0A0A] flex items-center gap-1.5 transition"
+                  style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
+                >
+                  <Download className="w-3.5 h-3.5 text-[#1D4ED8]" />
+                  {isEng ? 'Vehicle QR Setup 1-Page (Letter PDF, KOR)' : '차량 QR 셋업 1페이지 (Letter PDF)'}
                 </a>
               </div>
             </div>
@@ -1862,7 +1943,10 @@ export default function FleetGuardCockpitPage() {
             onToggleEmployeeDispatch={handleToggleEmployeeDispatch}
             onSendPermissionWarningPush={handleSendPermissionWarningPush}
             onAddEmployee={handleAddEmployee}
-            onBulkImportVehicles={handleBulkImportVehicles}
+            reservations={reservations}
+            dataMode={dataMode}
+            onApplyVehicleImport={handleApplyVehicleImport}
+            onClearDemoData={handleClearDemoData}
             onBulkImportEmployees={handleBulkImportEmployees}
             onResolveIncident={handleResolveIncident}
             onUpdatePolicyConfig={(nextCfg) => setPolicyConfig(nextCfg)}
@@ -1964,7 +2048,7 @@ export default function FleetGuardCockpitPage() {
                     {counts.idle}
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
-                    {isEng ? '/ 30 units' : '/ 30대'}
+                    {isEng ? `/ ${vehicles.length} units` : `/ ${vehicles.length}대`}
                   </span>
                 </div>
               </button>
@@ -1987,7 +2071,7 @@ export default function FleetGuardCockpitPage() {
                   className="rounded-xl bg-[#FAFAFA] overflow-hidden"
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-2.5 border-b border-white/[0.08]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-2.5 border-b border-black/[0.08]">
                     <div className="flex flex-wrap gap-1">
                       {[
                         {
@@ -2369,7 +2453,7 @@ export default function FleetGuardCockpitPage() {
                           </thead>
                           <tbody className="divide-y divide-black/5 font-mono">
                             {taxLogs.map((row) => (
-                              <tr key={row.id} className="hover:bg-white/[0.02]">
+                              <tr key={row.id} className="hover:bg-black/[0.02]">
                                 <td className="py-2 px-2 text-[#52525B]">{row.date}</td>
                                 <td className="py-2 px-2 text-[#0A0A0A] font-semibold">
                                   {row.plateNumber}
@@ -2439,6 +2523,7 @@ export default function FleetGuardCockpitPage() {
                   onSimulateCrashOrDrop={handleSimulateCrashOrDrop}
                   onTogglePermissionEvasion={handleTogglePermissionEvasion}
                   onAutoReturnToGarage={handleAutoReturnToGarage}
+                  qrScan={qrScan}
                 />
 
                 {/* Bilateral Real-Time Alert Stream */}

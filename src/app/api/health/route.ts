@@ -1,15 +1,30 @@
 import { NextResponse } from 'next/server';
-import { readFleetDatabase } from '@/lib/fleetDatabase';
+import {
+  FleetStorageUnavailableError,
+  getStorageBackendName,
+  readFleetDatabase,
+} from '@/lib/fleetDatabase';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const db = readFleetDatabase();
+  let db;
+  try {
+    db = await readFleetDatabase();
+  } catch (err) {
+    if (!(err instanceof FleetStorageUnavailableError)) throw err;
+    return NextResponse.json(
+      { status: 'degraded', storage: getStorageBackendName(), error: 'Fleet database unavailable' },
+      { status: 503 }
+    );
+  }
   return NextResponse.json({
     status: 'ok',
     service: 'fleet-guard-30-opelika-al',
     version: db.version,
     storageEngine: db.storageEngine,
+    storage: getStorageBackendName(),
+    dataMode: db.dataMode,
     lastUpdatedAt: db.lastUpdatedAt,
     recordCounts: {
       vehicles: db.vehicles.length,

@@ -166,7 +166,7 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
       >
         <div className="space-y-3">
           {/* Row 1: Vehicle ID & Status Pill */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+          <div className="flex items-center justify-between pb-3 border-b border-black/[0.08]">
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono text-[#52525B]">
@@ -276,7 +276,7 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
               </span>
             </div>
             {latestIncidentForSelected && (
-              <div className="flex items-center justify-between pt-1 border-t border-white/[0.06] text-[#DC2626]">
+              <div className="flex items-center justify-between pt-1 border-t border-black/[0.06] text-[#DC2626]">
                 <span>{isEng ? 'Last Event' : '최근 이벤트'}</span>
                 <span className="font-mono text-[11px]">
                   PEAK {latestIncidentForSelected.gForce}G ({latestIncidentForSelected.occurredAt})

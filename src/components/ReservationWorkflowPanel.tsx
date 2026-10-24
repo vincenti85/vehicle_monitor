@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   CheckCircle2,
   ClipboardPlus,
@@ -69,6 +69,14 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
 
   const [returnZoneMap, setReturnZoneMap] = useState<Record<string, string>>({});
 
+  // Defaults point at sample records; snap to real ones once the fleet/roster is replaced
+  useEffect(() => {
+    if (employees.length > 0 && !employees.some((e) => e.id === empId)) setEmpId(employees[0].id);
+  }, [employees, empId]);
+  useEffect(() => {
+    if (vehicles.length > 0 && !vehicles.some((v) => v.id === vehId)) setVehId(vehicles[0].id);
+  }, [vehicles, vehId]);
+
   const stageCounts = {
     REQUESTED: reservations.filter((r) => r.stage === 'REQUESTED').length,
     APPROVED: reservations.filter((r) => r.stage === 'APPROVED').length,
@@ -97,7 +105,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
   return (
     <div className="p-4 space-y-3 bg-[#FAFAFA]">
       {/* Minimal Filter & Action Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/[0.08]">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-black/[0.08]">
         <div className="flex flex-wrap items-center gap-1">
           {[
             {

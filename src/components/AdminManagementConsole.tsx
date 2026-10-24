@@ -37,17 +37,18 @@ import {
   IncidentEvent,
   SystemPolicyConfig,
   Vehicle,
+  VehicleReservation,
 } from '@/types/fleet';
+import { VehicleImportPanel } from '@/components/VehicleImportPanel';
+import { buildVehicleDeepLink, createQrSvg, resolveAppBaseUrl } from '@/utils/vehicleQr';
 
-export interface VehicleCsvRow {
-  fleetNumber: number;
-  plateNumber: string;
-  modelName: string;
-  btMacAddress: string;
-  bleBeaconUuid: string;
-  cumulativeGpsKm: number;
-  parkingZone: string;
-}
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 
 export interface EmployeeCsvRow {
   name: string;
@@ -68,7 +69,10 @@ interface AdminManagementConsoleProps {
   onToggleEmployeeDispatch: (employeeId: string) => void;
   onSendPermissionWarningPush: (employeeId: string) => void;
   onAddEmployee: (emp: { name: string; role: string; department: string; phone: string }) => void;
-  onBulkImportVehicles: (rows: VehicleCsvRow[]) => void;
+  reservations: VehicleReservation[];
+  dataMode: 'DEMO' | 'LIVE';
+  onApplyVehicleImport: (nextVehicles: Vehicle[], summary: string) => void;
+  onClearDemoData: (removeDemoEmployees: boolean) => Promise<{ ok: boolean; message: string }>;
   onBulkImportEmployees: (rows: EmployeeCsvRow[]) => void;
   onResolveIncident: (incidentId: string, resolutionNote: string, suspendDriver: boolean) => void;
   onUpdatePolicyConfig: (nextConfig: SystemPolicyConfig) => void;
@@ -93,7 +97,10 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   onToggleEmployeeDispatch,
   onSendPermissionWarningPush,
   onAddEmployee,
-  onBulkImportVehicles,
+  reservations,
+  dataMode,
+  onApplyVehicleImport,
+  onClearDemoData,
   onBulkImportEmployees,
   onResolveIncident,
   onUpdatePolicyConfig,
@@ -108,7 +115,6 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   const [odometerInputs, setOdometerInputs] = useState<Record<string, string>>({});
 
   // CSV Upload Refs & Status Banner
-  const vehicleCsvInputRef = useRef<HTMLInputElement | null>(null);
   const employeeCsvInputRef = useRef<HTMLInputElement | null>(null);
   const [csvFeedback, setCsvFeedback] = useState<string | null>(null);
 
@@ -177,44 +183,57 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   };
 
   const handleDownloadPrintableQrSheet = () => {
-    const cardsHtml = vehicles
-      .map(
-        (v) => `
+    const baseUrl = resolveAppBaseUrl();
+    const isLocalBase = /\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(baseUrl);
+    const cardsHtml = [...vehicles]
+      .sort((a, b) => a.fleetNumber - b.fleetNumber)
+      .map((v) => {
+        const unit = v.fleetNumber.toString().padStart(2, '0');
+        const deepLink = buildVehicleDeepLink(baseUrl, v.fleetNumber);
+        return `
       <div class="qr-card">
         <div class="qr-top">FLEETGUARD 30 · OPELIKA AL</div>
-        <div class="qr-num">#${v.fleetNumber.toString().padStart(2, '0')}호차 · ${v.plateNumber}</div>
-        <div class="qr-model">${v.modelName}</div>
-        <div class="qr-box">
-          [QR / NFC 태그 #${v.fleetNumber.toString().padStart(2, '0')}]<br/>
-          <span>스마트폰 카메라 스캔 시<br/>블루투스 설정 없이 즉시 배차·매칭</span>
-        </div>
-        <div class="qr-meta">자동인식 ID: ${v.bleBeaconUuid} | ${v.parkingZone}</div>
-      </div>`
-      )
+        <div class="qr-num">#${unit}호차 · ${escapeHtml(v.plateNumber)}</div>
+        <div class="qr-model">${escapeHtml(v.modelName)}</div>
+        <div class="qr-img">${createQrSvg(deepLink)}</div>
+        <div class="qr-hint">휴대폰 카메라로 스캔 → 앱에서 #${unit}호차 자동 선택</div>
+        <div class="qr-meta">ID ${escapeHtml(v.bleBeaconUuid)} · ${escapeHtml(v.parkingZone)}</div>
+      </div>`;
+      })
       .join('');
 
     const html = `<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>법인차량 30대 키고리·대시보드 원터치 QR 태그 시트 (4400 Northpark Dr, Opelika, AL)</title>
+  <title>법인차량 30대 키고리 QR 태그 시트 (4400 Northpark Dr, Opelika, AL)</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; padding: 24px; background: #fff; color: #111; }
-    h1 { font-size: 18px; margin-bottom: 4px; }
-    p { font-size: 12px; color: #555; margin-top: 0; margin-bottom: 16px; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .qr-card { border: 2px solid #111; border-radius: 10px; padding: 12px; text-align: center; page-break-inside: avoid; }
-    .qr-top { font-size: 10px; font-weight: 700; color: #3E6AE1; }
-    .qr-num { font-size: 14px; font-weight: 800; margin-top: 2px; }
-    .qr-model { font-size: 11px; color: #444; margin-bottom: 8px; }
-    .qr-box { border: 1px dashed #666; border-radius: 8px; padding: 14px 8px; font-size: 11px; font-weight: 700; background: #F8FAFC; }
-    .qr-box span { font-weight: 400; font-size: 10px; color: #555; }
-    .qr-meta { font-size: 9px; color: #666; margin-top: 6px; font-family: monospace; }
+    @page { size: letter; margin: 0.4in; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif; margin: 0; background: #fff; color: #111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @media screen { body { padding: 24px; } }
+    h1 { font-size: 14px; margin: 0 0 3px; }
+    p { font-size: 10px; color: #555; margin: 0 0 3px; }
+    .base { font-family: monospace; font-size: 9px; color: #1D4ED8; margin-bottom: 8px; }
+    .warn { font-size: 10px; color: #B91C1C; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 6px; padding: 5px 8px; margin: 4px 0 8px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .qr-card { min-width: 0; border: 1.5px solid #111; border-radius: 8px; padding: 5px 5px 4px; text-align: center; break-inside: avoid; page-break-inside: avoid; }
+    .qr-top { font-size: 7px; font-weight: 700; color: #3E6AE1; letter-spacing: .04em; }
+    .qr-num { font-size: 12px; font-weight: 800; margin-top: 1px; }
+    .qr-model { font-size: 8.5px; color: #444; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .qr-img svg { width: 1in; height: 1in; display: block; margin: 0 auto; }
+    .qr-hint { font-size: 8px; font-weight: 600; color: #111; margin-top: 2px; }
+    .qr-meta { font-size: 7px; color: #666; margin-top: 2px; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   </style>
 </head>
 <body>
-  <h1>법인차량 30대 키고리 · 대시보드 무설정 QR/NFC 태그 시트 (4400 Northpark Dr, Opelika, AL 36801)</h1>
-  <p>블루투스 MAC 주소를 입력하거나 페어링할 필요 없이, 아래 카드를 인쇄해 자동차키 고리 또는 대시보드에 부착하면 운전자가 스마트폰 스캔 1초 만에 차량과 자동 매칭됩니다.</p>
+  <h1>법인차량 30대 키고리 QR 태그 시트 (4400 Northpark Dr, Opelika, AL 36801)</h1>
+  <p>카드를 오려 코팅한 뒤 호차 번호·번호판이 일치하는 차키 고리에 부착하세요. 운전자가 휴대폰 카메라로 스캔하면 FleetGuard 30 앱이 열리고 해당 차량이 자동 선택됩니다 (운행은 앱에서 신청·출발해야 시작됩니다).</p>
+  <div class="base">QR 연결 주소: ${escapeHtml(baseUrl)}/?unit=NN</div>
+  ${
+    isLocalBase
+      ? '<div class="warn">⚠ 개발용 주소(localhost)로 생성되었습니다. 이 QR은 휴대폰에서 열리지 않습니다. 운영 주소(예: https://vehiclemonitor.vercel.app)에서 다시 인쇄하거나 NEXT_PUBLIC_APP_URL을 설정하세요.</div>'
+      : ''
+  }
   <div class="grid">${cardsHtml}</div>
 </body>
 </html>`;
@@ -223,23 +242,6 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
     const a = document.createElement('a');
     a.href = url;
     a.download = '법인차량30대_무설정_QR키고리시트_Opelika_AL.html';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDownloadVehicleCsvTemplate = () => {
-    const headers = ['fleetNumber', 'plateNumber', 'modelName'];
-    const sampleRows = [
-      ['1', 'AL 41A-2237', 'Hyundai IONIQ 5 AWD'],
-      ['2', 'AL 41B-5104', 'Kia EV6 GT-Line'],
-      ['31', 'AL 41G-7788', 'Genesis GV70 Electrified'],
-    ];
-    const csv = '\uFEFF' + [headers.join(','), ...sampleRows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '차량정보_3항목_간편등록_양식_Opelika_AL.csv';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -259,44 +261,6 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
     a.download = '사용자_임직원_일괄등록_양식_Opelika_AL.csv';
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const handleVehicleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const text = String(evt.target?.result || '').replace(/^\uFEFF/, '');
-      const lines = text
-        .split(/\r?\n/)
-        .map((l) => l.trim())
-        .filter(Boolean);
-      if (lines.length <= 1) return;
-
-      const parsed: VehicleCsvRow[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map((c) => c.trim());
-        if (cols.length < 3) continue;
-        const fleetNum = parseInt(cols[0].replace(/[^0-9]/g, ''), 10) || i;
-        parsed.push({
-          fleetNumber: fleetNum,
-          plateNumber: cols[1] || `AL 41Z-${1000 + fleetNum}`,
-          modelName: cols[2] || 'Hyundai Santa Fe (AL Built)',
-          btMacAddress: cols[3] || `A4:C1:38:99:${fleetNum.toString(16).padStart(2, '0').toUpperCase()}:01`,
-          bleBeaconUuid: cols[4] || `BLE-KEY-${fleetNum.toString().padStart(2, '0')}`,
-          cumulativeGpsKm: parseFloat(cols[5]) || 10000,
-          parkingZone: cols[6] || `Northpark Lot A #${fleetNum.toString().padStart(2, '0')}`,
-        });
-      }
-
-      if (parsed.length > 0) {
-        onBulkImportVehicles(parsed);
-        setCsvFeedback(`✅ 차량 CSV 파일(${file.name})에서 총 ${parsed.length}대의 차량 정보를 일괄 등록/업데이트했습니다.`);
-        setTimeout(() => setCsvFeedback(null), 6000);
-      }
-      e.target.value = '';
-    };
-    reader.readAsText(file, 'utf-8');
   };
 
   const handleEmployeeCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -345,13 +309,6 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   return (
     <div className="space-y-5">
       {/* Hidden File Inputs for Vehicle & Employee CSV Import */}
-      <input
-        ref={vehicleCsvInputRef}
-        type="file"
-        accept=".csv,text/csv"
-        onChange={handleVehicleCsvFileChange}
-        className="hidden"
-      />
       <input
         ref={employeeCsvInputRef}
         type="file"
@@ -480,22 +437,6 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                 <QrCode className="w-3.5 h-3.5" />
                 30대 무설정 QR 키고리 시트 인쇄
               </button>
-              <button
-                type="button"
-                onClick={handleDownloadVehicleCsvTemplate}
-                className="px-2.5 py-1.5 rounded-lg bg-[#F4F4F5] hover:bg-black/5 border border-black/15 text-xs text-[#0A0A0A] flex items-center gap-1.5 transition"
-              >
-                <Download className="w-3.5 h-3.5 text-[#1D4ED8]" />
-                간편 CSV 양식(번호판·차종만)
-              </button>
-              <button
-                type="button"
-                onClick={() => vehicleCsvInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-semibold flex items-center gap-1.5 transition"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                차량 CSV 일괄 업로드
-              </button>
               <div className="relative w-full md:w-60">
                 <Search className="w-3.5 h-3.5 text-[#52525B] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -508,6 +449,14 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               </div>
             </div>
           </div>
+
+          <VehicleImportPanel
+            vehicles={vehicles}
+            reservations={reservations}
+            dataMode={dataMode}
+            onApplyVehicleImport={onApplyVehicleImport}
+            onClearDemoData={onClearDemoData}
+          />
 
           <div className="overflow-x-auto max-h-[540px] overflow-y-auto">
             <table className="w-full text-left border-collapse text-xs">
@@ -531,7 +480,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                   const hasGhostDiscrepancy = Math.abs(gapKm) >= 5;
 
                   return (
-                    <tr key={veh.id} className="hover:bg-white/[0.02]">
+                    <tr key={veh.id} className="hover:bg-black/[0.02]">
                       <td className="py-2.5 px-3 font-mono">
                         <span className="text-[#52525B] mr-1.5">
                           #{veh.fleetNumber.toString().padStart(2, '0')}

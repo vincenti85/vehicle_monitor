@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import {
   Employee,
   GeofenceLog,
@@ -20,6 +18,9 @@ import {
   INITIAL_TAX_LOGS,
   INITIAL_VEHICLES,
 } from '@/data/initialFleetData';
+import { FleetStorageUnavailableError, getFleetStorage } from '@/lib/fleetStorage';
+
+export { FleetStorageUnavailableError } from '@/lib/fleetStorage';
 
 export interface PushAlertItem {
   id: string;
@@ -29,10 +30,14 @@ export interface PushAlertItem {
   level: 'CRITICAL' | 'INFO';
 }
 
+// DEMO: seeded sample fleet (simulated telemetry allowed). LIVE: real fleet data only.
+export type FleetDataMode = 'DEMO' | 'LIVE';
+
 export interface FleetDatabaseSchema {
   version: string;
   lastUpdatedAt: string;
   storageEngine: 'PERSISTENT_JSON_DB' | 'SUPABASE_POSTGRES';
+  dataMode: FleetDataMode;
   vehicles: Vehicle[];
   employees: Employee[];
   reservations: VehicleReservation[];
@@ -44,11 +49,10 @@ export interface FleetDatabaseSchema {
   pushStream: PushAlertItem[];
 }
 
-import os from 'os';
+export const DEMO_EMPLOYEE_IDS: ReadonlySet<string> = new Set(INITIAL_EMPLOYEES.map((e) => e.id));
 
-const IS_VERCEL = Boolean(process.env.VERCEL);
-const DATA_DIR = IS_VERCEL ? os.tmpdir() : path.join(process.cwd(), 'data');
-const DB_FILE_PATH = path.join(DATA_DIR, 'fleet-db.json');
+const HQ_LAT = 32.6912;
+const HQ_LNG = -85.3298;
 
 const DEFAULT_PUSH_STREAM: PushAlertItem[] = [
   {
@@ -87,11 +91,10 @@ const DEFAULT_PUSH_STREAM: PushAlertItem[] = [
 
 export function createSeedDatabase(): FleetDatabaseSchema {
   return {
-    version: '1.1.0',
+    version: '1.2.0',
     lastUpdatedAt: new Date().toISOString(),
-    storageEngine: process.env.NEXT_PUBLIC_SUPABASE_URL
-      ? 'SUPABASE_POSTGRES'
-      : 'PERSISTENT_JSON_DB',
+    storageEngine: 'PERSISTENT_JSON_DB',
+    dataMode: 'DEMO',
     vehicles: INITIAL_VEHICLES,
     employees: INITIAL_EMPLOYEES,
     reservations: INITIAL_RESERVATIONS,
@@ -104,52 +107,124 @@ export function createSeedDatabase(): FleetDatabaseSchema {
   };
 }
 
-export function readFleetDatabase(): FleetDatabaseSchema {
+/** Garage parking coordinates near HQ, spread by fleet number so markers do not overlap. */
+export function garageSlotCoordinates(fleetNumber: number): { lat: number; lng: number } {
+  return {
+    lat: HQ_LAT + ((fleetNumber % 6) - 2.5) * 0.0012,
+    lng: HQ_LNG + (Math.floor(fleetNumber / 6) - 2.5) * 0.0014,
+  };
+}
+
+export function getStorageBackendName() {
+  return getFleetStorage().name;
+}
+
+async function persist(db: FleetDatabaseSchema): Promise<FleetDatabaseSchema> {
+  await getFleetStorage().save(JSON.stringify(db, null, 2));
+  return db;
+}
+
+/**
+ * Reads the database. Creates the demo seed only when no database exists yet.
+ * Throws FleetStorageUnavailableError when the store exists but cannot be read or parsed,
+ * so callers never mistake an outage for an empty database and overwrite real data.
+ */
+export async function readFleetDatabase(): Promise<FleetDatabaseSchema> {
+  const raw = await getFleetStorage().load();
+  if (raw === null) {
+    return persist(createSeedDatabase());
+  }
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    if (!fs.existsSync(DB_FILE_PATH)) {
-      const seed = createSeedDatabase();
-      fs.writeFileSync(DB_FILE_PATH, JSON.stringify(seed, null, 2), 'utf-8');
-      return seed;
-    }
-    const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
-    return JSON.parse(raw) as FleetDatabaseSchema;
-  } catch {
-    return createSeedDatabase();
+    const parsed = JSON.parse(raw) as Partial<FleetDatabaseSchema>;
+    return { ...parsed, dataMode: parsed.dataMode ?? 'DEMO' } as FleetDatabaseSchema;
+  } catch (err) {
+    throw new FleetStorageUnavailableError('Fleet database is not valid JSON', { cause: err });
   }
 }
 
-export function writeFleetDatabase(
+export async function writeFleetDatabase(
   nextState: Partial<FleetDatabaseSchema>
-): FleetDatabaseSchema {
-  const current = readFleetDatabase();
-  const merged: FleetDatabaseSchema = {
+): Promise<FleetDatabaseSchema> {
+  const current = await readFleetDatabase();
+  return persist({
     ...current,
     ...nextState,
+    dataMode: current.dataMode,
     lastUpdatedAt: new Date().toISOString(),
-  };
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    fs.writeFileSync(DB_FILE_PATH, JSON.stringify(merged, null, 2), 'utf-8');
-  } catch {
-    // Fallback for read-only serverless environments where /tmp is used
-  }
-  return merged;
+  });
 }
 
-export function resetFleetDatabase(): FleetDatabaseSchema {
-  const seed = createSeedDatabase();
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    fs.writeFileSync(DB_FILE_PATH, JSON.stringify(seed, null, 2), 'utf-8');
-  } catch {
-    // Ignore write error in read-only environment
+/** Restores the demo seed. Refused once real data is live, so a stray click cannot wipe it. */
+export async function resetFleetDatabase(): Promise<FleetDatabaseSchema> {
+  const current = await readFleetDatabase();
+  if (current.dataMode === 'LIVE') {
+    throw new LiveDataProtectedError('Live data is protected; demo reset is disabled.');
   }
-  return seed;
+  return persist(createSeedDatabase());
+}
+
+function resetVehicleOperationalState(v: Vehicle): Vehicle {
+  return {
+    ...v,
+    status: 'IDLE',
+    speedKmh: 0,
+    currentGForce: 1.0,
+    rssiDbm: -95,
+    currentDriverId: null,
+    coPassengerIds: [],
+    driverSelectionReason: null,
+    tripPurpose: null,
+    tripStartedAt: null,
+    headingDeg: 0,
+    ...garageSlotCoordinates(v.fleetNumber),
+  };
+}
+
+/** Thrown when a demo-only operation is attempted on a database already holding real data. */
+export class LiveDataProtectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'LiveDataProtectedError';
+  }
+}
+
+export interface ClearDemoResult {
+  db: FleetDatabaseSchema;
+  removedDemoEmployees: number;
+  keptDemoEmployeesBecauseNoRealOnes: boolean;
+}
+
+/**
+ * Switches to LIVE mode: keeps the vehicle master data, clears all sample history
+ * (reservations, incidents, ghost trips, geofence logs, tax logs, alerts) and puts every
+ * vehicle back in the garage. Demo employees are removed only if real ones exist.
+ */
+export async function clearDemoData(removeDemoEmployees: boolean): Promise<ClearDemoResult> {
+  const current = await readFleetDatabase();
+  if (current.dataMode === 'LIVE') {
+    throw new LiveDataProtectedError('Demo data was already cleared; live records are kept.');
+  }
+  const realEmployees = current.employees.filter((e) => !DEMO_EMPLOYEE_IDS.has(e.id));
+  const canRemoveDemo = removeDemoEmployees && realEmployees.length > 0;
+  const employees = canRemoveDemo ? realEmployees : current.employees;
+
+  const db = await persist({
+    ...current,
+    dataMode: 'LIVE',
+    lastUpdatedAt: new Date().toISOString(),
+    vehicles: current.vehicles.map(resetVehicleOperationalState),
+    employees: employees.map((e) => ({ ...e, violationCount: 0 })),
+    reservations: [],
+    incidents: [],
+    geofenceLogs: [],
+    ghostTrips: [],
+    taxLogs: [],
+    pushStream: [],
+  });
+
+  return {
+    db,
+    removedDemoEmployees: current.employees.length - employees.length,
+    keptDemoEmployeesBecauseNoRealOnes: removeDemoEmployees && !canRemoveDemo,
+  };
 }

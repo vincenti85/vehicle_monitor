@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDistanceFromOpelikaHq } from '@/utils/realDeviceSensors';
-import { readFleetDatabase, writeFleetDatabase } from '@/lib/fleetDatabase';
+import {
+  FleetStorageUnavailableError,
+  readFleetDatabase,
+  writeFleetDatabase,
+} from '@/lib/fleetDatabase';
 import { IncidentEvent } from '@/types/fleet';
 import { TelemetryPayloadSchema } from '@/lib/fleetSchemas';
 
@@ -14,7 +18,7 @@ export async function POST(req: NextRequest) {
       );
     }
     const body = parsed.data;
-    const db = readFleetDatabase();
+    const db = await readFleetDatabase();
     if (!db.vehicles.some((v) => v.id === body.vehicleId)) {
       return NextResponse.json(
         { accepted: false, error: `Unknown vehicleId: ${body.vehicleId}` },
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
         nextIncidents = [crashInc, ...db.incidents];
       }
 
-      writeFleetDatabase({
+      await writeFleetDatabase({
         vehicles: nextVehicles,
         incidents: nextIncidents,
       });
@@ -111,6 +115,13 @@ export async function POST(req: NextRequest) {
           : 'NORMAL_TELEMETRY_LOGGED',
     });
   } catch (err) {
+    if (err instanceof FleetStorageUnavailableError) {
+      console.error('Fleet storage unavailable:', err.cause ?? err);
+      return NextResponse.json(
+        { accepted: false, error: 'Fleet database is temporarily unavailable' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { accepted: false, error: err instanceof Error ? err.message : 'Invalid payload' },
       { status: 400 }

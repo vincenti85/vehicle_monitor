@@ -205,8 +205,9 @@ export const FleetStatePatchSchema = z
 
 export const FleetStateRequestSchema = z
   .object({
-    action: z.enum(['SYNC_STATE', 'RESET_SEED']).optional(),
+    action: z.enum(['SYNC_STATE', 'RESET_SEED', 'CLEAR_DEMO']).optional(),
     patch: FleetStatePatchSchema.optional(),
+    removeDemoEmployees: z.boolean().optional(),
   })
   .strict();
 

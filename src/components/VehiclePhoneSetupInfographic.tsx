@@ -153,7 +153,7 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
       style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
     >
       {/* Top Infographic Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-black/[0.08]">
         <div>
           <h2 className="text-base font-semibold text-[#0A0A0A] flex items-center gap-2">
             <Car className="w-4 h-4 text-[#0A72EF]" />
@@ -342,7 +342,7 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
           style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
         >
           <div className="space-y-3">
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.06] text-[#1D4ED8]">
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-black/[0.06] text-[#1D4ED8]">
               POINT {activeHotspot.stepNumber} ·{' '}
               {isEng ? activeHotspot.badgeEng : activeHotspot.badgeKor}
             </span>
@@ -386,7 +386,7 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
         className="rounded-xl bg-[#FFFFFF] p-4 space-y-3"
         style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
       >
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-white/[0.08]">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-black/[0.08]">
           <div className="flex items-center gap-2">
             <Smartphone className="w-4 h-4 text-[#0A72EF]" />
             <h3 className="text-xs font-semibold text-[#0A0A0A]">

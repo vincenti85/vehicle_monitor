@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FleetGuard 30 · 차량 QR 셋업 1페이지 가이드 (관리자·사용자)</title>
+  <style>
+    @page { size: letter; margin: 0.3in 0.42in; }
+    * { box-sizing: border-box; }
+    :root {
+      --ink: #0A0A0A; --muted: #52525B; --faint: #71717A; --line: #E4E4E7;
+      --soft: #F4F4F5; --blue: #1D4ED8; --blue-bg: #EFF6FF; --green: #047857;
+      --green-bg: #ECFDF5; --amber: #B45309; --amber-bg: #FFFBEB; --red: #DC2626; --red-bg: #FEF2F2;
+    }
+    html, body { margin: 0; padding: 0; background: #FFFFFF; color: var(--ink); }
+    body {
+      font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", -apple-system, "Segoe UI", sans-serif;
+      font-size: 8.8pt; line-height: 1.32; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .sheet { width: 7.66in; margin: 0 auto; }
+    @media screen { body { background: #F4F4F5; padding: 24px 0; } .sheet { background: #fff; padding: 0.4in 0.45in; width: 8.5in; box-shadow: 0 1px 3px rgba(0,0,0,.12); } }
+
+    header { display: flex; gap: 14px; align-items: stretch; border-bottom: 2px solid var(--ink); padding-bottom: 8px; }
+    .title { flex: 1; }
+    .eyebrow { font: 700 7.5pt/1 ui-monospace, Consolas, monospace; letter-spacing: .06em; color: var(--blue); }
+    h1 { font-size: 14.5pt; line-height: 1.15; margin: 3px 0 2px; letter-spacing: -0.01em; }
+    .sub { color: var(--muted); font-size: 8pt; margin: 0; }
+    .chips { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
+    .chip { font-size: 7.6pt; font-weight: 600; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); background: var(--soft); }
+    .qrbox { display: flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 6px 9px; }
+    .qr { width: 0.85in; height: 0.85in; display: block; }
+    .qrtext { font-size: 7.4pt; color: var(--muted); width: 1.45in; }
+    .qrtext strong { display: block; color: var(--ink); font-size: 8.6pt; margin-bottom: 2px; }
+    .url { font: 600 7.2pt/1.3 ui-monospace, Consolas, monospace; color: var(--blue); white-space: nowrap; margin-top: 2px; }
+
+    .flow { display: flex; align-items: center; gap: 4px; margin: 6px 0 6px; }
+    .flow .step { flex: 1; text-align: center; border: 1px solid var(--line); border-radius: 8px; padding: 3px 3px; background: #fff; }
+    .flow .step b { display: block; font-size: 8.4pt; }
+    .flow .step span { font-size: 7.2pt; color: var(--faint); }
+    .flow .step.key { border-color: var(--blue); background: var(--blue-bg); }
+    .flow .arrow { color: var(--faint); font-size: 9pt; }
+
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .col { border: 1px solid var(--line); border-radius: 10px; padding: 6px 9px 6px; }
+    .col-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-bottom: 4px; }
+    .col-head h2 { font-size: 11pt; margin: 0; }
+    .col-head .when { font-size: 7.6pt; font-weight: 600; padding: 1px 7px; border-radius: 999px; }
+    .admin .when { color: var(--blue); background: var(--blue-bg); }
+    .user .when { color: var(--green); background: var(--green-bg); }
+    .phase { font: 700 7.4pt/1 ui-monospace, Consolas, monospace; letter-spacing: .05em; color: var(--faint); margin: 5px 0 3px; }
+    .phase:first-of-type { margin-top: 2px; }
+    ol { list-style: none; margin: 0; padding: 0; counter-reset: s; }
+    ol.cont { counter-reset: s var(--start); }
+    li { counter-increment: s; position: relative; padding-left: 20px; margin-bottom: 2.5px; }
+    li::before {
+      content: counter(s); position: absolute; left: 0; top: 0.5px; width: 15px; height: 15px; border-radius: 50%;
+      font-size: 7.6pt; font-weight: 700; line-height: 15px; text-align: center; color: #fff;
+    }
+    .admin li::before { background: var(--blue); }
+    .user li::before { background: var(--green); }
+    li b { font-size: 8.8pt; }
+    .path { font-size: 8pt; color: var(--muted); display: block; }
+    .btn { display: inline-block; font-size: 7.8pt; font-weight: 600; padding: 0 4px; border-radius: 4px; border: 1px solid #D4D4D8; background: var(--soft); color: var(--ink); white-space: nowrap; }
+    code { font: 7.6pt ui-monospace, Consolas, monospace; background: var(--soft); padding: 0 3px; border-radius: 3px; }
+    .os { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 3px; }
+    .os div { font-size: 7.9pt; background: var(--soft); border-radius: 6px; padding: 3px 6px; color: var(--muted); }
+    .os div b { color: var(--ink); font-size: 8pt; }
+
+    .tag { display: flex; gap: 8px; align-items: center; margin-top: 3px; padding: 3px 6px; border: 1px dashed #A1A1AA; border-radius: 8px; background: #FAFAFA; }
+    .tag-card { flex: 0 0 auto; width: 1.45in; border: 1.5px solid var(--ink); border-radius: 6px; padding: 3px 4px; text-align: center; background: #fff; }
+    .tag-card .t1 { font: 700 5.6pt/1.2 ui-monospace, Consolas, monospace; color: #3E6AE1; }
+    .tag-card .t2 { font-size: 7.6pt; font-weight: 800; }
+    .tag-card .t3 { font-size: 6pt; color: var(--muted); }
+    .tag-card .tagqr { width: 0.5in; height: 0.5in; display: block; margin: 1px auto; }
+    .tag p { margin: 0; font-size: 7.5pt; color: var(--muted); }
+
+    .bottom { display: grid; grid-template-columns: 1.15fr 1fr; gap: 10px; margin-top: 7px; }
+    .box { border-radius: 10px; padding: 5px 9px; font-size: 7.9pt; }
+    .box h3 { font-size: 8.6pt; margin: 0 0 2px; }
+    .box ul { margin: 0; padding-left: 15px; }
+    .box li { padding-left: 0; margin-bottom: 1px; }
+    .box li::before { display: none; }
+    .warn { background: var(--red-bg); border: 1px solid #FECACA; }
+    .warn h3 { color: var(--red); }
+    .note { background: var(--amber-bg); border: 1px solid #FDE68A; }
+    .note h3 { color: var(--amber); }
+
+    footer { display: flex; justify-content: space-between; margin-top: 5px; padding-top: 4px; border-top: 1px solid var(--line); font-size: 7.4pt; color: var(--faint); }
+    footer .sign { display: flex; gap: 14px; }
+    footer .sign span { border-bottom: 1px solid #A1A1AA; min-width: 0.95in; display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <header>
+      <div class="title">
+        <div class="eyebrow">FLEETGUARD 30 · VEHICLE QR SETUP · ONE-PAGE GUIDE</div>
+        <h1>법인차량 QR 키고리 셋업 · 사용 가이드</h1>
+        <p class="sub">관리자 · 사용자용 · 4400 Northpark Dr, Opelika, AL 36801 · 법인차량 30대 (#01~#30)</p>
+        <div class="chips">
+          <span class="chip">관리자 최초 1회 · 약 30분</span>
+          <span class="chip">사용자 최초 1회 · 약 1분</span>
+          <span class="chip">매 운행 · 신청 → 반납</span>
+        </div>
+      </div>
+      <div class="qrbox">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 124" class="qr" role="img" aria-label="QR: https://vehiclemonitor.vercel.app/"><path transform="scale(4)" class="qrline" stroke="#0a0a0a" d="M1 1.5h7m2 0h2m2 0h3m2 0h1m1 0h1m1 0h7m-29 1h1m5 0h1m1 0h1m2 0h1m3 0h1m1 0h1m4 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h1m1 0h1m1 0h2m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h4m4 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m6 0h3m3 0h2m1 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m6 0h2m2 0h1m2 0h1m1 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h3m1 0h2m4 0h3m-21 1h1m5 0h1m1 0h3m3 0h2m1 0h1m1 0h1m1 0h2m2 0h3m-27 1h2m5 0h1m1 0h1m3 0h1m1 0h1m1 0h2m3 0h2m1 0h2m-28 1h1m1 0h1m1 0h1m1 0h4m1 0h2m2 0h2m4 0h1m1 0h2m-25 1h1m1 0h2m3 0h1m1 0h2m3 0h3m3 0h3m2 0h1m-23 1h2m1 0h3m1 0h1m1 0h3m1 0h1m2 0h1m2 0h2m4 0h1m-28 1h1m1 0h3m1 0h4m2 0h3m3 0h2m1 0h3m2 0h2m-29 1h1m1 0h1m3 0h1m2 0h2m2 0h3m1 0h2m1 0h1m1 0h1m1 0h3m-24 1h3m1 0h1m3 0h1m1 0h2m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m1 0h1m-27 1h3m1 0h1m1 0h2m1 0h2m1 0h4m1 0h1m5 0h2m-27 1h4m1 0h1m6 0h1m2 0h2m1 0h3m1 0h3m1 0h3m-29 1h3m2 0h2m3 0h7m1 0h3m1 0h1m1 0h2m2 0h1m-29 1h1m2 0h3m2 0h2m1 0h1m2 0h1m4 0h3m1 0h2m-25 1h1m1 0h2m1 0h3m3 0h2m2 0h3m1 0h6m1 0h3m-21 1h3m1 0h2m1 0h1m2 0h1m1 0h1m3 0h2m-26 1h7m2 0h1m1 0h1m1 0h4m2 0h2m1 0h1m1 0h3m-27 1h1m5 0h1m2 0h5m5 0h2m3 0h1m3 0h1m-29 1h1m1 0h3m1 0h1m6 0h1m1 0h2m2 0h7m1 0h2m-29 1h1m1 0h3m1 0h1m2 0h3m1 0h1m1 0h7m3 0h2m1 0h1m-29 1h1m1 0h3m1 0h1m2 0h1m1 0h2m1 0h2m3 0h9m-28 1h1m5 0h1m2 0h1m2 0h1m2 0h1m2 0h1m2 0h1m3 0h2m1 0h1m-29 1h7m1 0h1m5 0h1m2 0h3m3 0h4"/></svg>
+        <div class="qrtext">
+          <strong>앱 바로가기</strong>
+          휴대폰 카메라로 스캔하면 웹앱이 열립니다.
+          <div class="url">vehiclemonitor.vercel.app</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flow">
+      <div class="step"><b>① 배차 신청</b><span>사용자 · 앱</span></div><div class="arrow">→</div>
+      <div class="step"><b>② 승인</b><span>관리자 · 앱</span></div><div class="arrow">→</div>
+      <div class="step key"><b>③ 키 QR 스캔</b><span>차량 자동 선택</span></div><div class="arrow">→</div>
+      <div class="step"><b>④ 운행 시작</b><span>앱 버튼</span></div><div class="arrow">→</div>
+      <div class="step"><b>⑤ 반납</b><span>주차 · 키 반납</span></div><div class="arrow">→</div>
+      <div class="step"><b>⑥ 운행일지</b><span>자동 생성</span></div>
+    </div>
+
+    <div class="cols">
+      <!-- ============ ADMIN ============ -->
+      <section class="col admin">
+        <div class="col-head"><h2>관리자 (차량관리 · 총무)</h2><span class="when">최초 1회 셋업</span></div>
+
+        <div class="phase">A. 차량 · 운전자 등록</div>
+        <ol>
+          <li><b>관리자 콘솔 접속</b>
+            <span class="path">상단 <span class="btn">3. 관리자 설정 (PIN)</span> → 4자리 보안 PIN 입력. PIN은 별도 전달하며 이 문서·게시판에 적지 않습니다.</span></li>
+          <li><b>실제 차량 등록</b>
+            <span class="path"><span class="btn">🚗 차량 30대 · 계기판 실사</span> → <span class="btn">빈 CSV 양식</span>에 호차(1~30)·번호판·차종·계기판 km 입력 → <span class="btn">CSV 업로드 (미리보기)</span> → 오류 0건 확인 후 <span class="btn">전체 교체 적용</span>.</span></li>
+          <li><b>운전자 등록 · 실운영 전환</b>
+            <span class="path"><span class="btn">👥 임직원 자격 · 권한 통제</span>에서 CSV 업로드 → 차량 탭의 <span class="btn">데모 기록 정리 후 실운영 전환</span> 1회 실행 (샘플 기록 삭제, 상단에 <b>실운영</b> 표시).</span></li>
+        </ol>
+
+        <div class="phase">B. 차량별 QR 키고리 태그 제작</div>
+        <ol class="cont" style="--start: 3">
+          <li><b>태그 시트 인쇄</b>
+            <span class="path"><span class="btn">🚗 차량 30대</span> 탭 → <span class="btn">30대 무설정 QR 키고리 시트 인쇄</span> → 내려받은 HTML을 Letter로 인쇄 (4열 · 2장). <b>운영 주소(vehiclemonitor.vercel.app)에서 인쇄</b>해야 휴대폰에서 열립니다.</span></li>
+          <li><b>재단 · 코팅 · 부착</b>
+            <span class="path">카드를 오려 코팅하고, <b>호차 번호 · 번호판</b>이 맞는 차키 고리에 부착합니다.</span>
+            <div class="tag">
+              <div class="tag-card"><div class="t1">FLEETGUARD 30 · OPELIKA AL</div><div class="t2">#02호차 · AL 41B-2374</div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 124" class="tagqr" role="img" aria-label="QR: unit 02"><path transform="scale(4)" class="qrline" stroke="#0a0a0a" d="M1 1.5h7m1 0h2m2 0h1m1 0h5m1 0h1m1 0h7m-29 1h1m5 0h1m4 0h1m4 0h2m1 0h2m1 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m2 0h1m1 0h1m3 0h1m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h2m2 0h4m2 0h1m1 0h1m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h3m1 0h1m1 0h3m5 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m1 0h1m2 0h1m1 0h2m1 0h2m1 0h1m2 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h2m1 0h1m2 0h1m2 0h1m1 0h2m-21 1h1m3 0h1m1 0h3m1 0h1m1 0h1m2 0h3m2 0h6m2 0h1m-29 1h1m1 0h2m3 0h1m1 0h2m2 0h1m1 0h1m2 0h1m3 0h7m-28 1h1m1 0h2m1 0h2m2 0h1m1 0h1m1 0h2m1 0h2m2 0h2m5 0h1m-24 1h1m2 0h3m1 0h1m4 0h2m1 0h1m2 0h3m1 0h2m-29 1h1m1 0h1m3 0h3m1 0h2m2 0h2m1 0h1m1 0h1m1 0h1m5 0h1m-28 1h1m1 0h1m2 0h1m5 0h2m2 0h1m6 0h7m-29 1h5m1 0h2m1 0h1m1 0h2m1 0h3m3 0h1m2 0h1m1 0h2m1 0h1m-29 1h3m7 0h1m3 0h4m3 0h4m2 0h2m-26 1h2m1 0h2m2 0h2m2 0h1m1 0h2m2 0h2m5 0h1m-28 1h6m1 0h1m2 0h2m1 0h1m1 0h2m1 0h1m3 0h4m1 0h2m-26 1h2m1 0h1m1 0h1m2 0h1m3 0h2m5 0h1m3 0h1m1 0h1m-27 1h2m3 0h1m1 0h4m2 0h6m1 0h1m4 0h2m-29 1h3m2 0h4m2 0h2m1 0h1m1 0h2m2 0h6m2 0h1m-21 1h3m1 0h2m1 0h2m1 0h3m3 0h1m3 0h1m-29 1h7m1 0h1m4 0h1m1 0h1m1 0h4m1 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m3 0h3m2 0h6m3 0h1m2 0h1m-28 1h1m1 0h3m1 0h1m1 0h3m2 0h2m2 0h1m1 0h7m2 0h1m-29 1h1m1 0h3m1 0h1m4 0h2m1 0h5m2 0h1m6 0h1m-29 1h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h8m3 0h4m-29 1h1m5 0h1m3 0h1m1 0h3m2 0h1m2 0h1m2 0h3m1 0h2m-29 1h7m1 0h3m1 0h1m1 0h2m1 0h2m1 0h2m1 0h2m2 0h1"/></svg><div class="t3">스캔 → #02호차 자동 선택</div></div>
+              <p>태그 예시. QR(<code>…/?unit=02</code>)을 스캔하면 앱에서 <b>#02호차가 자동 선택</b>됩니다. 부착 전 휴대폰으로 1회 스캔해 호차를 확인하세요.</p>
+            </div></li>
+          <li><b>키보관함 배치</b>
+            <span class="path">호차 번호 순서대로 지정 슬롯에 보관하고 이 가이드를 게시합니다.</span></li>
+        </ol>
+
+        <div class="phase">C. 오픈 · 일상 운영</div>
+        <ol class="cont" style="--start: 6">
+          <li><b>사용자 안내</b>
+            <span class="path">이 페이지 우측 상단 QR(앱 주소)을 Teams <code>#법인차량-배차</code> 고정 메시지와 키보관함에 게시합니다.</span></li>
+          <li><b>승인 정책 결정</b>
+            <span class="path"><span class="btn">⚙️ 지오펜스 · 센서 · 승인 정책</span>에서 관리자 부재 시 자동승인 여부를 정합니다. 신청 목록의 <span class="btn">승인</span> / <span class="btn">반려</span>로 처리합니다.</span></li>
+          <li><b>주 1회 점검</b>
+            <span class="path">실제 계기판 km 입력 → <span class="btn">실사 대조</span> (+5km 이상 차이 시 미기록 운행 경고) → <span class="btn">CSV</span> 내보내기 후 SharePoint 보관.</span></li>
+        </ol>
+      </section>
+
+      <!-- ============ USER ============ -->
+      <section class="col user">
+        <div class="col-head"><h2>사용자 (운전 임직원)</h2><span class="when">최초 1회 + 매 운행</span></div>
+
+        <div class="phase">A. 휴대폰 최초 설정 (1분)</div>
+        <ol>
+          <li><b>앱 열기 · 홈 화면에 추가</b>
+            <span class="path">우측 상단 QR을 휴대폰 카메라로 스캔해 앱을 엽니다.</span>
+            <div class="os">
+              <div><b>iPhone</b> · Safari 하단 <b>[공유 ↑]</b> → <b>[홈 화면에 추가]</b></div>
+              <div><b>Android</b> · Chrome 우측 상단 <b>[⋮]</b> → <b>[홈 화면에 추가 / 앱 설치]</b></div>
+            </div></li>
+          <li><b>센서 권한 허용</b>
+            <span class="path"><span class="btn">휴대폰 센서 연결</span> → 위치(앱 사용 중) · 동작 및 방향 · 근처 기기(블루투스) <b>[허용]</b>. 충격 감지와 운행 기록에 사용됩니다.</span></li>
+          <li><b>본인 선택</b>
+            <span class="path"><b>운전자</b> 목록에서 본인 이름을 선택합니다. 목록에 없으면 관리자에게 등록을 요청하세요.</span></li>
+        </ol>
+
+        <div class="phase">B. 매 운행</div>
+        <ol class="cont" style="--start: 3">
+          <li><b>배차 신청</b>
+            <span class="path"><span class="btn">1. 차량 신청 · 반납</span> → <b>차량</b>(#호차) · 목적 · 시간 · 행선지 입력 → <span class="btn">신청</span>. 상태가 <b>승인대기</b> → <b>승인완료</b>로 바뀝니다.</span></li>
+          <li><b>키 수령 · 키고리 QR 스캔</b>
+            <span class="path">키보관함에서 키를 꺼내 <b>키고리 QR을 휴대폰 카메라로 스캔</b> → 앱이 열리고 해당 호차가 자동 선택됩니다(초록색 <b>차키 QR 인식</b> 표시). 운전자 이름이 본인인지 확인하세요.</span></li>
+          <li><b>운행 시작</b>
+            <span class="path">승인완료 건의 <span class="btn">운행 시작</span>을 누릅니다.<br />관리자 부재 · 긴급 시: 앱 상단 <span class="btn">⚡ 차키 QR 1초 출발 (#호차)</span> → 즉시 운행으로 기록되고 관리자에게 통보됩니다.</span></li>
+          <li><b>반납</b>
+            <span class="path">지정 주차면(Lot A/B)에 주차 → 키를 <b>원래 슬롯</b>에 반납 → 앱에서 <span class="btn">반납 완료</span>. 주행거리와 운행일지가 자동으로 기록됩니다.</span></li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="bottom">
+      <div class="box warn">
+        <h3>⚠ 이렇게 하면 자동으로 관리자에게 통보됩니다</h3>
+        <ul>
+          <li>신청·승인 또는 <b>1초 출발</b> 없이 시동 후 주행 → <b>미승인 운행</b> 경고</li>
+          <li>운행 중 블루투스·위치 권한 끄기 → 권한 미준수 기록, 주간 계기판 실사로 미기록 주행 적발</li>
+          <li>위반이 반복되면 관리자가 <b>배차 자격을 일시 정지</b>할 수 있습니다</li>
+        </ul>
+      </div>
+      <div class="box note">
+        <h3>ℹ QR 스캔 안내</h3>
+        <ul>
+          <li>QR 스캔은 <b>차량 선택만</b> 합니다. 운행은 <b>운행 시작</b> 또는 <b>1초 출발</b>을 눌러야 기록됩니다.</li>
+          <li>빨간색 <b>등록되지 않은 차키 QR</b> 표시 시 관리자에게 알리세요. iPhone은 Safari로 열려도 그대로 진행하면 됩니다.</li>
+          <li>문의: 차량관리 담당 · Teams <code>#법인차량-배차</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>
+      <span>FleetGuard 30 · 차량 QR 셋업 1페이지 가이드 · 2026-10 · 사내 배포용</span>
+      <span class="sign">게시일 <span></span> 담당 <span></span></span>
+    </footer>
+  </div>
+</body>
+</html>

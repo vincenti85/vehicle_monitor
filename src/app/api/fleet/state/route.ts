@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  FleetStorageUnavailableError,
+  LiveDataProtectedError,
+  clearDemoData,
+  getStorageBackendName,
   readFleetDatabase,
   resetFleetDatabase,
   writeFleetDatabase,
@@ -9,17 +13,38 @@ import { AdminPinNotConfiguredError, isAdminRequest } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
+function errorResponse(err: unknown) {
+  if (err instanceof FleetStorageUnavailableError) {
+    console.error('Fleet storage unavailable:', err.cause ?? err);
+    return NextResponse.json(
+      { ok: false, error: 'Fleet database is temporarily unavailable. Nothing was saved.' },
+      { status: 503 }
+    );
+  }
+  if (err instanceof LiveDataProtectedError) {
+    return NextResponse.json({ ok: false, error: err.message }, { status: 409 });
+  }
+  if (err instanceof AdminPinNotConfiguredError) {
+    return NextResponse.json({ ok: false, error: err.message }, { status: 503 });
+  }
+  return NextResponse.json(
+    { ok: false, error: err instanceof Error ? err.message : 'Request failed' },
+    { status: 400 }
+  );
+}
+
 // GET /api/fleet/state — Fetch complete persistent fleet state from backend DB
 export async function GET() {
-  const db = readFleetDatabase();
-  return NextResponse.json({
-    ok: true,
-    data: db,
-  });
+  try {
+    const db = await readFleetDatabase();
+    return NextResponse.json({ ok: true, storage: getStorageBackendName(), data: db });
+  } catch (err) {
+    return errorResponse(err);
+  }
 }
 
 // POST /api/fleet/state — Persist validated partial fleet state updates to backend DB.
-// RESET_SEED and policyConfig changes are admin-only (x-admin-pin header).
+// RESET_SEED, CLEAR_DEMO and policyConfig changes are admin-only (x-admin-pin header).
 export async function POST(req: NextRequest) {
   try {
     const parsed = FleetStateRequestSchema.safeParse(await req.json());
@@ -34,8 +59,9 @@ export async function POST(req: NextRequest) {
     const policyChanged =
       body.patch?.policyConfig !== undefined &&
       JSON.stringify(body.patch.policyConfig) !==
-        JSON.stringify(readFleetDatabase().policyConfig);
-    const needsAdmin = body.action === 'RESET_SEED' || policyChanged;
+        JSON.stringify((await readFleetDatabase()).policyConfig);
+    const needsAdmin =
+      body.action === 'RESET_SEED' || body.action === 'CLEAR_DEMO' || policyChanged;
 
     if (needsAdmin && !isAdminRequest(req)) {
       return NextResponse.json(
@@ -45,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.action === 'RESET_SEED') {
-      const resetDb = resetFleetDatabase();
+      const resetDb = await resetFleetDatabase();
       return NextResponse.json({
         ok: true,
         message: 'Backend database reset to Opelika AL initial seed state.',
@@ -53,19 +79,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const updatedDb = writeFleetDatabase(body.patch || {});
+    if (body.action === 'CLEAR_DEMO') {
+      const result = await clearDemoData(body.removeDemoEmployees ?? true);
+      return NextResponse.json({
+        ok: true,
+        message: 'Demo history cleared. The database is now in LIVE mode.',
+        removedDemoEmployees: result.removedDemoEmployees,
+        keptDemoEmployeesBecauseNoRealOnes: result.keptDemoEmployeesBecauseNoRealOnes,
+        data: result.db,
+      });
+    }
+
+    const updatedDb = await writeFleetDatabase(body.patch || {});
     return NextResponse.json({
       ok: true,
       lastUpdatedAt: updatedDb.lastUpdatedAt,
       data: updatedDb,
     });
   } catch (err) {
-    if (err instanceof AdminPinNotConfiguredError) {
-      return NextResponse.json({ ok: false, error: err.message }, { status: 503 });
-    }
-    return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Write failed' },
-      { status: 400 }
-    );
+    return errorResponse(err);
   }
 }

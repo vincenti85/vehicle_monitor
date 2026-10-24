@@ -62,14 +62,19 @@ flowchart LR
 
 ### Phase 1 — 웹 서버 배포 (소요 시간: 10분)
 
-JSON DB는 **서버 디스크에 파일로 남아야** 한다. 따라서 배포 대상은 다음 중 하나를 택한다.
+JSON DB 저장 위치는 실행 환경에 따라 자동으로 정해진다 ([`fleetStorage.ts`](file:///c:/dev/GPS/src/lib/fleetStorage.ts), `/api/health`의 `storage` 값으로 확인).
 
-| 선택지 | 적합한 경우 | 데이터 보존 |
+| 선택지 | 저장소 (`storage`) | 데이터 보존 |
 |---|---|---|
-| **A. 사내 Windows/Linux 서버 (권장)** | 본사 내 PC/서버 1대 확보 가능 | `data/fleet-db.json`이 디스크에 영구 보존. 백업은 OneDrive 동기화 폴더 밖에 두고 §5 절차로 복사 |
-| B. Vercel | 사내 서버가 없는 경우 | `/tmp` 사용 → **재배포·콜드스타트 시 시드로 초기화**. 반드시 매일 §5-1 CSV 내보내기 수행 (임시 운영용) |
+| **A. Vercel + Blob 스토어 (현재 운영)** | `VERCEL_BLOB` — 비공개(private) Blob `fleetguard30/fleet-db.json` | 영구 보존. 프로젝트에 Blob 스토어를 연결하면 `BLOB_READ_WRITE_TOKEN`이 자동 등록되어 사용됨 |
+| B. 사내 Windows/Linux 서버 | `LOCAL_FILE` — `data/fleet-db.json` | 디스크에 영구 보존. 백업은 OneDrive 동기화 폴더 밖에 두고 §5 절차로 복사 |
+| (주의) Vercel, Blob 미연결 | `EPHEMERAL_TMP` — `/tmp` | **인스턴스가 바뀔 때마다 데모 시드로 초기화**. 실데이터 입력 금지 |
 
-**A. 사내 서버 배포**
+DB를 읽을 수 없으면(네트워크·파일 손상) API는 503을 반환하고, 화면 상단에 **DB 불러오기 실패**가 표시되며 자동 저장이 멈춘다. 샘플 데이터가 실데이터를 덮어쓰지 않도록 하기 위한 동작이다.
+
+**실데이터 전환 절차 (최초 1회):** 관리자 콘솔 → `🚗 차량 30대` → `빈 CSV 양식`에 실제 차량 입력 → `CSV 업로드 (미리보기)` → 오류 0건 확인 → `전체 교체 적용` → 임직원 CSV 등록 → `데모 기록 정리 후 실운영 전환`. 전환 후(`dataMode: LIVE`)에는 모의 주행과 데모 초기화가 비활성화되고 서버도 `RESET_SEED`를 409로 거부한다.
+
+**B. 사내 서버 배포**
 
 ```powershell
 cd c:\dev\GPS
@@ -82,12 +87,15 @@ npm run start        # http://<서버IP>:3005
 - Windows 서비스로 상시 실행: `nssm install FleetGuard30 "C:\Program Files\nodejs\npm.cmd" "run start"` 또는 작업 스케줄러 "시스템 시작 시" 등록
 - 사내 HTTPS가 필요하면 IIS/Caddy 리버스 프록시 뒤에 두고 `https://fleet.<회사도메인>`으로 노출 (스마트폰 센서 API는 HTTPS에서만 동작)
 
-**B. Vercel 배포**
+**A. Vercel 배포 (Blob 스토어 연결)**
 
 ```powershell
 npx vercel --prod
 # Vercel 대시보드 → Settings → Environment Variables → FLEET_ADMIN_PIN 등록
+# Vercel 대시보드 → Storage → Create → Blob → 프로젝트(vehicle_monitor)에 연결 → 재배포
 ```
+
+연결 후 `https://vehiclemonitor.vercel.app/api/health`에서 `"storage": "VERCEL_BLOB"`인지 확인한다. 첫 접속 시 데모 시드가 Blob에 생성되며, 이후 위 실데이터 전환 절차를 진행한다.
 
 ### Phase 2 — Microsoft 365 운영 환경 준비 (소요 시간: 20분, 최초 1회)
 
