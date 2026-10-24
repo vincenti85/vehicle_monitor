@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FleetGuard 30 — 관리자용 차량·운전자 초기 사전 등록 및 운영 가이드 (인포그래픽 에디션)</title>
+  <style>
+    :root {
+      --bg-canvas: #000000;
+      --bg-card: #0A0A0A;
+      --bg-elevated: #111111;
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --accent-blue: #0A72EF;
+      --accent-green: #10B981;
+      --accent-amber: #FBBF24;
+      --accent-red: #E82127;
+      --border-hairline: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 36px 20px 80px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Pretendard", "Malgun Gothic", sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      line-height: 1.65;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, #0F131A 0%, #0A0A0A 100%);
+      border: 1px solid rgba(10, 114, 239, 0.45);
+      border-radius: 18px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-blue {
+      background: rgba(10, 114, 239, 0.2);
+      color: #60A5FA;
+      border: 1px solid rgba(10, 114, 239, 0.45);
+    }
+
+    .badge-green {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-amber {
+      background: rgba(251, 191, 36, 0.18);
+      color: #FBBF24;
+      border: 1px solid rgba(251, 191, 36, 0.4);
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-hairline);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 15px;
+      border-radius: 9px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-hairline);
+      text-decoration: none;
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: #0060DF;
+    }
+
+    .btn-green {
+      background: var(--accent-green);
+      border-color: var(--accent-green);
+      color: #FFFFFF;
+    }
+
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      padding: 26px 28px;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .section-title {
+      font-size: 19px;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-pill {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: rgba(10, 114, 239, 0.2);
+      color: #60A5FA;
+      border: 1px solid rgba(10, 114, 239, 0.4);
+    }
+
+    .infographic-frame {
+      background: #050505;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 18px;
+      margin: 16px 0 20px;
+      overflow-x: auto;
+    }
+
+    .infographic-caption {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid var(--border-hairline);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--bg-elevated);
+      color: #60A5FA;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #18181B;
+      color: #FBBF24;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 820px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sub-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .sub-box h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #FAFAFA;
+    }
+
+    .sub-box p, .sub-box ul {
+      margin: 0;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      padding-left: 18px;
+    }
+
+    @media print {
+      body { background: #FFFFFF; color: #111111; padding: 0; }
+      .hero, .section-card, .sub-box, .infographic-frame {
+        background: #FFFFFF !important;
+        color: #111111 !important;
+        border-color: #D1D5DB !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+      .toolbar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HERO -->
+    <header class="hero">
+      <div class="badge-row">
+        <span class="badge badge-blue">FLEETGUARD 30 · ADMIN INITIAL SETUP GUIDE (KOR)</span>
+        <span class="badge badge-green">4400 NORTHPARK DR, OPELIKA, AL 36801</span>
+        <span class="badge badge-amber">항목별 시각 인포그래픽 수록</span>
+      </div>
+      <h1>관리자용 차량 30대 · 주요 운전자 사전 등록 및 초기 세팅 가이드</h1>
+      <p>
+        본 문서는 시스템 오픈 전 관리자가 <strong>① 법인차량 30대 초기 데이터</strong>와 <strong>② 주요 운전자(임직원) 사전 명단</strong>을 수합하여
+        관리자 콘솔(보안 PIN)에 일괄 입력하고 운영하는 전 과정을 항목별 인포그래픽으로 정리한 공식 지침서입니다.
+      </p>
+
+      <div class="toolbar">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="/" class="btn btn-primary">← 관제 웹앱으로 돌아가기</a>
+          <a href="/admin-guide/Admin_Setup_Guide_ENG.html" class="btn btn-green">🇺🇸 English Admin Guide (ENG)</a>
+          <button type="button" class="btn" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn" onclick="downloadSampleVehicleCsv()">📥 차량 30대 CSV 샘플 양식</button>
+          <button type="button" class="btn" onclick="downloadSampleEmployeeCsv()">📥 주요 운전자 CSV 샘플 양식</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- =====================================================================
+         ITEM 01: 전체 초기 구축 마스터 로드맵 (인포그래픽 #1)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 01</span>
+          관리자 사전 준비 및 초기 세팅 4단계 마스터 로드맵
+        </h2>
+        <span class="badge badge-blue">전체 소요시간: 약 30분 (최초 1회)</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        차량 내 블랙박스나 OBD 단말기를 설치하지 않는 대신, 관리자가 최초 1회 <strong>차량 기본 정보(블루투스 MAC·계기판 거리)</strong>와
+        <strong>주요 운전자 명단</strong>을 CSV로 등록해 두면 이후 모든 배차·추적·세무일지가 100% 자동화됩니다.
+      </p>
+
+      <!-- INFOGRAPHIC 01 -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 220" class="w-full" style="width:100%;height:auto;display:block;">
+          <defs>
+            <linearGradient id="stepGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0A72EF" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="#10B981" stop-opacity="0.25" />
+            </linearGradient>
+          </defs>
+          <!-- Connecting Line -->
+          <line x1="120" y1="105" x2="880" y2="105" stroke="#0A72EF" stroke-width="3" stroke-dasharray="8 6" />
+
+          <!-- Step 1 Box -->
+          <g transform="translate(20, 30)">
+            <rect width="215" height="150" rx="14" fill="#0F141D" stroke="#0A72EF" stroke-width="1.8" />
+            <circle cx="36" cy="36" r="16" fill="#0A72EF" />
+            <text x="36" y="41" text-anchor="middle" fill="#FFF" font-size="13" font-weight="bold" font-family="monospace">01</text>
+            <text x="62" y="40" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">VEHICLE DATA</text>
+            <text x="20" y="74" fill="#FAFAFA" font-size="14" font-weight="bold">법인차량 30대 정보 조사</text>
+            <text x="20" y="98" fill="#A1A1AA" font-size="11.5">• 호차(#01~#30) 및 번호판</text>
+            <text x="20" y="116" fill="#A1A1AA" font-size="11.5">• 순정 블루투스 MAC 주소</text>
+            <text x="20" y="134" fill="#34D399" font-size="11.5">• 초기 계기판 주행거리(km)</text>
+          </g>
+
+          <!-- Step 2 Box -->
+          <g transform="translate(268, 30)">
+            <rect width="215" height="150" rx="14" fill="#0F141D" stroke="#10B981" stroke-width="1.8" />
+            <circle cx="36" cy="36" r="16" fill="#10B981" />
+            <text x="36" y="41" text-anchor="middle" fill="#000" font-size="13" font-weight="bold" font-family="monospace">02</text>
+            <text x="62" y="40" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">DRIVER ROSTER</text>
+            <text x="20" y="74" fill="#FAFAFA" font-size="14" font-weight="bold">주요 운전자 사전 수합</text>
+            <text x="20" y="98" fill="#A1A1AA" font-size="11.5">• 부서별 주요 운전자 명단</text>
+            <text x="20" y="116" fill="#A1A1AA" font-size="11.5">• 성명(한/영), 직급, 부서</text>
+            <text x="20" y="134" fill="#34D399" font-size="11.5">• 휴대폰 번호 · 배차권한(Y)</text>
+          </g>
+
+          <!-- Step 3 Box -->
+          <g transform="translate(516, 30)">
+            <rect width="215" height="150" rx="14" fill="#0F141D" stroke="#FBBF24" stroke-width="1.8" />
+            <circle cx="36" cy="36" r="16" fill="#FBBF24" />
+            <text x="36" y="41" text-anchor="middle" fill="#000" font-size="13" font-weight="bold" font-family="monospace">03</text>
+            <text x="62" y="40" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">CSV UPLOAD (PIN)</text>
+            <text x="20" y="74" fill="#FAFAFA" font-size="14" font-weight="bold">관리자 콘솔 일괄 입력</text>
+            <text x="20" y="98" fill="#A1A1AA" font-size="11.5">• 3. 관리자 설정 (PIN 인증)</text>
+            <text x="20" y="116" fill="#A1A1AA" font-size="11.5">• 차량 CSV 업로드 (30대)</text>
+            <text x="20" y="134" fill="#FBBF24" font-size="11.5">• 운전자 CSV 업로드 (일괄)</text>
+          </g>
+
+          <!-- Step 4 Box -->
+          <g transform="translate(764, 30)">
+            <rect width="215" height="150" rx="14" fill="#0F141D" stroke="#60A5FA" stroke-width="1.8" />
+            <circle cx="36" cy="36" r="16" fill="#60A5FA" />
+            <text x="36" y="41" text-anchor="middle" fill="#000" font-size="13" font-weight="bold" font-family="monospace">04</text>
+            <text x="62" y="40" fill="#93C5FD" font-size="11" font-weight="bold" font-family="monospace">QR & GO LIVE</text>
+            <text x="20" y="74" fill="#FAFAFA" font-size="14" font-weight="bold">키홀더 QR 부착 · 개시</text>
+            <text x="20" y="98" fill="#A1A1AA" font-size="11.5">• 자동차키 고리에 QR 부착</text>
+            <text x="20" y="116" fill="#A1A1AA" font-size="11.5">• 운전자 최초 1회 블루투스</text>
+            <text x="20" y="134" fill="#60A5FA" font-size="11.5">• 30대 실시간 관제 가동</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [인포그래픽 01] 관리자 초기 데이터 수합(차량 30대 + 주요 운전자) → CSV 일괄 업로드 → 현장 가동 4단계 파이프라인
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 02: 차량 30대 초기 정보 조사 및 입력 가이드 (인포그래픽 #2)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 02</span>
+          법인차량 30대 초기 정보 조사 및 등록 가이드 (7대 필수 항목)
+        </h2>
+        <span class="badge badge-green">차량 1대당 최초 1회 조사</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        관리자는 차량에 별도 기기를 장착할 필요 없이, 아래 인포그래픽에 표시된 <strong>차량 7대 고유 정보</strong>를 조사하여 엑셀(CSV) 시트에 기록하거나 관리자 화면에서 직접 입력합니다.
+      </p>
+
+      <!-- INFOGRAPHIC 02: Vehicle 7-Field Anatomy -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 310" style="width:100%;height:auto;display:block;">
+          <!-- Center Vehicle Silhouette -->
+          <g transform="translate(310, 95)">
+            <rect x="0" y="0" width="380" height="125" rx="34" fill="#141B26" stroke="#60A5FA" stroke-width="2" />
+            <rect x="65" y="14" width="240" height="97" rx="20" fill="#0B0F17" stroke="rgba(255,255,255,0.18)" />
+            <!-- Wheels -->
+            <rect x="52" y="-8" width="60" height="10" rx="4" fill="#71717A" />
+            <rect x="268" y="-8" width="60" height="10" rx="4" fill="#71717A" />
+            <rect x="52" y="123" width="60" height="10" rx="4" fill="#71717A" />
+            <rect x="268" y="123" width="60" height="10" rx="4" fill="#71717A" />
+            <!-- Headlights -->
+            <rect x="368" y="20" width="10" height="24" rx="4" fill="#60A5FA" />
+            <rect x="368" y="81" width="10" height="24" rx="4" fill="#60A5FA" />
+            <text x="190" y="58" text-anchor="middle" fill="#FAFAFA" font-size="14" font-weight="bold">법인차량 (#01 ~ #30호차)</text>
+            <text x="190" y="78" text-anchor="middle" fill="#60A5FA" font-size="11" font-family="monospace">AL 41A-2237 · Hyundai Santa Fe</text>
+          </g>
+
+          <!-- Callout 1: Fleet Number & Plate -->
+          <line x1="330" y1="115" x2="215" y2="55" stroke="#60A5FA" stroke-width="1.5" />
+          <circle cx="330" cy="115" r="5" fill="#60A5FA" />
+          <rect x="18" y="18" width="205" height="68" rx="10" fill="#0F141D" stroke="#60A5FA" />
+          <text x="30" y="40" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">① fleetNumber / ② plateNumber</text>
+          <text x="30" y="58" fill="#FAFAFA" font-size="12" font-weight="bold">호차 번호(1~30) & 번호판</text>
+          <text x="30" y="74" fill="#A1A1AA" font-size="11">예: 1, AL 41A-2237 (Lee County)</text>
+
+          <!-- Callout 2: Model Name -->
+          <line x1="315" y1="165" x2="215" y2="155" stroke="#34D399" stroke-width="1.5" />
+          <circle cx="315" cy="165" r="5" fill="#34D399" />
+          <rect x="18" y="115" width="205" height="68" rx="10" fill="#0F141D" stroke="#10B981" />
+          <text x="30" y="137" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">③ modelName (차종 모델명)</text>
+          <text x="30" y="155" fill="#FAFAFA" font-size="12" font-weight="bold">제조사 및 차종 명칭</text>
+          <text x="30" y="171" fill="#A1A1AA" font-size="11">예: 2025 Hyundai Tucson SEL</text>
+
+          <!-- Callout 3: Parking Zone -->
+          <line x1="345" y1="210" x2="215" y2="250" stroke="#A1A1AA" stroke-width="1.5" />
+          <circle cx="345" cy="210" r="5" fill="#FAFAFA" />
+          <rect x="18" y="212" width="205" height="68" rx="10" fill="#0F141D" stroke="rgba(255,255,255,0.25)" />
+          <text x="30" y="234" fill="#FAFAFA" font-size="11" font-weight="bold" font-family="monospace">⑦ parkingZone (지정 주차면)</text>
+          <text x="30" y="252" fill="#FAFAFA" font-size="12" font-weight="bold">본사 차고지 기본 주차구역</text>
+          <text x="30" y="268" fill="#A1A1AA" font-size="11">예: Northpark Lot A #01</text>
+
+          <!-- Callout 4: Factory Bluetooth MAC -->
+          <line x1="590" y1="130" x2="755" y2="55" stroke="#0A72EF" stroke-width="1.8" />
+          <circle cx="590" cy="130" r="6" fill="#0A72EF" />
+          <rect x="755" y="18" width="225" height="72" rx="10" fill="#0F141D" stroke="#0A72EF" />
+          <text x="768" y="40" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">④ btMacAddress (순정 블루투스)</text>
+          <text x="768" y="58" fill="#FAFAFA" font-size="12" font-weight="bold">차량 핸즈프리 고유 MAC 주소</text>
+          <text x="768" y="75" fill="#A1A1AA" font-size="11">센터페시아 [설정→블루투스 정보] 확인</text>
+
+          <!-- Callout 5: Keybox BLE UUID -->
+          <line x1="500" y1="160" x2="755" y2="150" stroke="#FBBF24" stroke-width="1.8" />
+          <circle cx="500" cy="160" r="6" fill="#FBBF24" />
+          <rect x="755" y="114" width="225" height="72" rx="10" fill="#0F141D" stroke="#FBBF24" />
+          <text x="768" y="136" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">⑤ bleBeaconUuid (키보관함 BLE)</text>
+          <text x="768" y="154" fill="#FAFAFA" font-size="12" font-weight="bold">자동차키 고리 BLE/QR 식별코드</text>
+          <text x="768" y="171" fill="#A1A1AA" font-size="11">예: FG30-KEYBOX-01 (자동 부여 가능)</text>
+
+          <!-- Callout 6: Initial Odometer -->
+          <line x1="635" y1="185" x2="755" y2="248" stroke="#10B981" stroke-width="1.8" />
+          <circle cx="635" cy="185" r="6" fill="#10B981" />
+          <rect x="755" y="210" width="225" height="72" rx="10" fill="#0F141D" stroke="#10B981" />
+          <text x="768" y="232" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">⑥ cumulativeGpsKm (초기 계기판)</text>
+          <text x="768" y="250" fill="#FAFAFA" font-size="12" font-weight="bold">등록 시점 실제 계기판 Odometer</text>
+          <text x="768" y="267" fill="#A1A1AA" font-size="11">예: 14280.5 (이후 GPS가 자동 적산)</text>
+        </svg>
+        <div class="infographic-caption">
+          [인포그래픽 02] 차량 1대당 관리자가 초기에 수집·입력하는 7대 핵심 데이터 위치도
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>CSV 컬럼명</th>
+            <th>항목명 (국문)</th>
+            <th>입력 예시</th>
+            <th>관리자 수집 방법 및 활용 목적</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>fleetNumber</code></td>
+            <td>호차 번호</td>
+            <td><code>1</code> ~ <code>30</code></td>
+            <td>사내 관리 번호 (#01호차 ~ #30호차). 기존 호차 번호와 동일하면 업로드 시 자동 덮어쓰기(Update)됩니다.</td>
+          </tr>
+          <tr>
+            <td><code>plateNumber</code></td>
+            <td>차량 번호판</td>
+            <td><code>AL 41A-2237</code></td>
+            <td>미국 앨라배마주 Lee County 법인 번호판. IRS 세무 운행일지(Sec. 274d)의 차량 식별자로 사용됩니다.</td>
+          </tr>
+          <tr>
+            <td><code>modelName</code></td>
+            <td>차종 명칭</td>
+            <td><code>Hyundai Santa Fe</code></td>
+            <td>임직원이 배차 신청 시 차종(SUV/세단/전기차)을 식별하기 위한 모델명입니다.</td>
+          </tr>
+          <tr>
+            <td><code>btMacAddress</code></td>
+            <td>순정 블루투스 MAC</td>
+            <td><code>A4:C1:38:90:01:AA</code></td>
+            <td>차량 시동 시 누구의 스마트폰이 연결되었는지 자동 식별하여 <strong>무단 반출 및 주 운전자</strong>를 판별합니다.</td>
+          </tr>
+          <tr>
+            <td><code>bleBeaconUuid</code></td>
+            <td>키보관함 식별 ID</td>
+            <td><code>FG30-KEYBOX-01</code></td>
+            <td>본사 총무팀 키보관함(3m) 접근 이력 및 키홀더 QR 스티커와 1:1로 매칭되는 고유 코드입니다.</td>
+          </tr>
+          <tr>
+            <td><code>cumulativeGpsKm</code></td>
+            <td>초기 계기판 주행거리</td>
+            <td><code>14280.5</code></td>
+            <td>초기 등록 시점의 실제 계기판(Odometer) 수치입니다. 이후 반납 시마다 GPS 주행거리가 자동 합산됩니다.</td>
+          </tr>
+          <tr>
+            <td><code>parkingZone</code></td>
+            <td>기본 주차구역</td>
+            <td><code>Northpark Lot A #01</code></td>
+            <td>4400 Northpark Dr 본사 주차장 내 지정 주차면 번호입니다.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 03: 주요 운전자(임직원) 사전 정보 수합 및 등록 (인포그래픽 #3)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 03</span>
+          주요 운전자(임직원) 사전 정보 수합 및 일괄 등록 가이드
+        </h2>
+        <span class="badge badge-green">개별 추가 & CSV 일괄 업로드 지원</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        관리자는 법인차량을 운행할 <strong>부서별 주요 운전자 5대 기본 정보</strong>를 사전에 취합하여 시스템에 등록합니다.
+        사전 등록된 운전자만 배차 신청 및 1초 QR 자율 반출이 가능하며, 미등록자나 배차 정지자(<code>dispatchAllowed = N</code>)는 자동 차단됩니다.
+      </p>
+
+      <!-- INFOGRAPHIC 03: Driver Pre-Collection Flow -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 230" style="width:100%;height:auto;display:block;">
+          <!-- Box 1: Pre-Collection Form -->
+          <g transform="translate(20, 25)">
+            <rect width="290" height="175" rx="14" fill="#0F141D" stroke="#10B981" stroke-width="1.8" />
+            <text x="20" y="34" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">STEP A · 부서별 사전 수합 항목 (5개)</text>
+            <text x="20" y="60" fill="#FAFAFA" font-size="14" font-weight="bold">주요 운전자 사전 조사표</text>
+            <text x="20" y="86" fill="#D4D4D8" font-size="12">1. 성명 (한/영): <tspan fill="#34D399" font-family="monospace">박성훈 대리 (Dave Park)</tspan></text>
+            <text x="20" y="108" fill="#D4D4D8" font-size="12">2. 직급 (Role): <tspan fill="#A1A1AA" font-family="monospace">대리 / Manager</tspan></text>
+            <text x="20" y="130" fill="#D4D4D8" font-size="12">3. 소속 부서: <tspan fill="#A1A1AA" font-family="monospace">품질보증팀 (QA)</tspan></text>
+            <text x="20" y="152" fill="#D4D4D8" font-size="12">4. 휴대폰 / 5. 배차허용: <tspan fill="#FBBF24" font-family="monospace">+1-334-555-0142 / Y</tspan></text>
+          </g>
+
+          <!-- Arrow 1 -->
+          <path d="M 320 112 L 365 112" stroke="#10B981" stroke-width="2.5" />
+          <polygon points="365,106 378,112 365,118" fill="#10B981" />
+
+          <!-- Box 2: Admin Console Registration -->
+          <g transform="translate(385, 25)">
+            <rect width="275" height="175" rx="14" fill="#0F141D" stroke="#0A72EF" stroke-width="1.8" />
+            <text x="20" y="34" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">STEP B · 관리자 콘솔 입력 (2가지 방식)</text>
+            <text x="20" y="60" fill="#FAFAFA" font-size="14" font-weight="bold">[임직원 자격 · 권한 통제] 탭</text>
+            <rect x="20" y="76" width="235" height="40" rx="8" fill="#141C2B" stroke="rgba(10,114,239,0.4)" />
+            <text x="32" y="100" fill="#93C5FD" font-size="12" font-weight="bold">방식 1: 📤 사용자 CSV 일괄 업로드</text>
+            <rect x="20" y="126" width="235" height="40" rx="8" fill="#141C2B" stroke="rgba(255,255,255,0.12)" />
+            <text x="32" y="150" fill="#D4D4D8" font-size="12" font-weight="bold">방식 2: ➕ 신규 임직원 1명씩 직접 추가</text>
+          </g>
+
+          <!-- Arrow 2 -->
+          <path d="M 670 112 L 715 112" stroke="#0A72EF" stroke-width="2.5" />
+          <polygon points="715,106 728,112 715,118" fill="#0A72EF" />
+
+          <!-- Box 3: Live Governance -->
+          <g transform="translate(735, 25)">
+            <rect width="245" height="175" rx="14" fill="#0F141D" stroke="#FBBF24" stroke-width="1.8" />
+            <text x="20" y="34" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">STEP C · 자동 권한 감시 · 통제</text>
+            <text x="20" y="60" fill="#FAFAFA" font-size="14" font-weight="bold">실시간 운전자 거버넌스</text>
+            <text x="20" y="88" fill="#A1A1AA" font-size="11.5">• 등록 즉시 모바일 앱 명단에 표시</text>
+            <text x="20" y="110" fill="#A1A1AA" font-size="11.5">• 한/영 전환 시 영문명 자동 표기</text>
+            <text x="20" y="132" fill="#34D399" font-size="11.5">• GPS/BT 권한 하트비트 자동 감시</text>
+            <text x="20" y="154" fill="#FF8080" font-size="11.5">• 위반 시 원클릭 [배차 정지] 가능</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [인포그래픽 03] 주요 운전자 사전 명단 수합 → 관리자 콘솔 등록 → 실시간 권한 하트비트 감시 흐름도
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="sub-box">
+          <h4>💡 국·영문(KOR/ENG) 동시 표기를 위한 성명 입력 팁</h4>
+          <p>
+            운전자 성명을 <code>박성훈 대리 (Dave Park)</code>처럼 <strong>한글 성명 + 괄호 안 영문 성명</strong> 형태로 입력해 두면,
+            상단 메뉴에서 <code>KOR</code> 선택 시 한글로, <code>ENG</code> 선택 시 자동으로 <code>Dave Park</code>으로 변환되어 표시됩니다.
+          </p>
+        </div>
+        <div class="sub-box">
+          <h4>🚫 배차 허용 여부 (<code>dispatchAllowed</code>) 활용법</h4>
+          <p>
+            사전 명단에는 포함하되 면허 확인 전이거나 교육 미이수자인 경우 CSV의 <code>dispatchAllowed</code> 값을 <code>N</code>으로 입력하면,
+            명단에는 등록되지만 차량 배차 신청은 잠금(차단) 상태로 시작됩니다.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 04: 관리자 콘솔 보안 PIN 접속 및 CSV 업로드 화면 구조 (인포그래픽 #4)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 04</span>
+          관리자 콘솔(보안 PIN) 접속 및 CSV 일괄 업로드 절차
+        </h2>
+        <span class="badge badge-amber">보안 등급: Fleet Admin 전용</span>
+      </div>
+
+      <!-- INFOGRAPHIC 04: Admin Console UI Map -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 240" style="width:100%;height:auto;display:block;">
+          <!-- Step 1: Top Header -->
+          <rect x="20" y="20" width="960" height="46" rx="10" fill="#111111" stroke="rgba(255,255,255,0.15)" />
+          <text x="40" y="48" fill="#FAFAFA" font-size="13" font-weight="bold">FLEETGUARD 30</text>
+          <rect x="260" y="28" width="130" height="30" rx="6" fill="#191E2A" />
+          <text x="325" y="47" text-anchor="middle" fill="#A1A1AA" font-size="11">1. 차량 신청 · 반납</text>
+          <rect x="400" y="28" width="130" height="30" rx="6" fill="#191E2A" />
+          <text x="465" y="47" text-anchor="middle" fill="#A1A1AA" font-size="11">2. 30대 실시간 관제</text>
+          <rect x="540" y="28" width="150" height="30" rx="6" fill="#FAFAFA" />
+          <text x="615" y="47" text-anchor="middle" fill="#000000" font-size="11" font-weight="bold">🔒 3. 관리자 설정 (PIN)</text>
+          <rect x="850" y="28" width="110" height="30" rx="6" fill="#0A72EF" />
+          <text x="905" y="47" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="bold">🌐 KOR | ENG</text>
+
+          <!-- Down Arrow from Tab 3 -->
+          <line x1="615" y1="66" x2="615" y2="95" stroke="#FBBF24" stroke-width="2" />
+
+          <!-- PIN Modal & Admin Sub-Tabs -->
+          <g transform="translate(20, 95)">
+            <rect width="280" height="125" rx="12" fill="#0F141D" stroke="#E82127" stroke-width="1.6" />
+            <text x="20" y="28" fill="#FF8080" font-size="11" font-weight="bold" font-family="monospace">① 4자리 보안 PIN 입력</text>
+            <text x="20" y="52" fill="#FAFAFA" font-size="13" font-weight="bold">관리자 전용 비공개 PIN 인증</text>
+            <rect x="20" y="66" width="160" height="36" rx="8" fill="#050505" stroke="rgba(255,255,255,0.2)" />
+            <text x="100" y="90" text-anchor="middle" fill="#FBBF24" font-size="16" font-family="monospace" letter-spacing="8">••••</text>
+          </g>
+
+          <g transform="translate(325, 95)">
+            <rect width="315" height="125" rx="12" fill="#0F141D" stroke="#0A72EF" stroke-width="1.6" />
+            <text x="20" y="28" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">② 탭 1: 🚗 차량 30대 · 계기판 실사</text>
+            <text x="20" y="52" fill="#FAFAFA" font-size="13" font-weight="bold">차량 30대 CSV 양식 다운로드 & 업로드</text>
+            <text x="20" y="76" fill="#A1A1AA" font-size="11.5">• [차량 CSV 양식 다운로드] 클릭 후 엑셀 작성</text>
+            <text x="20" y="96" fill="#34D399" font-size="11.5">• [차량 CSV 업로드]로 30대 일괄 등록/수정</text>
+          </g>
+
+          <g transform="translate(665, 95)">
+            <rect width="315" height="125" rx="12" fill="#0F141D" stroke="#10B981" stroke-width="1.6" />
+            <text x="20" y="28" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">③ 탭 2: 👥 임직원 자격 · 권한 통제</text>
+            <text x="20" y="52" fill="#FAFAFA" font-size="13" font-weight="bold">주요 운전자 CSV 업로드 & 개별 등록</text>
+            <text x="20" y="76" fill="#A1A1AA" font-size="11.5">• [사용자 CSV 양식 다운로드] 후 명단 입력</text>
+            <text x="20" y="96" fill="#34D399" font-size="11.5">• [사용자 CSV 업로드] 또는 우측 개별 추가</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [인포그래픽 04] 상단 [3. 관리자 설정 (PIN)] 진입 및 차량·운전자 CSV 일괄 업로드 콘솔 구조도
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 05: 초기 등록 후 정기 계기판 실사 & 유령 주행 감사 (인포그래픽 #5)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 05</span>
+          운영 개시 후 주간 점검 — 계기판 실사 대조 및 유령 주행(Ghost Trip) 감사
+        </h2>
+        <span class="badge badge-blue">주 1회 정기 점검 권장</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        임직원이 스마트폰 블루투스나 GPS를 고의로 끄고 차량을 몰래 운행하더라도, 관리자가 주 1회 <strong>실제 차량 계기판(Odometer) 숫자</strong>를 입력해
+        <strong>[실사 대조]</strong>를 누르면 누락된 주행거리(<code>+5km 이상</code>)와 용의자를 자동으로 적발합니다.
+      </p>
+
+      <!-- INFOGRAPHIC 05: Odometer Audit & Ghost Trip Correlation -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 210" style="width:100%;height:auto;display:block;">
+          <g transform="translate(20, 25)">
+            <rect width="290" height="160" rx="14" fill="#0F141D" stroke="#60A5FA" stroke-width="1.6" />
+            <text x="20" y="32" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">01 · ODOMETER CHECK</text>
+            <text x="20" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">실제 계기판 주행거리 입력</text>
+            <text x="20" y="84" fill="#A1A1AA" font-size="12">• 앱 GPS 누적 기록: <tspan fill="#FAFAFA" font-family="monospace">18,905 km</tspan></text>
+            <text x="20" y="106" fill="#A1A1AA" font-size="12">• 실제 계기판 검침: <tspan fill="#FBBF24" font-family="monospace">18,943 km</tspan></text>
+            <text x="20" y="132" fill="#FF8080" font-size="12" font-weight="bold">→ 미기록 공백 주행 +38 km 발견!</text>
+          </g>
+
+          <path d="M 320 105 L 355 105" stroke="#FBBF24" stroke-width="2.5" />
+          <polygon points="355,99 368,105 355,111" fill="#FBBF24" />
+
+          <g transform="translate(375, 25)">
+            <rect width="290" height="160" rx="14" fill="#0F141D" stroke="#FBBF24" stroke-width="1.6" />
+            <text x="20" y="32" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">02 · 3-LAYER CORRELATION</text>
+            <text x="20" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">3중 교차 분석 엔진 가동</text>
+            <text x="20" y="84" fill="#A1A1AA" font-size="12">① 공백 시간대 150m 차고지 출입자</text>
+            <text x="20" y="106" fill="#A1A1AA" font-size="12">② 총무팀 3m 키보관함 BLE 접근 기록</text>
+            <text x="20" y="128" fill="#FBBF24" font-size="12">③ 차고지 내 블루투스/GPS OFF 하트비트</text>
+          </g>
+
+          <path d="M 675 105 L 710 105" stroke="#E82127" stroke-width="2.5" />
+          <polygon points="710,99 723,105 710,111" fill="#E82127" />
+
+          <g transform="translate(730, 25)">
+            <rect width="250" height="160" rx="14" fill="#0F141D" stroke="#E82127" stroke-width="1.6" />
+            <text x="20" y="32" fill="#FF8080" font-size="11" font-weight="bold" font-family="monospace">03 · SUSPECT & ACTION</text>
+            <text x="20" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">유령 주행 용의자 특정 · 처분</text>
+            <text x="20" y="84" fill="#FAFAFA" font-size="12">• 유력 용의자(일치율 91%) 특정</text>
+            <text x="20" y="106" fill="#A1A1AA" font-size="12">• 원클릭 [경고 푸시 발송]</text>
+            <text x="20" y="128" fill="#FF8080" font-size="12" font-weight="bold">• 원클릭 [배차 자격 일시 정지]</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [인포그래픽 05] 주간 계기판 실사 대조(+5km 이상 오차)를 통한 유령 주행(Ghost Trip) 자동 색출 프로세스
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 06: Microsoft 365 기반 기록 보관 · 공유 · 결재 운영 절차 (외부 DB 미연동)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 06</span>
+          Microsoft 365(SharePoint · OneDrive Excel · Teams) 기반 기록 보관 및 월간 운영 절차
+        </h2>
+        <span class="badge badge-amber">외부 DB(Supabase) 미연동 · 회사 M365 계정으로 운영</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        웹앱은 <strong>"오늘 누가 어떤 차를 타고 있는가"</strong>를 다루는 실시간 운영 장부이고, Microsoft 365는 <strong>"지난달 운행기록이 어디 있는가"</strong>를 답하는 보관 장부입니다.
+        관리자는 주 1회 관리자 콘솔의 <strong>CSV 내보내기</strong>로 운행일지·배차대장을 받아 SharePoint에 올리고, 월 1회 Excel 마스터에 병합합니다. 별도 서버 DB 계약이나 Azure 앱 등록은 필요 없습니다.
+      </p>
+
+      <!-- INFOGRAPHIC 06: Web App -> SharePoint -> Excel -> Teams pipeline -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 210" style="width:100%;height:auto;display:block;">
+          <g transform="translate(20, 25)">
+            <rect width="220" height="160" rx="14" fill="#0F141D" stroke="#60A5FA" stroke-width="1.6" />
+            <text x="18" y="32" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">01 · WEB APP (주 1회)</text>
+            <text x="18" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">관리자 콘솔 CSV 내보내기</text>
+            <text x="18" y="84" fill="#A1A1AA" font-size="12">• 운행일지 (세무 운행기록부)</text>
+            <text x="18" y="106" fill="#A1A1AA" font-size="12">• 배차대장 (신청~반납)</text>
+            <text x="18" y="128" fill="#A1A1AA" font-size="12">• 사고대장 · 계기판 실사</text>
+          </g>
+
+          <path d="M 250 105 L 282 105" stroke="#FBBF24" stroke-width="2.5" />
+          <polygon points="282,99 295,105 282,111" fill="#FBBF24" />
+
+          <g transform="translate(300, 25)">
+            <rect width="220" height="160" rx="14" fill="#0F141D" stroke="#FBBF24" stroke-width="1.6" />
+            <text x="18" y="32" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">02 · SHAREPOINT</text>
+            <text x="18" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">문서 라이브러리 보관</text>
+            <text x="18" y="84" fill="#A1A1AA" font-size="12" font-family="monospace">차량운행기록/YYYY/YYYY-MM/</text>
+            <text x="18" y="106" fill="#A1A1AA" font-size="12">• 버전 관리 ON · 외부 공유 차단</text>
+            <text x="18" y="128" fill="#A1A1AA" font-size="12">• 차량관리자 편집 / 임직원 읽기</text>
+          </g>
+
+          <path d="M 530 105 L 562 105" stroke="#34D399" stroke-width="2.5" />
+          <polygon points="562,99 575,105 562,111" fill="#34D399" />
+
+          <g transform="translate(580, 25)">
+            <rect width="190" height="160" rx="14" fill="#0F141D" stroke="#34D399" stroke-width="1.6" />
+            <text x="18" y="32" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">03 · EXCEL (월 1회)</text>
+            <text x="18" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">마스터 통합 · 피벗</text>
+            <text x="18" y="84" fill="#A1A1AA" font-size="12">• 운행일지 / 배차대장</text>
+            <text x="18" y="106" fill="#A1A1AA" font-size="12">• 사고대장 / 계기판실사</text>
+            <text x="18" y="128" fill="#A1A1AA" font-size="12">• 부서별 km · 회계팀 공유</text>
+          </g>
+
+          <path d="M 780 105 L 812 105" stroke="#E82127" stroke-width="2.5" />
+          <polygon points="812,99 825,105 812,111" fill="#E82127" />
+
+          <g transform="translate(830, 25)">
+            <rect width="150" height="160" rx="14" fill="#0F141D" stroke="#E82127" stroke-width="1.6" />
+            <text x="16" y="32" fill="#FF8080" font-size="11" font-weight="bold" font-family="monospace">04 · TEAMS</text>
+            <text x="16" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">알림 · 결재</text>
+            <text x="16" y="84" fill="#A1A1AA" font-size="12">• #법인차량-배차</text>
+            <text x="16" y="106" fill="#A1A1AA" font-size="12">• 미반납 일일 확인</text>
+            <text x="16" y="128" fill="#FF8080" font-size="12">• 사고 처분 승인</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [인포그래픽 06] 웹앱 CSV 내보내기 → SharePoint 보관 → Excel 월간 통합 → Teams 알림·결재 4단계 M365 운영 파이프라인
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>주기</th>
+            <th>관리자 작업</th>
+            <th>Microsoft 365 산출물 위치</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>매일 퇴근 전</td>
+            <td>앱 상단 KPI(미반납 N대) 확인 후 Teams 채널에 캡처 게시</td>
+            <td>Teams <code>#법인차량-배차</code></td>
+          </tr>
+          <tr>
+            <td>주 1회 (월요일)</td>
+            <td>① 계기판 실사 → <strong>[실사 대조]</strong> ② 관리자 콘솔 <strong>CSV 내보내기</strong> ③ 업로드</td>
+            <td>SharePoint <code>차량운행기록/YYYY-MM/운행일지_YYYY-MM-DD.csv</code></td>
+          </tr>
+          <tr>
+            <td>월 1회 (1영업일)</td>
+            <td>주간 CSV를 Excel 마스터에 병합(붙여넣기 또는 Power Automate) → 부서별 피벗 → 회계팀 공유</td>
+            <td>OneDrive <code>FleetGuard30_운행일지_마스터.xlsx</code></td>
+          </tr>
+          <tr>
+            <td>분기 1회</td>
+            <td>사고대장·유령주행 적발 건 검토, 배차 정지자 명단 갱신 (Teams 결재 스레드)</td>
+            <td>Excel <code>사고대장</code> 시트</td>
+          </tr>
+          <tr>
+            <td>연 1회</td>
+            <td>전년도 운행일지 PDF 변환 → 보존 레이블(7년) 적용</td>
+            <td>SharePoint <code>YYYY/연간_운행기록부.pdf</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-2" style="margin-top:14px;">
+        <div style="background:#0F141D;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;">
+          <div style="font-size:12px;font-weight:bold;color:#60A5FA;font-family:monospace;margin-bottom:8px;">M365 최초 1회 준비 (20분)</div>
+          <ol style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-secondary);line-height:1.7;">
+            <li>SharePoint 사이트 <code>FleetGuard30</code> · 라이브러리 <code>차량운행기록</code> 생성</li>
+            <li>권한: 차량관리자 <strong>편집</strong> / 임직원 <strong>읽기</strong> / 외부 공유 <strong>차단</strong></li>
+            <li>Teams 채널 <code>#법인차량-배차</code> 생성 (배포 URL 고정 메시지)</li>
+            <li>OneDrive에 <code>FleetGuard30_운행일지_마스터.xlsx</code> (시트 4개) 생성</li>
+            <li>(선택) Power Automate: CSV 도착 → Excel 행 추가 → Teams 게시</li>
+          </ol>
+        </div>
+        <div style="background:#0F141D;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;">
+          <div style="font-size:12px;font-weight:bold;color:#FBBF24;font-family:monospace;margin-bottom:8px;">JSON DB 백업 · 보안 수칙</div>
+          <ul style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-secondary);line-height:1.7;">
+            <li>서버의 <code>data/fleet-db.json</code>을 주 1회 복사 → SharePoint <code>백업/</code> 업로드 (OneDrive 동기화 폴더에 직접 두지 않음)</li>
+            <li>관리자 PIN은 서버 환경변수 <code>FLEET_ADMIN_PIN</code>에만 보관, Teams 공개 채널·문서에 기록 금지</li>
+            <li><strong>DB 초기화</strong>는 PIN 인증 후에만 가능 (미인증 API 호출은 401 거부)</li>
+            <li>운행일지 CSV에는 휴대폰 번호를 포함하지 않음 (임직원 CSV는 <code>마스터/</code> 폴더, 관리자만 접근)</li>
+            <li>백업·운행기록 보존 기간 7년</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function downloadSampleVehicleCsv() {
+      const headers = ['fleetNumber','plateNumber','modelName','btMacAddress','bleBeaconUuid','cumulativeGpsKm','parkingZone'];
+      const sample = [
+        ['1','AL 41A-2237','Hyundai Santa Fe','A4:C1:38:90:01:AA','FG30-KEYBOX-01','14280.5','Northpark Lot A #01'],
+        ['2','AL 41A-5104','Kia Sorento','A4:C1:38:90:02:BB','FG30-KEYBOX-02','21840.2','Northpark Lot A #02'],
+        ['3','AL 41A-9012','Hyundai Tucson','A4:C1:38:90:03:CC','FG30-KEYBOX-03','9842.0','Northpark Lot A #03']
+      ];
+      const csv = '\uFEFF' + [headers.join(','), ...sample.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'FleetGuard30_차량30대_초기등록_양식_Opelika_AL.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadSampleEmployeeCsv() {
+      const headers = ['name','role','department','phone','dispatchAllowed'];
+      const sample = [
+        ['박성훈 대리 (Dave Park)','대리','품질보증팀 (Quality Assurance)','+1-334-555-0142','Y'],
+        ['김민수 과장 (Minsoo Kim)','과장','생산기술팀 (Production Eng.)','+1-334-555-0188','Y'],
+        ['최현우 사원 (Chris Choi)','사원','구매물류팀 (Logistics & Purchasing)','+1-334-555-0194','Y'],
+        ['이정우 사원 (Justin Lee)','사원','북미영업팀 (North America Sales)','+1-334-555-0163','Y']
+      ];
+      const csv = '\uFEFF' + [headers.join(','), ...sample.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'FleetGuard30_주요운전자_사전등록_양식_Opelika_AL.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

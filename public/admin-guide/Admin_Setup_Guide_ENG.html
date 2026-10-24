@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FleetGuard 30 — Admin Guide: Initial Vehicle &amp; Driver Pre-Registration and Operations (Infographic Edition)</title>
+  <style>
+    :root {
+      --bg-canvas: #000000;
+      --bg-card: #0A0A0A;
+      --bg-elevated: #111111;
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1AA;
+      --text-muted: #71717A;
+      --accent-blue: #0A72EF;
+      --accent-green: #10B981;
+      --accent-amber: #FBBF24;
+      --accent-red: #E82127;
+      --border-hairline: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 36px 20px 80px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Pretendard", "Malgun Gothic", sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      line-height: 1.65;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, #0F131A 0%, #0A0A0A 100%);
+      border: 1px solid rgba(10, 114, 239, 0.45);
+      border-radius: 18px;
+      padding: 28px 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-blue {
+      background: rgba(10, 114, 239, 0.2);
+      color: #60A5FA;
+      border: 1px solid rgba(10, 114, 239, 0.45);
+    }
+
+    .badge-green {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-amber {
+      background: rgba(251, 191, 36, 0.18);
+      color: #FBBF24;
+      border: 1px solid rgba(251, 191, 36, 0.4);
+    }
+
+    h1 {
+      font-size: 26px;
+      margin: 0 0 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-hairline);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 15px;
+      border-radius: 9px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border-hairline);
+      text-decoration: none;
+      color: var(--text-primary);
+      background: var(--bg-elevated);
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: #0060DF;
+    }
+
+    .btn-green {
+      background: var(--accent-green);
+      border-color: var(--accent-green);
+      color: #FFFFFF;
+    }
+
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-hairline);
+      border-radius: 16px;
+      padding: 26px 28px;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .section-title {
+      font-size: 19px;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-pill {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: rgba(10, 114, 239, 0.2);
+      color: #60A5FA;
+      border: 1px solid rgba(10, 114, 239, 0.4);
+    }
+
+    .infographic-frame {
+      background: #050505;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 18px;
+      margin: 16px 0 20px;
+      overflow-x: auto;
+    }
+
+    .infographic-caption {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid var(--border-hairline);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--bg-elevated);
+      color: #60A5FA;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #18181B;
+      color: #FBBF24;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 820px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sub-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .sub-box h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #FAFAFA;
+    }
+
+    .sub-box p, .sub-box ul {
+      margin: 0;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      padding-left: 18px;
+    }
+
+    @media print {
+      body { background: #FFFFFF; color: #111111; padding: 0; }
+      .hero, .section-card, .sub-box, .infographic-frame {
+        background: #FFFFFF !important;
+        color: #111111 !important;
+        border-color: #D1D5DB !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+      }
+      .toolbar { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HERO -->
+    <header class="hero">
+      <div class="badge-row">
+        <span class="badge badge-blue">FLEETGUARD 30 · ADMIN INITIAL SETUP GUIDE (ENG)</span>
+        <span class="badge badge-green">4400 NORTHPARK DR, OPELIKA, AL 36801</span>
+        <span class="badge badge-amber">Visual Infographic for Every Item</span>
+      </div>
+      <h1>Admin Guide: Pre-Registering 30 Vehicles &amp; Key Drivers and Initial Setup</h1>
+      <p>
+        This official guide uses item-by-item infographics to walk administrators through the entire process before system launch: collecting
+        <strong>① initial data for all 30 company vehicles</strong> and <strong>② the pre-approved roster of key drivers (employees)</strong>,
+        then bulk-entering and managing them in the Admin Console (security PIN).
+      </p>
+
+      <div class="toolbar">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="/" class="btn btn-primary">← Back to Fleet Web App</a>
+          <a href="/admin-guide/Admin_Setup_Guide_KOR.html" class="btn btn-green">🇰🇷 Korean Guide (KOR)</a>
+          <button type="button" class="btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn" onclick="downloadSampleVehicleCsv()">📥 30-Vehicle CSV Sample Template</button>
+          <button type="button" class="btn" onclick="downloadSampleEmployeeCsv()">📥 Key Driver CSV Sample Template</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- =====================================================================
+         ITEM 01: Overall initial setup master roadmap (Infographic #1)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 01</span>
+          4-Step Master Roadmap for Admin Preparation &amp; Initial Setup
+        </h2>
+        <span class="badge badge-blue">Total time: approx. 30 min (one-time)</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        Instead of installing dashcams or OBD devices in the vehicles, the admin registers the <strong>basic vehicle data (Bluetooth MAC · odometer reading)</strong> and the
+        <strong>key driver roster</strong> via CSV just once. From then on, every dispatch, tracking event, and mileage logbook entry is 100% automated.
+      </p>
+
+      <!-- INFOGRAPHIC 01 -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 220" class="w-full" style="width:100%;height:auto;display:block;">
+          <defs>
+            <linearGradient id="stepGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0A72EF" stop-opacity="0.25" />
+              <stop offset="100%" stop-color="#10B981" stop-opacity="0.25" />
+            </linearGradient>
+          </defs>
+          <!-- Connecting Line -->
+          <line x1="120" y1="105" x2="880" y2="105" stroke="#0A72EF" stroke-width="3" stroke-dasharray="8 6" />
+
+          <!-- Step 1 Box -->
+          <g transform="translate(20, 30)">
+            <rect width="215" height="150" rx="14" fill="#0F141D" stroke="#0A72EF" stroke-width="1.8" />
+            <circle cx="36" cy="36" r="16" fill="#0A72EF" />
+            <text x="36" y="41" text-anchor="middle" fill="#FFF" font-size="13" font-weight="bold" font-family="monospace">01</text>
+            <text x="62" y="40" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">VEHICLE DATA</text>
+            <text x="20" y="74" fill="#FAFAFA" font-size="14" font-weight="bold">Survey All 30 Vehicles</text>
+            <text x="20" y="98" fill="#A1A1AA" font-size="11.5">• Vehicle # (#01–#30) &amp; plate</text>
+            <text x="20" y="116" fill="#A1A1AA" font-size="11.5">• Factory Bluetooth MAC address</text>
+            <text x="20" y="134" fill="#34D399" font-size="11.5">• Initial odometer reading (km)</text>
+          </g>
+
+          <!-- Step 2 Box -->
+          <g transform="translate(268, 30)">
+            <rect width="215" height="150" rx="14" fill="#0F141D" stroke="#10B981" stroke-width="1.8" />
+            <circle cx="36" cy="36" r="16" fill="#10B981" />
+            <text x="36" y="41" text-anchor="middle" fill="#000" font-size="13" font-weight="bold" font-family="monospace">02</text>
+            <text x="62" y="40" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">DRIVER ROSTER</text>
+            <text x="20" y="74" fill="#FAFAFA" font-size="14" font-weight="bold">Collect Key Driver Roster</text>
+            <text x="20" y="98" fill="#A1A1AA" font-size="11.5">• Key drivers by department</text>
+            <text x="20" y="116" fill="#A1A1AA" font-size="11.5">• Name (KOR/ENG), title, dept.</text>
+            <text x="20" y="134" fill="#34D399" font-size="11.5">• Mobile no. · dispatch rights (Y)</text>
+          </g>
+
+          <!-- Step 3 Box -->
+          <g transform="translate(516, 30)">
+            <rect width="215" height="150" rx="14" fill="#0F141D" stroke="#FBBF24" stroke-width="1.8" />
+            <circle cx="36" cy="36" r="16" fill="#FBBF24" />
+            <text x="36" y="41" text-anchor="middle" fill="#000" font-size="13" font-weight="bold" font-family="monospace">03</text>
+            <text x="62" y="40" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">CSV UPLOAD (PIN)</text>
+            <text x="20" y="74" fill="#FAFAFA" font-size="14" font-weight="bold">Bulk Entry in Admin Console</text>
+            <text x="20" y="98" fill="#A1A1AA" font-size="11.5">• 3. Admin Console (PIN auth)</text>
+            <text x="20" y="116" fill="#A1A1AA" font-size="11.5">• Upload vehicle CSV (30 units)</text>
+            <text x="20" y="134" fill="#FBBF24" font-size="11.5">• Upload driver CSV (bulk)</text>
+          </g>
+
+          <!-- Step 4 Box -->
+          <g transform="translate(764, 30)">
+            <rect width="215" height="150" rx="14" fill="#0F141D" stroke="#60A5FA" stroke-width="1.8" />
+            <circle cx="36" cy="36" r="16" fill="#60A5FA" />
+            <text x="36" y="41" text-anchor="middle" fill="#000" font-size="13" font-weight="bold" font-family="monospace">04</text>
+            <text x="62" y="40" fill="#93C5FD" font-size="11" font-weight="bold" font-family="monospace">QR & GO LIVE</text>
+            <text x="20" y="74" fill="#FAFAFA" font-size="14" font-weight="bold">Attach Key-Tag QR · Launch</text>
+            <text x="20" y="98" fill="#A1A1AA" font-size="11.5">• Attach QR to each key ring</text>
+            <text x="20" y="116" fill="#A1A1AA" font-size="11.5">• One-time driver BT pairing</text>
+            <text x="20" y="134" fill="#60A5FA" font-size="11.5">• Live monitoring of all 30 units</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [Infographic 01] 4-stage pipeline: admin collects initial data (30 vehicles + key drivers) → bulk CSV upload → go live on site
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 02: Survey and entry guide for 30 vehicles (Infographic #2)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 02</span>
+          Surveying &amp; Registering All 30 Company Vehicles (7 Required Fields)
+        </h2>
+        <span class="badge badge-green">One-time survey per vehicle</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        No additional devices need to be installed in the vehicles. The admin simply collects the <strong>7 unique vehicle data fields</strong> shown in the infographic below and records them in an Excel (CSV) sheet or enters them directly in the Admin Console.
+      </p>
+
+      <!-- INFOGRAPHIC 02: Vehicle 7-Field Anatomy -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 310" style="width:100%;height:auto;display:block;">
+          <!-- Center Vehicle Silhouette -->
+          <g transform="translate(310, 95)">
+            <rect x="0" y="0" width="380" height="125" rx="34" fill="#141B26" stroke="#60A5FA" stroke-width="2" />
+            <rect x="65" y="14" width="240" height="97" rx="20" fill="#0B0F17" stroke="rgba(255,255,255,0.18)" />
+            <!-- Wheels -->
+            <rect x="52" y="-8" width="60" height="10" rx="4" fill="#71717A" />
+            <rect x="268" y="-8" width="60" height="10" rx="4" fill="#71717A" />
+            <rect x="52" y="123" width="60" height="10" rx="4" fill="#71717A" />
+            <rect x="268" y="123" width="60" height="10" rx="4" fill="#71717A" />
+            <!-- Headlights -->
+            <rect x="368" y="20" width="10" height="24" rx="4" fill="#60A5FA" />
+            <rect x="368" y="81" width="10" height="24" rx="4" fill="#60A5FA" />
+            <text x="190" y="58" text-anchor="middle" fill="#FAFAFA" font-size="14" font-weight="bold">Company Vehicle (#01 – #30)</text>
+            <text x="190" y="78" text-anchor="middle" fill="#60A5FA" font-size="11" font-family="monospace">AL 41A-2237 · Hyundai Santa Fe</text>
+          </g>
+
+          <!-- Callout 1: Fleet Number & Plate -->
+          <line x1="330" y1="115" x2="215" y2="55" stroke="#60A5FA" stroke-width="1.5" />
+          <circle cx="330" cy="115" r="5" fill="#60A5FA" />
+          <rect x="18" y="18" width="205" height="68" rx="10" fill="#0F141D" stroke="#60A5FA" />
+          <text x="30" y="40" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">① fleetNumber / ② plateNumber</text>
+          <text x="30" y="58" fill="#FAFAFA" font-size="12" font-weight="bold">Vehicle # (1–30) &amp; plate</text>
+          <text x="30" y="74" fill="#A1A1AA" font-size="11">e.g. 1, AL 41A-2237 (Lee County)</text>
+
+          <!-- Callout 2: Model Name -->
+          <line x1="315" y1="165" x2="215" y2="155" stroke="#34D399" stroke-width="1.5" />
+          <circle cx="315" cy="165" r="5" fill="#34D399" />
+          <rect x="18" y="115" width="205" height="68" rx="10" fill="#0F141D" stroke="#10B981" />
+          <text x="30" y="137" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">③ modelName (vehicle model)</text>
+          <text x="30" y="155" fill="#FAFAFA" font-size="12" font-weight="bold">Make &amp; model name</text>
+          <text x="30" y="171" fill="#A1A1AA" font-size="11">e.g. 2025 Hyundai Tucson SEL</text>
+
+          <!-- Callout 3: Parking Zone -->
+          <line x1="345" y1="210" x2="215" y2="250" stroke="#A1A1AA" stroke-width="1.5" />
+          <circle cx="345" cy="210" r="5" fill="#FAFAFA" />
+          <rect x="18" y="212" width="205" height="68" rx="10" fill="#0F141D" stroke="rgba(255,255,255,0.25)" />
+          <text x="30" y="234" fill="#FAFAFA" font-size="11" font-weight="bold" font-family="monospace">⑦ parkingZone (assigned spot)</text>
+          <text x="30" y="252" fill="#FAFAFA" font-size="12" font-weight="bold">Default spot at HQ garage</text>
+          <text x="30" y="268" fill="#A1A1AA" font-size="11">e.g. Northpark Lot A #01</text>
+
+          <!-- Callout 4: Factory Bluetooth MAC -->
+          <line x1="590" y1="130" x2="755" y2="55" stroke="#0A72EF" stroke-width="1.8" />
+          <circle cx="590" cy="130" r="6" fill="#0A72EF" />
+          <rect x="755" y="18" width="225" height="72" rx="10" fill="#0F141D" stroke="#0A72EF" />
+          <text x="768" y="40" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">④ btMacAddress (factory BT)</text>
+          <text x="768" y="58" fill="#FAFAFA" font-size="12" font-weight="bold">Unique hands-free MAC address</text>
+          <text x="768" y="75" fill="#A1A1AA" font-size="11">Head unit: [Settings → Bluetooth Info]</text>
+
+          <!-- Callout 5: Keybox BLE UUID -->
+          <line x1="500" y1="160" x2="755" y2="150" stroke="#FBBF24" stroke-width="1.8" />
+          <circle cx="500" cy="160" r="6" fill="#FBBF24" />
+          <rect x="755" y="114" width="225" height="72" rx="10" fill="#0F141D" stroke="#FBBF24" />
+          <text x="768" y="136" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">⑤ bleBeaconUuid (key box BLE)</text>
+          <text x="768" y="154" fill="#FAFAFA" font-size="12" font-weight="bold">Key-ring BLE/QR identifier</text>
+          <text x="768" y="171" fill="#A1A1AA" font-size="11">e.g. FG30-KEYBOX-01 (can auto-assign)</text>
+
+          <!-- Callout 6: Initial Odometer -->
+          <line x1="635" y1="185" x2="755" y2="248" stroke="#10B981" stroke-width="1.8" />
+          <circle cx="635" cy="185" r="6" fill="#10B981" />
+          <rect x="755" y="210" width="225" height="72" rx="10" fill="#0F141D" stroke="#10B981" />
+          <text x="768" y="232" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">⑥ cumulativeGpsKm (initial odo)</text>
+          <text x="768" y="250" fill="#FAFAFA" font-size="12" font-weight="bold">Actual odometer at registration</text>
+          <text x="768" y="267" fill="#A1A1AA" font-size="11">e.g. 14280.5 (GPS accumulates after)</text>
+        </svg>
+        <div class="infographic-caption">
+          [Infographic 02] Location map of the 7 core data fields the admin collects and enters for each vehicle at setup
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>CSV Column</th>
+            <th>Field Name</th>
+            <th>Example Input</th>
+            <th>How the Admin Collects It &amp; Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>fleetNumber</code></td>
+            <td>Vehicle number</td>
+            <td><code>1</code> ~ <code>30</code></td>
+            <td>Internal fleet number (Vehicle #01 – #30). If it matches an existing vehicle number, the record is automatically overwritten (updated) on upload.</td>
+          </tr>
+          <tr>
+            <td><code>plateNumber</code></td>
+            <td>License plate</td>
+            <td><code>AL 41A-2237</code></td>
+            <td>Company license plate issued in Lee County, Alabama. Used as the vehicle identifier in the IRS mileage logbook (Sec. 274(d)).</td>
+          </tr>
+          <tr>
+            <td><code>modelName</code></td>
+            <td>Model name</td>
+            <td><code>Hyundai Santa Fe</code></td>
+            <td>Model name that lets employees identify the vehicle type (SUV / sedan / EV) when submitting a dispatch request.</td>
+          </tr>
+          <tr>
+            <td><code>btMacAddress</code></td>
+            <td>Factory Bluetooth MAC</td>
+            <td><code>A4:C1:38:90:01:AA</code></td>
+            <td>Automatically identifies whose smartphone connects when the vehicle starts, to detect <strong>unauthorized use and the primary driver</strong>.</td>
+          </tr>
+          <tr>
+            <td><code>bleBeaconUuid</code></td>
+            <td>Key box ID</td>
+            <td><code>FG30-KEYBOX-01</code></td>
+            <td>Unique code matched 1:1 to the access history of the HQ General Affairs key box (3 m range) and to the QR sticker on the key tag.</td>
+          </tr>
+          <tr>
+            <td><code>cumulativeGpsKm</code></td>
+            <td>Initial odometer reading</td>
+            <td><code>14280.5</code></td>
+            <td>The actual odometer reading at initial registration. GPS-measured distance is then added automatically at every return.</td>
+          </tr>
+          <tr>
+            <td><code>parkingZone</code></td>
+            <td>Default parking zone</td>
+            <td><code>Northpark Lot A #01</code></td>
+            <td>Assigned parking spot number in the 4400 Northpark Dr HQ parking lot.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 03: Key driver (employee) pre-collection and registration (Infographic #3)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 03</span>
+          Collecting &amp; Bulk-Registering Key Driver (Employee) Information
+        </h2>
+        <span class="badge badge-green">Supports individual add &amp; bulk CSV upload</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        The admin collects <strong>5 basic data points for each department's key drivers</strong> who will operate company vehicles, and registers them in the system in advance.
+        Only pre-registered drivers can submit dispatch requests and use 1-second QR self-checkout; unregistered users and drivers with suspended dispatch rights (<code>dispatchAllowed = N</code>) are blocked automatically.
+      </p>
+
+      <!-- INFOGRAPHIC 03: Driver Pre-Collection Flow -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 230" style="width:100%;height:auto;display:block;">
+          <!-- Box 1: Pre-Collection Form -->
+          <g transform="translate(20, 25)">
+            <rect width="290" height="175" rx="14" fill="#0F141D" stroke="#10B981" stroke-width="1.8" />
+            <text x="20" y="34" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">STEP A · 5 FIELDS COLLECTED PER DEPT.</text>
+            <text x="20" y="60" fill="#FAFAFA" font-size="14" font-weight="bold">Key Driver Pre-Survey Form</text>
+            <text x="20" y="86" fill="#D4D4D8" font-size="12">1. Name: <tspan fill="#34D399" font-family="monospace">Sunghoon Park (Dave Park)</tspan></text>
+            <text x="20" y="108" fill="#D4D4D8" font-size="12">2. Title (Role): <tspan fill="#A1A1AA" font-family="monospace">Assistant Manager</tspan></text>
+            <text x="20" y="130" fill="#D4D4D8" font-size="12">3. Department: <tspan fill="#A1A1AA" font-family="monospace">Quality Assurance (QA)</tspan></text>
+            <text x="20" y="152" fill="#D4D4D8" font-size="12">4. Phone / 5. Dispatch: <tspan fill="#FBBF24" font-family="monospace">+1-334-555-0142 / Y</tspan></text>
+          </g>
+
+          <!-- Arrow 1 -->
+          <path d="M 320 112 L 365 112" stroke="#10B981" stroke-width="2.5" />
+          <polygon points="365,106 378,112 365,118" fill="#10B981" />
+
+          <!-- Box 2: Admin Console Registration -->
+          <g transform="translate(385, 25)">
+            <rect width="275" height="175" rx="14" fill="#0F141D" stroke="#0A72EF" stroke-width="1.8" />
+            <text x="20" y="34" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">STEP B · ADMIN CONSOLE (2 METHODS)</text>
+            <text x="20" y="60" fill="#FAFAFA" font-size="14" font-weight="bold">[Employee Governance] Tab</text>
+            <rect x="20" y="76" width="235" height="40" rx="8" fill="#141C2B" stroke="rgba(10,114,239,0.4)" />
+            <text x="32" y="100" fill="#93C5FD" font-size="12" font-weight="bold">Method 1: 📤 Bulk User CSV Upload</text>
+            <rect x="20" y="126" width="235" height="40" rx="8" fill="#141C2B" stroke="rgba(255,255,255,0.12)" />
+            <text x="32" y="150" fill="#D4D4D8" font-size="12" font-weight="bold">Method 2: ➕ Add Employees Manually</text>
+          </g>
+
+          <!-- Arrow 2 -->
+          <path d="M 670 112 L 715 112" stroke="#0A72EF" stroke-width="2.5" />
+          <polygon points="715,106 728,112 715,118" fill="#0A72EF" />
+
+          <!-- Box 3: Live Governance -->
+          <g transform="translate(735, 25)">
+            <rect width="245" height="175" rx="14" fill="#0F141D" stroke="#FBBF24" stroke-width="1.8" />
+            <text x="20" y="34" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">STEP C · AUTO MONITORING</text>
+            <text x="20" y="60" fill="#FAFAFA" font-size="14" font-weight="bold">Real-Time Driver Governance</text>
+            <text x="20" y="88" fill="#A1A1AA" font-size="11.5">• Shown in mobile app list instantly</text>
+            <text x="20" y="110" fill="#A1A1AA" font-size="11.5">• English name shown in ENG mode</text>
+            <text x="20" y="132" fill="#34D399" font-size="11.5">• GPS/BT permission heartbeat check</text>
+            <text x="20" y="154" fill="#FF8080" font-size="11.5">• One-click [Suspend Dispatch]</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [Infographic 03] Flow: collect key driver roster → register in Admin Console → real-time permission heartbeat monitoring
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="sub-box">
+          <h4>💡 Name Entry Tip for Bilingual (KOR/ENG) Display</h4>
+          <p>
+            If you enter each driver's name as <strong>Korean name + English name in parentheses</strong>, e.g. <code>Sunghoon Park (Dave Park)</code> with the Korean name written in Hangul,
+            the name appears in Korean when <code>KOR</code> is selected in the top menu and automatically switches to <code>Dave Park</code> when <code>ENG</code> is selected.
+          </p>
+        </div>
+        <div class="sub-box">
+          <h4>🚫 Using the Dispatch Permission Flag (<code>dispatchAllowed</code>)</h4>
+          <p>
+            For drivers who belong on the roster but whose license has not yet been verified or who have not completed training, set <code>dispatchAllowed</code> to <code>N</code> in the CSV.
+            They will be registered on the roster, but their vehicle dispatch requests will start in a locked (blocked) state.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 04: Admin Console security PIN access and CSV upload layout (Infographic #4)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 04</span>
+          Accessing the Admin Console (Security PIN) &amp; Bulk CSV Upload Procedure
+        </h2>
+        <span class="badge badge-amber">Access level: Fleet Admin only</span>
+      </div>
+
+      <!-- INFOGRAPHIC 04: Admin Console UI Map -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 240" style="width:100%;height:auto;display:block;">
+          <!-- Step 1: Top Header -->
+          <rect x="20" y="20" width="960" height="46" rx="10" fill="#111111" stroke="rgba(255,255,255,0.15)" />
+          <text x="40" y="48" fill="#FAFAFA" font-size="13" font-weight="bold">FLEETGUARD 30</text>
+          <rect x="260" y="28" width="130" height="30" rx="6" fill="#191E2A" />
+          <text x="325" y="47" text-anchor="middle" fill="#A1A1AA" font-size="11">1. Request &amp; Return</text>
+          <rect x="400" y="28" width="130" height="30" rx="6" fill="#191E2A" />
+          <text x="465" y="47" text-anchor="middle" fill="#A1A1AA" font-size="11">2. 30-Fleet Telemetry</text>
+          <rect x="540" y="28" width="150" height="30" rx="6" fill="#FAFAFA" />
+          <text x="615" y="47" text-anchor="middle" fill="#000000" font-size="11" font-weight="bold">🔒 3. Admin Console (PIN)</text>
+          <rect x="850" y="28" width="110" height="30" rx="6" fill="#0A72EF" />
+          <text x="905" y="47" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="bold">🌐 KOR | ENG</text>
+
+          <!-- Down Arrow from Tab 3 -->
+          <line x1="615" y1="66" x2="615" y2="95" stroke="#FBBF24" stroke-width="2" />
+
+          <!-- PIN Modal & Admin Sub-Tabs -->
+          <g transform="translate(20, 95)">
+            <rect width="280" height="125" rx="12" fill="#0F141D" stroke="#E82127" stroke-width="1.6" />
+            <text x="20" y="28" fill="#FF8080" font-size="11" font-weight="bold" font-family="monospace">① Enter 4-digit security PIN</text>
+            <text x="20" y="52" fill="#FAFAFA" font-size="13" font-weight="bold">Private admin-only PIN auth</text>
+            <rect x="20" y="66" width="160" height="36" rx="8" fill="#050505" stroke="rgba(255,255,255,0.2)" />
+            <text x="100" y="90" text-anchor="middle" fill="#FBBF24" font-size="16" font-family="monospace" letter-spacing="8">••••</text>
+          </g>
+
+          <g transform="translate(325, 95)">
+            <rect width="315" height="125" rx="12" fill="#0F141D" stroke="#0A72EF" stroke-width="1.6" />
+            <text x="20" y="28" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">② Tab 1: 🚗 30-Fleet &amp; Odometer Audit</text>
+            <text x="20" y="52" fill="#FAFAFA" font-size="13" font-weight="bold">Download &amp; upload 30-vehicle CSV</text>
+            <text x="20" y="76" fill="#A1A1AA" font-size="11.5">• [Download Vehicle CSV Template] → fill in</text>
+            <text x="20" y="96" fill="#34D399" font-size="11.5">• [Upload Vehicle CSV] to add/update all 30</text>
+          </g>
+
+          <g transform="translate(665, 95)">
+            <rect width="315" height="125" rx="12" fill="#0F141D" stroke="#10B981" stroke-width="1.6" />
+            <text x="20" y="28" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">③ Tab 2: 👥 Employee Governance</text>
+            <text x="20" y="52" fill="#FAFAFA" font-size="13" font-weight="bold">Key driver CSV upload &amp; manual add</text>
+            <text x="20" y="76" fill="#A1A1AA" font-size="11.5">• [Download User CSV Template], enter roster</text>
+            <text x="20" y="96" fill="#34D399" font-size="11.5">• [Upload User CSV] or add one by one</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [Infographic 04] Console layout: entering top-level [3. Admin Console (PIN)] and bulk-uploading vehicle and driver CSVs
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 05: Periodic odometer audit and Ghost Trip audit after setup (Infographic #5)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 05</span>
+          Weekly Check After Launch — Odometer Reconciliation &amp; Ghost Trip Audit
+        </h2>
+        <span class="badge badge-blue">Recommended: once a week</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        Even if an employee deliberately turns off smartphone Bluetooth or GPS and drives a vehicle off the record, once a week the admin enters the <strong>actual vehicle odometer reading</strong> and
+        clicks <strong>[Reconcile Odometer]</strong>; the system then automatically flags the unrecorded mileage (<code>+5 km or more</code>) and the likely suspect.
+      </p>
+
+      <!-- INFOGRAPHIC 05: Odometer Audit & Ghost Trip Correlation -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 210" style="width:100%;height:auto;display:block;">
+          <g transform="translate(20, 25)">
+            <rect width="290" height="160" rx="14" fill="#0F141D" stroke="#60A5FA" stroke-width="1.6" />
+            <text x="20" y="32" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">01 · ODOMETER CHECK</text>
+            <text x="20" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">Enter Actual Odometer Reading</text>
+            <text x="20" y="84" fill="#A1A1AA" font-size="12">• App GPS cumulative: <tspan fill="#FAFAFA" font-family="monospace">18,905 km</tspan></text>
+            <text x="20" y="106" fill="#A1A1AA" font-size="12">• Actual odometer: <tspan fill="#FBBF24" font-family="monospace">18,943 km</tspan></text>
+            <text x="20" y="132" fill="#FF8080" font-size="12" font-weight="bold">→ +38 km of unrecorded driving found!</text>
+          </g>
+
+          <path d="M 320 105 L 355 105" stroke="#FBBF24" stroke-width="2.5" />
+          <polygon points="355,99 368,105 355,111" fill="#FBBF24" />
+
+          <g transform="translate(375, 25)">
+            <rect width="290" height="160" rx="14" fill="#0F141D" stroke="#FBBF24" stroke-width="1.6" />
+            <text x="20" y="32" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">02 · 3-LAYER CORRELATION</text>
+            <text x="20" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">3-Way Cross-Analysis Engine</text>
+            <text x="20" y="84" fill="#A1A1AA" font-size="12">① Who entered the 150 m garage in the gap</text>
+            <text x="20" y="106" fill="#A1A1AA" font-size="12">② General Affairs 3 m key box BLE log</text>
+            <text x="20" y="128" fill="#FBBF24" font-size="12">③ BT/GPS-OFF heartbeats inside garage</text>
+          </g>
+
+          <path d="M 675 105 L 710 105" stroke="#E82127" stroke-width="2.5" />
+          <polygon points="710,99 723,105 710,111" fill="#E82127" />
+
+          <g transform="translate(730, 25)">
+            <rect width="250" height="160" rx="14" fill="#0F141D" stroke="#E82127" stroke-width="1.6" />
+            <text x="20" y="32" fill="#FF8080" font-size="11" font-weight="bold" font-family="monospace">03 · SUSPECT & ACTION</text>
+            <text x="20" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">Identify &amp; Act on Suspect</text>
+            <text x="20" y="84" fill="#FAFAFA" font-size="12">• Prime suspect identified (91% match)</text>
+            <text x="20" y="106" fill="#A1A1AA" font-size="12">• One-click [Send Warning Push]</text>
+            <text x="20" y="128" fill="#FF8080" font-size="12" font-weight="bold">• One-click [Suspend Dispatch Rights]</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [Infographic 05] Automatic Ghost Trip detection via weekly odometer reconciliation (discrepancy of +5 km or more)
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ITEM 06: Record keeping, sharing and approvals on Microsoft 365 (no external DB)
+         ===================================================================== -->
+    <section class="section-card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="step-pill">ITEM 06</span>
+          Record Keeping &amp; Monthly Operations on Microsoft 365 (SharePoint · OneDrive Excel · Teams)
+        </h2>
+        <span class="badge badge-amber">No external DB (Supabase) — runs on the company M365 tenant</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-secondary);margin:0;">
+        The web app is the <strong>live operations ledger</strong> ("who is driving which car right now"); Microsoft 365 is the <strong>archive ledger</strong> ("where is last month's trip log").
+        Once a week the admin uses <strong>CSV Export</strong> in the Admin Console, uploads the files to SharePoint, and merges them into the Excel master once a month. No database subscription or Azure app registration is required.
+      </p>
+
+      <!-- INFOGRAPHIC 06: Web App -> SharePoint -> Excel -> Teams pipeline -->
+      <div class="infographic-frame">
+        <svg viewBox="0 0 1000 210" style="width:100%;height:auto;display:block;">
+          <g transform="translate(20, 25)">
+            <rect width="220" height="160" rx="14" fill="#0F141D" stroke="#60A5FA" stroke-width="1.6" />
+            <text x="18" y="32" fill="#60A5FA" font-size="11" font-weight="bold" font-family="monospace">01 · WEB APP (weekly)</text>
+            <text x="18" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">Admin Console CSV Export</text>
+            <text x="18" y="84" fill="#A1A1AA" font-size="12">• Trip logbook (tax mileage log)</text>
+            <text x="18" y="106" fill="#A1A1AA" font-size="12">• Dispatch register (request→return)</text>
+            <text x="18" y="128" fill="#A1A1AA" font-size="12">• Incident log · odometer audits</text>
+          </g>
+
+          <path d="M 250 105 L 282 105" stroke="#FBBF24" stroke-width="2.5" />
+          <polygon points="282,99 295,105 282,111" fill="#FBBF24" />
+
+          <g transform="translate(300, 25)">
+            <rect width="220" height="160" rx="14" fill="#0F141D" stroke="#FBBF24" stroke-width="1.6" />
+            <text x="18" y="32" fill="#FBBF24" font-size="11" font-weight="bold" font-family="monospace">02 · SHAREPOINT</text>
+            <text x="18" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">Document Library Archive</text>
+            <text x="18" y="84" fill="#A1A1AA" font-size="12" font-family="monospace">FleetRecords/YYYY/YYYY-MM/</text>
+            <text x="18" y="106" fill="#A1A1AA" font-size="12">• Versioning ON · no external sharing</text>
+            <text x="18" y="128" fill="#A1A1AA" font-size="12">• Fleet admin: edit / staff: read</text>
+          </g>
+
+          <path d="M 530 105 L 562 105" stroke="#34D399" stroke-width="2.5" />
+          <polygon points="562,99 575,105 562,111" fill="#34D399" />
+
+          <g transform="translate(580, 25)">
+            <rect width="190" height="160" rx="14" fill="#0F141D" stroke="#34D399" stroke-width="1.6" />
+            <text x="18" y="32" fill="#34D399" font-size="11" font-weight="bold" font-family="monospace">03 · EXCEL (monthly)</text>
+            <text x="18" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">Master Merge · Pivot</text>
+            <text x="18" y="84" fill="#A1A1AA" font-size="12">• Trip log / dispatch register</text>
+            <text x="18" y="106" fill="#A1A1AA" font-size="12">• Incident log / odometer audit</text>
+            <text x="18" y="128" fill="#A1A1AA" font-size="12">• km by dept → Accounting</text>
+          </g>
+
+          <path d="M 780 105 L 812 105" stroke="#E82127" stroke-width="2.5" />
+          <polygon points="812,99 825,105 812,111" fill="#E82127" />
+
+          <g transform="translate(830, 25)">
+            <rect width="150" height="160" rx="14" fill="#0F141D" stroke="#E82127" stroke-width="1.6" />
+            <text x="16" y="32" fill="#FF8080" font-size="11" font-weight="bold" font-family="monospace">04 · TEAMS</text>
+            <text x="16" y="56" fill="#FAFAFA" font-size="14" font-weight="bold">Alerts · Approvals</text>
+            <text x="16" y="84" fill="#A1A1AA" font-size="12">• #fleet-dispatch</text>
+            <text x="16" y="106" fill="#A1A1AA" font-size="12">• Daily unreturned check</text>
+            <text x="16" y="128" fill="#FF8080" font-size="12">• Incident sign-off</text>
+          </g>
+        </svg>
+        <div class="infographic-caption">
+          [Infographic 06] 4-step M365 pipeline: web app CSV export → SharePoint archive → monthly Excel merge → Teams alerts &amp; approvals
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Cadence</th>
+            <th>Admin task</th>
+            <th>Microsoft 365 output location</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Daily, end of day</td>
+            <td>Check the KPI card (N vehicles not returned) and post a screenshot to the Teams channel</td>
+            <td>Teams <code>#fleet-dispatch</code></td>
+          </tr>
+          <tr>
+            <td>Weekly (Monday)</td>
+            <td>① Odometer check → <strong>[Reconcile Odometer]</strong> ② Admin Console <strong>CSV Export</strong> ③ Upload</td>
+            <td>SharePoint <code>FleetRecords/YYYY-MM/TripLog_YYYY-MM-DD.csv</code></td>
+          </tr>
+          <tr>
+            <td>Monthly (1st business day)</td>
+            <td>Merge weekly CSVs into the Excel master (paste or Power Automate) → pivot by department → share with Accounting</td>
+            <td>OneDrive <code>FleetGuard30_TripLog_Master.xlsx</code></td>
+          </tr>
+          <tr>
+            <td>Quarterly</td>
+            <td>Review incident log and Ghost Trip findings; refresh the dispatch-suspended list (Teams approval thread)</td>
+            <td>Excel <code>Incidents</code> sheet</td>
+          </tr>
+          <tr>
+            <td>Yearly</td>
+            <td>Convert prior-year trip log to PDF → apply 7-year retention label</td>
+            <td>SharePoint <code>YYYY/Annual_TripLog.pdf</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid-2" style="margin-top:14px;">
+        <div style="background:#0F141D;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;">
+          <div style="font-size:12px;font-weight:bold;color:#60A5FA;font-family:monospace;margin-bottom:8px;">One-time M365 setup (20 min)</div>
+          <ol style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-secondary);line-height:1.7;">
+            <li>Create SharePoint site <code>FleetGuard30</code> and library <code>FleetRecords</code></li>
+            <li>Permissions: fleet admin <strong>Edit</strong> / staff <strong>Read</strong> / external sharing <strong>Off</strong></li>
+            <li>Create Teams channel <code>#fleet-dispatch</code> (pin the app URL)</li>
+            <li>Create <code>FleetGuard30_TripLog_Master.xlsx</code> in OneDrive (4 sheets)</li>
+            <li>(Optional) Power Automate: CSV arrives → add Excel rows → post to Teams</li>
+          </ol>
+        </div>
+        <div style="background:#0F141D;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;">
+          <div style="font-size:12px;font-weight:bold;color:#FBBF24;font-family:monospace;margin-bottom:8px;">JSON DB backup · security rules</div>
+          <ul style="margin:0;padding-left:18px;font-size:12.5px;color:var(--text-secondary);line-height:1.7;">
+            <li>Copy the server's <code>data/fleet-db.json</code> weekly → upload to SharePoint <code>Backup/</code> (never keep it inside an OneDrive sync folder)</li>
+            <li>The admin PIN lives only in the server env var <code>FLEET_ADMIN_PIN</code>; never post it in Teams or documents</li>
+            <li><strong>DB Reset</strong> works only after PIN verification (unauthenticated API calls get 401)</li>
+            <li>Trip-log CSVs contain no phone numbers (employee CSVs stay in <code>Master/</code>, admin-only)</li>
+            <li>Retain backups and trip records for 7 years</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function downloadSampleVehicleCsv() {
+      const headers = ['fleetNumber','plateNumber','modelName','btMacAddress','bleBeaconUuid','cumulativeGpsKm','parkingZone'];
+      const sample = [
+        ['1','AL 41A-2237','Hyundai Santa Fe','A4:C1:38:90:01:AA','FG30-KEYBOX-01','14280.5','Northpark Lot A #01'],
+        ['2','AL 41A-5104','Kia Sorento','A4:C1:38:90:02:BB','FG30-KEYBOX-02','21840.2','Northpark Lot A #02'],
+        ['3','AL 41A-9012','Hyundai Tucson','A4:C1:38:90:03:CC','FG30-KEYBOX-03','9842.0','Northpark Lot A #03']
+      ];
+      const csv = '﻿' + [headers.join(','), ...sample.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'FleetGuard30_30_Vehicles_Initial_Registration_Template_Opelika_AL.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadSampleEmployeeCsv() {
+      const headers = ['name','role','department','phone','dispatchAllowed'];
+      const sample = [
+        ['Sunghoon Park - Assistant Manager (Dave Park)','Assistant Manager','Quality Assurance','+1-334-555-0142','Y'],
+        ['Minsu Kim - Manager (Minsoo Kim)','Manager','Production Engineering','+1-334-555-0188','Y'],
+        ['Hyunwoo Choi - Staff (Chris Choi)','Staff','Logistics & Purchasing','+1-334-555-0194','Y'],
+        ['Jungwoo Lee - Staff (Justin Lee)','Staff','North America Sales','+1-334-555-0163','Y']
+      ];
+      const csv = '﻿' + [headers.join(','), ...sample.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'FleetGuard30_Key_Drivers_Pre_Registration_Template_Opelika_AL.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>

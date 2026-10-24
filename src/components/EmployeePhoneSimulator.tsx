@@ -105,6 +105,14 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
           body: JSON.stringify({
             vehicleId: selectedVehId,
             employeeId: selectedEmpId,
+            plateNumber:
+              vehicles.find((v) => v.id === selectedVehId)?.plateNumber ?? 'UNKNOWN',
+            hasActiveApproval: reservations.some(
+              (r) =>
+                r.vehicleId === selectedVehId &&
+                r.employeeId === selectedEmpId &&
+                (r.stage === 'APPROVED' || r.stage === 'IN_USE')
+            ),
             lat: snap.lat ?? 32.6912,
             lng: snap.lng ?? -85.3298,
             speedKmh: snap.speedKmh,

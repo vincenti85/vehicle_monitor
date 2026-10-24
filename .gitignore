@@ -29,3 +29,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# runtime JSON database (regenerated from seed on first start)
+/data/fleet-db.json

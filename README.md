@@ -37,7 +37,16 @@
   - `GET / POST /api/fleet/state`: 전체 법인차량·배차·사고·정책 상태 영구 동기화 (`src/lib/fleetDatabase.ts`)
   - `POST /api/fleet/telemetry`: 스마트폰 6축 IMU 원시 센서 수신 및 Sensor Fusion 사고 판정
   - `GET /api/health`: 스토리지 엔진 및 레코드 건수 상태 점검
-  - `supabase/migrations/001_fleetguard30_schema.sql`: Supabase PostgreSQL + Realtime 확장 DDL
+  - `POST /api/admin/verify-pin`: 관리자 PIN 서버 측 검증 (`FLEET_ADMIN_PIN` 환경변수, 브라우저 번들에 미포함)
+  - `src/lib/fleetSchemas.ts`: 모든 API 입력에 대한 zod 검증 스키마
+  - `data/fleet-db.json`: 서버 로컬 JSON DB (git 추적 제외, 첫 실행 시 시드에서 자동 생성)
+  - `supabase/migrations/001_fleetguard30_schema.sql`: 향후 외부 DB 전환 시 참고용 DDL (현재 미사용)
+
+## 운영·보관 (Microsoft 365)
+
+외부 DB 없이 운영한다. 실시간 상태는 웹앱 JSON DB가 담당하고, **기록 보관·공유·결재는 Microsoft 365(SharePoint · OneDrive Excel · Teams)**로 처리한다.
+주 1회 관리자 콘솔에서 CSV를 내보내 SharePoint `차량운행기록/YYYY-MM/`에 업로드하고, 월 1회 Excel 마스터에 병합한다.
+상세 절차·백업·Power Automate 구성: [`docs/DEPLOYMENT_PLAN.md`](docs/DEPLOYMENT_PLAN.md), 관리자 가이드 ITEM 06 (`/admin-guide/Admin_Setup_Guide_KOR.html`).
 
 ---
 

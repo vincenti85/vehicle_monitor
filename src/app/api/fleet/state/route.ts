@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  FleetDatabaseSchema,
   readFleetDatabase,
   resetFleetDatabase,
   writeFleetDatabase,
 } from '@/lib/fleetDatabase';
+import { FleetStateRequestSchema } from '@/lib/fleetSchemas';
+import { AdminPinNotConfiguredError, isAdminRequest } from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,13 +18,31 @@ export async function GET() {
   });
 }
 
-// POST /api/fleet/state — Persist partial or full fleet state updates to backend DB
+// POST /api/fleet/state — Persist validated partial fleet state updates to backend DB.
+// RESET_SEED and policyConfig changes are admin-only (x-admin-pin header).
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as {
-      action?: 'SYNC_STATE' | 'RESET_SEED';
-      patch?: Partial<FleetDatabaseSchema>;
-    };
+    const parsed = FleetStateRequestSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { ok: false, error: 'Invalid fleet state payload', issues: parsed.error.issues.slice(0, 10) },
+        { status: 400 }
+      );
+    }
+    const body = parsed.data;
+    // Clients echo the whole state back; only an actual policy change needs the admin PIN.
+    const policyChanged =
+      body.patch?.policyConfig !== undefined &&
+      JSON.stringify(body.patch.policyConfig) !==
+        JSON.stringify(readFleetDatabase().policyConfig);
+    const needsAdmin = body.action === 'RESET_SEED' || policyChanged;
+
+    if (needsAdmin && !isAdminRequest(req)) {
+      return NextResponse.json(
+        { ok: false, error: 'Admin PIN required for this operation' },
+        { status: 401 }
+      );
+    }
 
     if (body.action === 'RESET_SEED') {
       const resetDb = resetFleetDatabase();
@@ -41,6 +60,9 @@ export async function POST(req: NextRequest) {
       data: updatedDb,
     });
   } catch (err) {
+    if (err instanceof AdminPinNotConfiguredError) {
+      return NextResponse.json({ ok: false, error: err.message }, { status: 503 });
+    }
     return NextResponse.json(
       { ok: false, error: err instanceof Error ? err.message : 'Write failed' },
       { status: 400 }

@@ -117,18 +117,37 @@ export default function FleetGuardCockpitPage() {
     }
   };
 
-  const handleVerifyAdminPin = (candidatePin?: string) => {
+  // PIN is verified server-side (FLEET_ADMIN_PIN env) and kept in memory only to
+  // sign admin-only writes (policy changes, DB reset) with the x-admin-pin header.
+  const [adminPin, setAdminPin] = useState<string | null>(null);
+
+  const handleVerifyAdminPin = async (candidatePin?: string) => {
     const code = (candidatePin ?? pinInput).trim();
-    if (code === '4400') {
-      setIsAdminUnlocked(true);
-      setShowPinModal(false);
-      setPinInput('');
-      setPinError(null);
-      setViewMode('ADMIN_CONSOLE');
-    } else {
-      setPinError('보안 PIN 번호가 일치하지 않습니다. 관리자에게 문의하세요.');
-      setPinInput('');
+    if (code.length !== 4) return;
+    try {
+      const res = await fetch('/api/admin/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: code }),
+      });
+      if (res.ok) {
+        setAdminPin(code);
+        setIsAdminUnlocked(true);
+        setShowPinModal(false);
+        setPinInput('');
+        setPinError(null);
+        setViewMode('ADMIN_CONSOLE');
+        return;
+      }
+      setPinError(
+        res.status === 503
+          ? '서버에 관리자 PIN(FLEET_ADMIN_PIN)이 설정되지 않았습니다.'
+          : '보안 PIN 번호가 일치하지 않습니다. 관리자에게 문의하세요.'
+      );
+    } catch {
+      setPinError('PIN 검증 서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.');
     }
+    setTimeout(() => setPinInput(''), 350);
   };
 
   const handleDigitClick = (digit: string) => {
@@ -136,15 +155,7 @@ export default function FleetGuardCockpitPage() {
     const next = (pinInput + digit).slice(0, 4);
     setPinInput(next);
     if (next.length === 4) {
-      if (next === '4400') {
-        setIsAdminUnlocked(true);
-        setShowPinModal(false);
-        setPinInput('');
-        setViewMode('ADMIN_CONSOLE');
-      } else {
-        setPinError('보안 PIN 번호가 일치하지 않습니다. 관리자에게 문의하세요.');
-        setTimeout(() => setPinInput(''), 350);
-      }
+      void handleVerifyAdminPin(next);
     }
   };
 
@@ -227,6 +238,20 @@ export default function FleetGuardCockpitPage() {
     };
   }, []);
 
+  // Stable key of vehicle fields worth persisting. Excludes the fields the 2.5s live
+  // telemetry tick oscillates, so admin edits (MAC/BLE, lock, odometer audit) trigger a
+  // save without writing the DB on every animation frame.
+  const vehiclesPersistKey = useMemo(
+    () =>
+      JSON.stringify(
+        vehicles.map(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          ({ speedKmh, currentGForce, lat, lng, cumulativeGpsKm, ...stable }) => stable
+        )
+      ),
+    [vehicles]
+  );
+
   // 2. Automatically persist business state mutations to backend DB (data/fleet-db.json)
   useEffect(() => {
     if (!isHydratedRef.current) return;
@@ -234,7 +259,10 @@ export default function FleetGuardCockpitPage() {
     const timer = setTimeout(() => {
       fetch('/api/fleet/state', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminPin ? { 'x-admin-pin': adminPin } : {}),
+        },
         body: JSON.stringify({
           patch: {
             vehicles,
@@ -244,7 +272,8 @@ export default function FleetGuardCockpitPage() {
             geofenceLogs,
             ghostTrips,
             taxLogs,
-            policyConfig,
+            // Policy edits are admin-only; non-admin clients never send them
+            ...(adminPin ? { policyConfig } : {}),
             pushStream,
           },
         }),
@@ -259,7 +288,9 @@ export default function FleetGuardCockpitPage() {
         .catch(() => setDbSyncState('SYNCED'));
     }, 350);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    vehiclesPersistKey,
     employees,
     reservations,
     incidents,
@@ -275,10 +306,28 @@ export default function FleetGuardCockpitPage() {
     try {
       const res = await fetch('/api/fleet/state', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(adminPin ? { 'x-admin-pin': adminPin } : {}),
+        },
         body: JSON.stringify({ action: 'RESET_SEED' }),
       });
       const resData = await res.json();
+      if (!res.ok) {
+        setPushStream((prev) => [
+          {
+            id: `push-reset-denied-${Date.now()}`,
+            time: nowTimeStr(),
+            target: 'MANAGER',
+            message: isEng
+              ? '🔒 [DB Reset Denied] Unlock the Admin Console with the security PIN first.'
+              : '🔒 [DB 초기화 거부] 관리자 콘솔 보안 PIN 인증 후에만 초기화할 수 있습니다.',
+            level: 'CRITICAL',
+          },
+          ...prev,
+        ]);
+        return;
+      }
       if (resData?.data) {
         const db = resData.data;
         setVehicles(db.vehicles);
@@ -353,6 +402,14 @@ export default function FleetGuardCockpitPage() {
   const nowTimeStr = () => {
     const d = new Date();
     return d.toTimeString().slice(0, 8);
+  };
+
+  // Local calendar date (YYYY-MM-DD) for logbook rows; avoids UTC date rollover at night
+  const todayDateStr = () => {
+    const d = new Date();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
   };
 
   // ============================================================================
@@ -580,8 +637,11 @@ export default function FleetGuardCockpitPage() {
     if (!res) return;
     const veh = vehicles.find((v) => v.id === res.vehicleId);
     const timestamp = nowTimeStr();
-    const drivenKm = 22.8;
-    const endOdometer = Number((res.startOdometerKm + drivenKm).toFixed(1));
+    // Distance actually accumulated by phone GPS since trip start (never negative)
+    const endOdometer = Number(
+      Math.max(veh?.cumulativeGpsKm ?? res.startOdometerKm, res.startOdometerKm).toFixed(1)
+    );
+    const drivenKm = Number((endOdometer - res.startOdometerKm).toFixed(1));
 
     setReservations((prev) =>
       prev.map((r) =>
@@ -627,7 +687,7 @@ export default function FleetGuardCockpitPage() {
 
     const newTaxRow: TaxLogEntry = {
       id: `tax-${Date.now()}`,
-      date: '2026-10-20',
+      date: todayDateStr(),
       plateNumber: `${res.plateNumber} (${res.fleetNumber}호차)`,
       modelName: veh?.modelName || res.modelName,
       department: res.department.split(' (')[0],
@@ -1292,9 +1352,15 @@ export default function FleetGuardCockpitPage() {
     if (!veh) return;
     const emp = employees.find((e) => e.id === veh.currentDriverId) || employees[0];
     const timestamp = nowTimeStr();
-    const tripDistance = 16.4;
-    const startKm = Number((veh.cumulativeGpsKm - tripDistance).toFixed(1));
+    // Trip start odometer comes from the active reservation; fall back to last audit
+    const activeRes = reservations.find(
+      (r) => r.vehicleId === vehicleId && r.stage === 'IN_USE'
+    );
     const endKm = Number(veh.cumulativeGpsKm.toFixed(1));
+    const startKm = Number(
+      Math.min(activeRes?.startOdometerKm ?? veh.lastVerifiedOdometerKm, endKm).toFixed(1)
+    );
+    const tripDistance = Number((endKm - startKm).toFixed(1));
     const autoLot = `Northpark Lot A #${veh.fleetNumber.toString().padStart(2, '0')}`;
 
     setReservations((prev) =>
@@ -1315,7 +1381,7 @@ export default function FleetGuardCockpitPage() {
 
     const newTaxRow: TaxLogEntry = {
       id: `tax-${Date.now()}`,
-      date: '2026-10-20',
+      date: todayDateStr(),
       plateNumber: `${veh.plateNumber} (${veh.fleetNumber}호차)`,
       modelName: veh.modelName,
       department: emp.department.split(' (')[0],
@@ -1760,6 +1826,20 @@ export default function FleetGuardCockpitPage() {
                 >
                   <ClipboardList className="w-3.5 h-3.5" />
                   {isEng ? 'Test Scenarios (.HTML / Notion)' : '실전 테스트 시나리오 (.HTML / Notion)'}
+                </a>
+                <a
+                  href={
+                    isEng
+                      ? '/admin-guide/Admin_Setup_Guide_ENG.html'
+                      : '/admin-guide/Admin_Setup_Guide_KOR.html'
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-lg bg-[#111111] hover:bg-white/[0.08] text-xs font-medium text-[#FAFAFA] flex items-center gap-1.5 transition"
+                  style={{ boxShadow: 'rgba(255, 255, 255, 0.08) 0px 0px 0px 1px' }}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#FBBF24]" />
+                  {isEng ? 'Admin Setup Guide (.HTML)' : '관리자 초기 세팅 가이드 (.HTML)'}
                 </a>
               </div>
             </div>

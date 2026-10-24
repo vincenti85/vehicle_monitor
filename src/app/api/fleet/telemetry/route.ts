@@ -2,25 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDistanceFromOpelikaHq } from '@/utils/realDeviceSensors';
 import { readFleetDatabase, writeFleetDatabase } from '@/lib/fleetDatabase';
 import { IncidentEvent } from '@/types/fleet';
-
-interface TelemetryPayload {
-  employeeId: string;
-  vehicleId: string;
-  plateNumber: string;
-  lat: number;
-  lng: number;
-  speedKmh: number;
-  deltaSpeedKmh: number;
-  gForce: number;
-  gyroYawDegPerSec: number;
-  hasActiveApproval: boolean;
-  persistToDb?: boolean;
-}
+import { TelemetryPayloadSchema } from '@/lib/fleetSchemas';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as TelemetryPayload;
+    const parsed = TelemetryPayloadSchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json(
+        { accepted: false, error: 'Invalid telemetry payload', issues: parsed.error.issues.slice(0, 10) },
+        { status: 400 }
+      );
+    }
+    const body = parsed.data;
     const db = readFleetDatabase();
+    if (!db.vehicles.some((v) => v.id === body.vehicleId)) {
+      return NextResponse.json(
+        { accepted: false, error: `Unknown vehicleId: ${body.vehicleId}` },
+        { status: 404 }
+      );
+    }
     const policy = db.policyConfig;
 
     const distanceFromHqM = getDistanceFromOpelikaHq(body.lat, body.lng);
