@@ -930,7 +930,7 @@ export default function FleetGuardCockpitPage() {
         id: `push-vcsv-${Date.now()}`,
         time: nowTimeStr(),
         target: 'MANAGER',
-        message: `📥 [차량 CSV 등록] ${summary}`,
+        message: `📥 [차량 정보 등록] ${summary}`,
         level: 'INFO',
       },
       ...prev,

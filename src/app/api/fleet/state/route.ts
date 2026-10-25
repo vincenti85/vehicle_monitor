@@ -10,8 +10,20 @@ import {
 } from '@/lib/fleetDatabase';
 import { FleetStateRequestSchema } from '@/lib/fleetSchemas';
 import { AdminPinNotConfiguredError, isAdminRequest } from '@/lib/adminAuth';
+import { enforceVehicleMaster } from '@/lib/vehicleMaster';
+import type { FleetDatabaseSchema } from '@/lib/fleetDatabase';
 
 export const dynamic = 'force-dynamic';
+
+// Treats a server without FLEET_ADMIN_PIN as "no admin" instead of failing every save
+function isAdminRequestSafe(req: NextRequest): boolean {
+  try {
+    return isAdminRequest(req);
+  } catch (err) {
+    if (err instanceof AdminPinNotConfiguredError) return false;
+    throw err;
+  }
+}
 
 function errorResponse(err: unknown) {
   if (err instanceof FleetStorageUnavailableError) {
@@ -90,10 +102,22 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const updatedDb = await writeFleetDatabase(body.patch || {});
+    // Vehicle master data (plate, model, pairing IDs, lock, fleet list) is admin-only.
+    // Non-admin patches keep syncing operational fields; master changes are ignored.
+    const patch = { ...(body.patch || {}) } as Partial<FleetDatabaseSchema>;
+    let vehicleMasterProtected = false;
+    if (patch.vehicles && !isAdminRequestSafe(req)) {
+      const stored = await readFleetDatabase();
+      const guarded = enforceVehicleMaster(patch.vehicles, stored.vehicles);
+      patch.vehicles = guarded.vehicles;
+      vehicleMasterProtected = guarded.overridden;
+    }
+
+    const updatedDb = await writeFleetDatabase(patch);
     return NextResponse.json({
       ok: true,
       lastUpdatedAt: updatedDb.lastUpdatedAt,
+      vehicleMasterProtected,
       data: updatedDb,
     });
   } catch (err) {

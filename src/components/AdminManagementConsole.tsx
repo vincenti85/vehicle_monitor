@@ -40,6 +40,7 @@ import {
   VehicleReservation,
 } from '@/types/fleet';
 import { VehicleImportPanel } from '@/components/VehicleImportPanel';
+import { VehicleFormPanel } from '@/components/VehicleFormPanel';
 import { buildVehicleDeepLink, createQrSvg, resolveAppBaseUrl } from '@/utils/vehicleQr';
 
 const escapeHtml = (value: string): string =>
@@ -449,6 +450,13 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               </div>
             </div>
           </div>
+
+          <VehicleFormPanel
+            vehicles={vehicles}
+            reservations={reservations}
+            dataMode={dataMode}
+            onApplyVehicleImport={onApplyVehicleImport}
+          />
 
           <VehicleImportPanel
             vehicles={vehicles}

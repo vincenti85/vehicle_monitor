@@ -77,13 +77,26 @@ function resolveColumns(header: string[]): ColumnKey[] {
   );
 }
 
+/** Raw text values keyed by column, as typed in a CSV cell or a form field. */
+export type VehicleInputValues = Partial<Record<ColumnKey, string>>;
+
 function parseRow(
   cells: string[],
   columns: ColumnKey[]
 ): { row?: VehicleCsvRow; error?: string } {
+  const values: VehicleInputValues = {};
+  columns.forEach((key, idx) => {
+    if (key) values[key] = cells[idx] ?? '';
+  });
+  return validateVehicleInput(values);
+}
+
+/** Validates one vehicle (CSV row or form). Blank optional values stay undefined. */
+export function validateVehicleInput(
+  values: VehicleInputValues
+): { row?: VehicleCsvRow; error?: string } {
   const cell = (key: ColumnKey) => {
-    const idx = columns.indexOf(key);
-    const value = idx >= 0 ? cells[idx] ?? '' : '';
+    const value = values[key]?.trim() ?? '';
     return value === '' ? undefined : value;
   };
 
