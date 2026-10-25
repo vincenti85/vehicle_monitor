@@ -22,6 +22,7 @@ import {
   startRealDeviceSensors,
 } from '@/utils/realDeviceSensors';
 import { AppLang, formatDeptName, formatEmpName } from '@/utils/i18n';
+import { DispatchResult } from '@/utils/dispatchRules';
 
 // Result of opening the app from a vehicle key-tag QR (?unit=NN)
 export interface QrScanResult {
@@ -41,15 +42,15 @@ interface EmployeePhoneSimulatorProps {
     destination: string;
     plannedTimeWindow: string;
     notes: string;
-  }) => void;
-  onApproveRequest: (reservationId: string) => void;
-  onStartUsingVehicle: (reservationId: string) => void;
+  }) => DispatchResult;
+  onApproveRequest: (reservationId: string) => DispatchResult;
+  onStartUsingVehicle: (reservationId: string) => DispatchResult;
   onReturnVehicle: (
     reservationId: string,
     parkingZone: string,
     keyReturnedToBox: boolean
   ) => void;
-  onAuthorizedCheckout: (employeeId: string, vehicleId: string, purpose: TripPurpose) => void;
+  onAuthorizedCheckout: (employeeId: string, vehicleId: string, purpose: TripPurpose) => DispatchResult;
   onUnauthorizedKeyTheft: (
     employeeId: string,
     vehicleId: string,
@@ -95,6 +96,13 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   const [liveSnapshot, setLiveSnapshot] =
     useState<RealDeviceTelemetrySnapshot | null>(null);
   const stopSensorRef = useRef<(() => void) | null>(null);
+  const [dispatchNotice, setDispatchNotice] = useState<DispatchResult | null>(null);
+
+  // Shows the real outcome (blocked or done) instead of assuming success
+  const showDispatchResult = (result: DispatchResult) => {
+    setDispatchNotice(result);
+    setSimFeedback(result.message);
+  };
 
   // Defaults point at sample records; snap to real ones once the fleet/roster is replaced
   useEffect(() => {
@@ -231,17 +239,27 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
           </div>
         )}
 
+        {dispatchNotice && (
+          <div
+            role="alert"
+            data-testid="dispatch-notice"
+            className={`px-3 py-2 rounded-lg text-xs flex items-start justify-between gap-2 ${
+              dispatchNotice.ok ? 'bg-[#10B981]/10 text-[#047857]' : 'bg-[#FF5B4F]/10 text-[#DC2626]'
+            }`}
+          >
+            <span>{dispatchNotice.ok ? '✅ ' : '🚫 '}{dispatchNotice.message}</span>
+            <button type="button" onClick={() => setDispatchNotice(null)} className="shrink-0 underline">
+              {isEng ? 'Close' : '닫기'}
+            </button>
+          </div>
+        )}
+
         {/* 1-Click QR Boarding & Sensor Bar */}
         <div className="space-y-1.5">
           <button
             type="button"
             onClick={() => {
-              onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose);
-              setSimFeedback(
-                isEng
-                  ? `Unit #${currentVeh.fleetNumber} QR Boarding · Trip Started`
-                  : `#${currentVeh.fleetNumber}호차 QR 탑승 · 운행 시작`
-              );
+              showDispatchResult(onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose));
             }}
             className="w-full py-2 px-3 rounded-lg bg-[#0A0A0A] hover:bg-[#27272A] text-[#FAFAFA] text-xs font-semibold flex items-center justify-center gap-1.5 transition"
           >
@@ -420,19 +438,14 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    onCreateRequest({
+                    showDispatchResult(onCreateRequest({
                       employeeId: selectedEmpId,
                       vehicleId: selectedVehId,
                       purpose: selectedPurpose,
                       destination,
                       plannedTimeWindow: plannedWindow,
                       notes: isEng ? 'Mobile Request' : '모바일 신청',
-                    });
-                    setSimFeedback(
-                      isEng
-                        ? `Unit #${currentVeh.fleetNumber} Requested`
-                        : `#${currentVeh.fleetNumber}호차 배차 신청 완료`
-                    );
+                    }));
                   }}
                   className="px-3 py-1.5 rounded-md bg-[#0A72EF] hover:bg-[#0060DF] text-white text-xs font-medium shrink-0 transition"
                 >
@@ -496,12 +509,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                           <button
                             type="button"
                             onClick={() => {
-                              onApproveRequest(res.id);
-                              setSimFeedback(
-                                isEng
-                                  ? `Unit #${res.fleetNumber} Approved`
-                                  : `#${res.fleetNumber}호차 승인 완료`
-                              );
+                              showDispatchResult(onApproveRequest(res.id));
                             }}
                             className="px-2 py-0.5 rounded bg-[#10B981]/20 text-[#047857] text-[11px]"
                           >
@@ -514,12 +522,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            onStartUsingVehicle(res.id);
-                            setSimFeedback(
-                              isEng
-                                ? `Unit #${res.fleetNumber} Trip Started`
-                                : `#${res.fleetNumber}호차 운행 시작`
-                            );
+                            showDispatchResult(onStartUsingVehicle(res.id));
                           }}
                           className="w-full py-1.5 rounded bg-[#0A72EF] text-white text-xs font-medium flex items-center justify-center gap-1"
                         >
@@ -600,12 +603,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose);
-                  setSimFeedback(
-                    isEng
-                      ? `Unit #${currentVeh.fleetNumber} Authorized Start`
-                      : `#${currentVeh.fleetNumber}호차 자율 반출 완료`
-                  );
+                  showDispatchResult(onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose));
                 }}
                 className="px-2.5 py-1 rounded bg-[#0A72EF] text-white text-xs"
               >

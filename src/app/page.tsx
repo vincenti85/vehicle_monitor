@@ -60,6 +60,12 @@ import { TeslaTelemetryMap } from '@/components/TeslaTelemetryMap';
 import { EmployeePhoneSimulator, QrScanResult } from '@/components/EmployeePhoneSimulator';
 import { hasUnitParam, parseUnitParam } from '@/utils/vehicleQr';
 import type { FleetDataMode, FleetDatabaseSchema } from '@/lib/fleetDatabase';
+import {
+  CONFIRM_BLOCKING_STAGES,
+  CREATE_BLOCKING_STAGES,
+  DispatchResult,
+  findDispatchConflict,
+} from '@/utils/dispatchRules';
 import { ReservationWorkflowPanel } from '@/components/ReservationWorkflowPanel';
 import { AdminManagementConsole, EmployeeCsvRow } from '@/components/AdminManagementConsole';
 import { UserApprovalManualModal } from '@/components/UserApprovalManualModal';
@@ -487,6 +493,14 @@ export default function FleetGuardCockpitPage() {
   // 4-STAGE LIFECYCLE HANDLERS: 1.신청(REQUESTED) -> 2.승인(APPROVED) -> 3.사용(IN_USE) -> 4.반납(RETURNED)
   // ============================================================================
 
+  // Posts a blocked-dispatch notice to the shared alert feed
+  const pushDispatchBlocked = (target: 'MANAGER' | 'DRIVER', message: string) => {
+    setPushStream((prev) => [
+      { id: `push-dup-${Date.now()}`, time: nowTimeStr(), target, message, level: 'CRITICAL' },
+      ...prev,
+    ]);
+  };
+
   const handleCreateRequest = (payload: {
     employeeId: string;
     vehicleId: string;
@@ -494,10 +508,10 @@ export default function FleetGuardCockpitPage() {
     destination: string;
     plannedTimeWindow: string;
     notes: string;
-  }) => {
+  }): DispatchResult => {
     const emp = employees.find((e) => e.id === payload.employeeId);
     const veh = vehicles.find((v) => v.id === payload.vehicleId);
-    if (!emp || !veh) return;
+    if (!emp || !veh) return { ok: false, message: '운전자 또는 차량 정보를 찾을 수 없습니다.' };
 
     const timestamp = nowTimeStr();
 
@@ -513,7 +527,7 @@ export default function FleetGuardCockpitPage() {
         },
         ...prev,
       ]);
-      return;
+      return { ok: false, message: '배차 자격이 일시 정지되어 신청할 수 없습니다. 관리자에게 문의하세요.' };
     }
 
     if (veh.isLockedByAdmin) {
@@ -527,7 +541,13 @@ export default function FleetGuardCockpitPage() {
         },
         ...prev,
       ]);
-      return;
+      return { ok: false, message: `#${veh.fleetNumber}호차는 관리자가 잠근 차량(점검)이라 신청할 수 없습니다.` };
+    }
+
+    const conflict = findDispatchConflict(veh, reservations, CREATE_BLOCKING_STAGES);
+    if (conflict) {
+      pushDispatchBlocked('DRIVER', `🚫 [중복 배차 신청 차단] ${emp.name.split(' (')[0]}님의 신청을 막았습니다. ${conflict}`);
+      return { ok: false, message: conflict };
     }
 
     const autoApprove = policyConfig.autoApproveWhenManagerAway;
@@ -584,11 +604,24 @@ export default function FleetGuardCockpitPage() {
         ...prev,
       ]);
     }
+    return {
+      ok: true,
+      message: autoApprove
+        ? `#${veh.fleetNumber}호차 신청이 자동 승인되었습니다. 키를 수령해 운행을 시작하세요.`
+        : `#${veh.fleetNumber}호차 배차 신청 완료 — 관리자 승인을 기다리세요.`,
+    };
   };
 
-  const handleApproveRequest = (reservationId: string) => {
+  const handleApproveRequest = (reservationId: string): DispatchResult => {
     const res = reservations.find((r) => r.id === reservationId);
-    if (!res) return;
+    const veh = res && vehicles.find((v) => v.id === res.vehicleId);
+    if (!res || !veh) return { ok: false, message: '배차 건 또는 차량을 찾을 수 없습니다.' };
+    if (res.stage !== 'REQUESTED') return { ok: false, message: '승인대기 상태의 건만 승인할 수 있습니다.' };
+    const conflict = findDispatchConflict(veh, reservations, CONFIRM_BLOCKING_STAGES, res.id);
+    if (conflict) {
+      pushDispatchBlocked('MANAGER', `⚠️ [중복 배차 승인 차단] ${res.employeeName.split(' (')[0]}님 신청을 승인하지 않았습니다. ${conflict}`);
+      return { ok: false, message: conflict };
+    }
     const timestamp = nowTimeStr();
 
     setReservations((prev) =>
@@ -615,6 +648,7 @@ export default function FleetGuardCockpitPage() {
       },
       ...prev,
     ]);
+    return { ok: true, message: `#${res.fleetNumber}호차 승인 완료` };
   };
 
   const handleRejectRequest = (reservationId: string) => {
@@ -646,9 +680,16 @@ export default function FleetGuardCockpitPage() {
     ]);
   };
 
-  const handleStartUsingVehicle = (reservationId: string) => {
+  const handleStartUsingVehicle = (reservationId: string): DispatchResult => {
     const res = reservations.find((r) => r.id === reservationId);
-    if (!res) return;
+    const veh = res && vehicles.find((v) => v.id === res.vehicleId);
+    if (!res || !veh) return { ok: false, message: '배차 건 또는 차량을 찾을 수 없습니다.' };
+    if (res.stage !== 'APPROVED') return { ok: false, message: '승인완료 상태의 건만 운행을 시작할 수 있습니다.' };
+    const conflict = findDispatchConflict(veh, reservations, CONFIRM_BLOCKING_STAGES, res.id);
+    if (conflict) {
+      pushDispatchBlocked('DRIVER', `🚫 [운행 시작 차단] ${res.employeeName.split(' (')[0]}님 운행 시작을 막았습니다. ${conflict}`);
+      return { ok: false, message: conflict };
+    }
     const timestamp = nowTimeStr();
 
     setReservations((prev) =>
@@ -697,6 +738,7 @@ export default function FleetGuardCockpitPage() {
       },
       ...prev,
     ]);
+    return { ok: true, message: `#${res.fleetNumber}호차 운행 시작` };
   };
 
   const handleReturnVehicle = (
@@ -1030,10 +1072,28 @@ export default function FleetGuardCockpitPage() {
     employeeId: string,
     vehicleId: string,
     purpose: TripPurpose
-  ) => {
+  ): DispatchResult => {
     const emp = employees.find((e) => e.id === employeeId);
     const veh = vehicles.find((v) => v.id === vehicleId);
-    if (!emp || !veh) return;
+    if (!emp || !veh) return { ok: false, message: '운전자 또는 차량 정보를 찾을 수 없습니다.' };
+
+    // Driver already holds an approved booking for this car: start it instead of a new one
+    const ownApproved = reservations.find(
+      (r) => r.vehicleId === vehicleId && r.employeeId === employeeId && r.stage === 'APPROVED'
+    );
+    if (ownApproved) return handleStartUsingVehicle(ownApproved.id);
+
+    if (emp.dispatchAllowed === false) {
+      return { ok: false, message: '배차 자격이 일시 정지되어 출발할 수 없습니다. 관리자에게 문의하세요.' };
+    }
+    if (veh.isLockedByAdmin) {
+      return { ok: false, message: `#${veh.fleetNumber}호차는 관리자가 잠근 차량(점검)이라 출발할 수 없습니다.` };
+    }
+    const conflict = findDispatchConflict(veh, reservations, CREATE_BLOCKING_STAGES);
+    if (conflict) {
+      pushDispatchBlocked('DRIVER', `🚫 [중복 출발 차단] ${emp.name.split(' (')[0]}님의 1초 출발을 막았습니다. ${conflict}`);
+      return { ok: false, message: conflict };
+    }
 
     const timestamp = nowTimeStr();
     const quickRes: VehicleReservation = {
@@ -1095,6 +1155,7 @@ export default function FleetGuardCockpitPage() {
       },
       ...prev,
     ]);
+    return { ok: true, message: `#${veh.fleetNumber}호차 1초 출발 — 운행이 기록되었습니다.` };
   };
 
   const handleUnauthorizedKeyTheft = (

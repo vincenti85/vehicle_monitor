@@ -16,6 +16,7 @@ import {
   Vehicle,
   VehicleReservation,
 } from '@/types/fleet';
+import { DispatchResult } from '@/utils/dispatchRules';
 import { AppLang, formatDeptName, formatEmpName, formatTripPurpose } from '@/utils/i18n';
 
 interface ReservationWorkflowPanelProps {
@@ -31,10 +32,10 @@ interface ReservationWorkflowPanelProps {
     destination: string;
     plannedTimeWindow: string;
     notes: string;
-  }) => void;
-  onApproveRequest: (reservationId: string) => void;
+  }) => DispatchResult;
+  onApproveRequest: (reservationId: string) => DispatchResult;
   onRejectRequest: (reservationId: string) => void;
-  onStartUsingVehicle: (reservationId: string) => void;
+  onStartUsingVehicle: (reservationId: string) => DispatchResult;
   onReturnVehicle: (
     reservationId: string,
     parkingZone: string,
@@ -68,6 +69,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
   const [notes, setNotes] = useState<string>('');
 
   const [returnZoneMap, setReturnZoneMap] = useState<Record<string, string>>({});
+  const [notice, setNotice] = useState<DispatchResult | null>(null);
 
   // Defaults point at sample records; snap to real ones once the fleet/roster is replaced
   useEffect(() => {
@@ -91,7 +93,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreateRequest({
+    const result = onCreateRequest({
       employeeId: empId,
       vehicleId: vehId,
       purpose,
@@ -99,7 +101,9 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
       plannedTimeWindow: timeWindow,
       notes,
     });
-    setShowRequestForm(false);
+    setNotice(result);
+    // Keep the form open on a blocked request so the user can pick another vehicle
+    if (result.ok) setShowRequestForm(false);
   };
 
   return (
@@ -183,6 +187,21 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
           </button>
         </div>
       </div>
+
+      {notice && (
+        <div
+          role="alert"
+          data-testid="dispatch-panel-notice"
+          className={`px-3 py-2 rounded-lg text-xs flex items-start justify-between gap-2 ${
+            notice.ok ? 'bg-[#10B981]/10 text-[#047857]' : 'bg-[#FF5B4F]/10 text-[#DC2626]'
+          }`}
+        >
+          <span>{notice.ok ? '✅ ' : '🚫 '}{notice.message}</span>
+          <button type="button" onClick={() => setNotice(null)} className="shrink-0 underline">
+            {isEng ? 'Close' : '닫기'}
+          </button>
+        </div>
+      )}
 
       {/* Compact New Request Form */}
       {showRequestForm && (
@@ -335,7 +354,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                   <>
                     <button
                       type="button"
-                      onClick={() => onApproveRequest(res.id)}
+                      onClick={() => setNotice(onApproveRequest(res.id))}
                       className="px-2.5 py-1 rounded-md bg-[#10B981] text-white text-xs font-medium flex items-center gap-1"
                     >
                       <CheckCircle2 className="w-3 h-3" />
@@ -355,7 +374,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                 {res.stage === 'APPROVED' && (
                   <button
                     type="button"
-                    onClick={() => onStartUsingVehicle(res.id)}
+                    onClick={() => setNotice(onStartUsingVehicle(res.id))}
                     className="px-3 py-1 rounded-md bg-[#0A72EF] text-white text-xs font-medium flex items-center gap-1"
                   >
                     <Play className="w-3 h-3" />
