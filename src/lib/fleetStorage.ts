@@ -47,6 +47,12 @@ export class FleetStorageConflictError extends Error {
 const BLOB_PATHNAME = 'fleetguard30/fleet-db.json';
 const DB_FILE_NAME = 'fleet-db.json';
 
+// Blob serves larger JSON compressed with a weak ETag (W/"..."), which put({ ifMatch })
+// always rejects. The opaque tag is identical to the strong one put() returned.
+export function toStrongEtag(etag: string): string {
+  return etag.startsWith('W/') ? etag.slice(2) : etag;
+}
+
 function createBlobBackend(): FleetStorageBackend {
   return {
     name: 'VERCEL_BLOB',
@@ -59,7 +65,7 @@ function createBlobBackend(): FleetStorageBackend {
         });
         if (!result) return null;
         if (result.statusCode === 304) return 'NOT_MODIFIED';
-        return { json: await new Response(result.stream).text(), etag: result.blob.etag };
+        return { json: await new Response(result.stream).text(), etag: toStrongEtag(result.blob.etag) };
       } catch (err) {
         throw new FleetStorageUnavailableError('Vercel Blob read failed', { cause: err });
       }
