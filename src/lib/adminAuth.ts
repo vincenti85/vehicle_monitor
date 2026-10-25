@@ -27,3 +27,13 @@ export function verifyAdminPin(candidate: string | null | undefined): boolean {
 export function isAdminRequest(req: NextRequest): boolean {
   return verifyAdminPin(req.headers.get(ADMIN_PIN_HEADER));
 }
+
+/** Like isAdminRequest, but a server without FLEET_ADMIN_PIN simply has no admins. */
+export function isAdminRequestSafe(req: NextRequest): boolean {
+  try {
+    return isAdminRequest(req);
+  } catch (err) {
+    if (err instanceof AdminPinNotConfiguredError) return false;
+    throw err;
+  }
+}

@@ -60,14 +60,13 @@ import { TeslaTelemetryMap } from '@/components/TeslaTelemetryMap';
 import { EmployeePhoneSimulator, QrScanResult } from '@/components/EmployeePhoneSimulator';
 import { hasUnitParam, parseUnitParam } from '@/utils/vehicleQr';
 import type { FleetDataMode, FleetDatabaseSchema } from '@/lib/fleetDatabase';
-import {
-  CONFIRM_BLOCKING_STAGES,
-  CREATE_BLOCKING_STAGES,
-  DispatchResult,
-  findDispatchConflict,
-} from '@/utils/dispatchRules';
+import type { ActionRequest } from '@/lib/actionSchemas';
+import type { EmployeeCsvRow } from '@/domain/admin';
+import { useFleetSync } from '@/hooks/useFleetSync';
+import { VehicleCsvRow, VehicleImportMode } from '@/utils/vehicleImport';
+import { DispatchResult } from '@/utils/dispatchRules';
 import { ReservationWorkflowPanel } from '@/components/ReservationWorkflowPanel';
-import { AdminManagementConsole, EmployeeCsvRow } from '@/components/AdminManagementConsole';
+import { AdminManagementConsole } from '@/components/AdminManagementConsole';
 import { UserApprovalManualModal } from '@/components/UserApprovalManualModal';
 import { NewUserOnboardingGuide } from '@/components/NewUserOnboardingGuide';
 import { VehiclePhoneSetupInfographic } from '@/components/VehiclePhoneSetupInfographic';
@@ -206,16 +205,13 @@ export default function FleetGuardCockpitPage() {
     },
   ]);
 
-  const [dbSyncState, setDbSyncState] =
-    useState<'HYDRATING' | 'SYNCED' | 'SAVING' | 'ERROR'>('HYDRATING');
-  const [dbError, setDbError] = useState<string | null>(null);
-  const [dbLastUpdated, setDbLastUpdated] = useState<string>('');
   const [dataMode, setDataMode] = useState<FleetDataMode>('DEMO');
-  const [hydrateAttempt, setHydrateAttempt] = useState<number>(0);
-  const isHydratedRef = useRef<boolean>(false);
+  const [dbLastUpdated, setDbLastUpdated] = useState<string>('');
+  // Outcome of the latest admin/background action, shown under the top bar
+  const [actionNotice, setActionNotice] = useState<DispatchResult | null>(null);
 
-  // Applies a full server snapshot to client state (hydrate, demo reset, demo cleanup)
-  const applyDbSnapshot = (db: Partial<FleetDatabaseSchema>) => {
+  // Applies a full server snapshot to client state (initial load, polling, action responses)
+  const applyDbSnapshot = (db: FleetDatabaseSchema) => {
     if (Array.isArray(db.vehicles) && db.vehicles.length > 0) setVehicles(db.vehicles);
     if (Array.isArray(db.employees) && db.employees.length > 0) setEmployees(db.employees);
     if (Array.isArray(db.reservations)) setReservations(db.reservations);
@@ -229,42 +225,28 @@ export default function FleetGuardCockpitPage() {
     setDbLastUpdated(db.lastUpdatedAt ? new Date(db.lastUpdatedAt).toLocaleTimeString() : '방금 전');
   };
 
-  // 1. Hydrate state from persistent backend DB (/api/fleet/state) on mount.
-  // On failure stay un-hydrated: auto-save is blocked so the sample data on screen can
-  // never overwrite the real database.
+  // Server is the source of truth: every write is one action; screens poll every 15 s
+  const sync = useFleetSync(applyDbSnapshot, adminPin);
+  const runAction = sync.runAction;
+
+  /** Runs an action and reports failures (and, if asked, successes) in the page notice. */
+  const runAndNotify = async (action: ActionRequest, notifySuccess = false): Promise<DispatchResult> => {
+    const result = await runAction(action);
+    if (!result.ok || notifySuccess) setActionNotice(result);
+    return result;
+  };
+
   useEffect(() => {
-    let cancelled = false;
-    fetch('/api/fleet/state')
-      .then(async (res) => {
-        const resData = await res.json().catch(() => null);
-        if (!res.ok || !resData?.data) {
-          throw new Error(resData?.error ?? `HTTP ${res.status}`);
-        }
-        return resData.data as FleetDatabaseSchema;
-      })
-      .then((db) => {
-        if (cancelled) return;
-        applyDbSnapshot(db);
-        isHydratedRef.current = true;
-        setDbError(null);
-        setDbSyncState('SYNCED');
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setDbError(err instanceof Error ? err.message : 'DB load failed');
-        setDbSyncState('ERROR');
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrateAttempt]);
+    if (!actionNotice) return;
+    const timer = setTimeout(() => setActionNotice(null), 6000);
+    return () => clearTimeout(timer);
+  }, [actionNotice]);
 
   // 1-b. Vehicle key-tag QR deep link (?unit=NN): once hydrated, preselect that vehicle
   const [qrScan, setQrScan] = useState<QrScanResult | null>(null);
   const qrHandledRef = useRef<boolean>(false);
   useEffect(() => {
-    if (!isHydratedRef.current || qrHandledRef.current) return;
+    if (!sync.hydrated || qrHandledRef.current) return;
     qrHandledRef.current = true;
     const { search, pathname, hash } = window.location;
     if (!hasUnitParam(search)) return;
@@ -276,144 +258,15 @@ export default function FleetGuardCockpitPage() {
     setViewMode('EMPLOYEE_OPS');
     // Drop the param so a reload does not re-apply the scan
     window.history.replaceState(null, '', `${pathname}${hash}`);
-  }, [dbSyncState, vehicles]);
-
-  // Stable key of vehicle fields worth persisting. Excludes the fields the 2.5s live
-  // telemetry tick oscillates, so admin edits (MAC/BLE, lock, odometer audit) trigger a
-  // save without writing the DB on every animation frame.
-  const vehiclesPersistKey = useMemo(
-    () =>
-      JSON.stringify(
-        vehicles.map(
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          ({ speedKmh, currentGForce, lat, lng, cumulativeGpsKm, ...stable }) => stable
-        )
-      ),
-    [vehicles]
-  );
-
-  // 2. Automatically persist business state mutations to backend DB (data/fleet-db.json)
-  useEffect(() => {
-    if (!isHydratedRef.current) return;
-    setDbSyncState('SAVING');
-    const timer = setTimeout(() => {
-      fetch('/api/fleet/state', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(adminPin ? { 'x-admin-pin': adminPin } : {}),
-        },
-        body: JSON.stringify({
-          patch: {
-            vehicles,
-            employees,
-            reservations,
-            incidents,
-            geofenceLogs,
-            ghostTrips,
-            taxLogs,
-            // Policy edits are admin-only; non-admin clients never send them
-            ...(adminPin ? { policyConfig } : {}),
-            pushStream,
-          },
-        }),
-      })
-        .then(async (res) => {
-          const resData = await res.json().catch(() => null);
-          if (!res.ok) throw new Error(resData?.error ?? `HTTP ${res.status}`);
-          if (resData?.data?.lastUpdatedAt) {
-            setDbLastUpdated(new Date(resData.data.lastUpdatedAt).toLocaleTimeString());
-          }
-          setDbError(null);
-          setDbSyncState('SYNCED');
-        })
-        .catch((err: unknown) => {
-          setDbError(err instanceof Error ? err.message : 'DB save failed');
-          setDbSyncState('ERROR');
-        });
-    }, 350);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    vehiclesPersistKey,
-    employees,
-    reservations,
-    incidents,
-    geofenceLogs,
-    ghostTrips,
-    taxLogs,
-    policyConfig,
-    pushStream,
-  ]);
+  }, [sync.hydrated, vehicles]);
 
   const handleResetDatabase = async () => {
-    setDbSyncState('SAVING');
-    try {
-      const res = await fetch('/api/fleet/state', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(adminPin ? { 'x-admin-pin': adminPin } : {}),
-        },
-        body: JSON.stringify({ action: 'RESET_SEED' }),
-      });
-      const resData = await res.json();
-      if (!res.ok) {
-        const message =
-          res.status === 409
-            ? isEng
-              ? '🔒 [DB Reset Blocked] Live fleet data is protected; demo reset is disabled.'
-              : '🔒 [DB 초기화 차단] 실운영 데이터가 보호 중이라 데모 초기화를 할 수 없습니다.'
-            : isEng
-              ? '🔒 [DB Reset Denied] Unlock the Admin Console with the security PIN first.'
-              : '🔒 [DB 초기화 거부] 관리자 콘솔 보안 PIN 인증 후에만 초기화할 수 있습니다.';
-        setPushStream((prev) => [
-          {
-            id: `push-reset-denied-${Date.now()}`,
-            time: nowTimeStr(),
-            target: 'MANAGER',
-            message,
-            level: 'CRITICAL',
-          },
-          ...prev,
-        ]);
-        return;
-      }
-      if (resData?.data) applyDbSnapshot(resData.data);
-    } finally {
-      setDbSyncState('SYNCED');
-    }
+    await runAndNotify({ type: 'admin.resetDemo', payload: {} }, true);
   };
 
   // Admin: switch from the sample fleet to real operations (clears all demo history)
-  const handleClearDemoData = async (
-    removeDemoEmployees: boolean
-  ): Promise<{ ok: boolean; message: string }> => {
-    if (!adminPin) {
-      return { ok: false, message: '관리자 PIN 인증이 필요합니다.' };
-    }
-    try {
-      const res = await fetch('/api/fleet/state', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
-        body: JSON.stringify({ action: 'CLEAR_DEMO', removeDemoEmployees }),
-      });
-      const resData = await res.json().catch(() => null);
-      if (!res.ok || !resData?.data) {
-        return { ok: false, message: resData?.error ?? `요청 실패 (HTTP ${res.status})` };
-      }
-      applyDbSnapshot(resData.data);
-      const kept = resData.keptDemoEmployeesBecauseNoRealOnes
-        ? ' 실제 임직원이 아직 없어 데모 임직원은 유지했습니다.'
-        : '';
-      return {
-        ok: true,
-        message: `실운영 모드로 전환했습니다. 데모 배차·사고·운행일지·알림을 비우고 차량을 모두 차고지 대기로 되돌렸습니다. 데모 임직원 ${resData.removedDemoEmployees}명 삭제.${kept}`,
-      };
-    } catch {
-      return { ok: false, message: '서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.' };
-    }
-  };
+  const handleClearDemoData = (removeDemoEmployees: boolean) =>
+    runAction({ type: 'admin.clearDemo', payload: { removeDemoEmployees } });
 
   // Keep the selected vehicle valid when the fleet list is replaced by real data
   useEffect(() => {
@@ -476,1042 +329,113 @@ export default function FleetGuardCockpitPage() {
     };
   }, [vehicles, employees, reservations, incidents]);
 
-  const nowTimeStr = () => {
-    const d = new Date();
-    return d.toTimeString().slice(0, 8);
-  };
-
-  // Local calendar date (YYYY-MM-DD) for logbook rows; avoids UTC date rollover at night
-  const todayDateStr = () => {
-    const d = new Date();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${d.getFullYear()}-${mm}-${dd}`;
-  };
-
   // ============================================================================
-  // 4-STAGE LIFECYCLE HANDLERS: 1.신청(REQUESTED) -> 2.승인(APPROVED) -> 3.사용(IN_USE) -> 4.반납(RETURNED)
+  // ACTIONS — each user action is applied on the server against the latest data.
+  // The server enforces every rule; these wrappers only add UI follow-ups.
   // ============================================================================
 
-  // Posts a blocked-dispatch notice to the shared alert feed
-  const pushDispatchBlocked = (target: 'MANAGER' | 'DRIVER', message: string) => {
-    setPushStream((prev) => [
-      { id: `push-dup-${Date.now()}`, time: nowTimeStr(), target, message, level: 'CRITICAL' },
-      ...prev,
-    ]);
-  };
-
-  const handleCreateRequest = (payload: {
+  // 4-stage dispatch lifecycle: 신청(REQUESTED) -> 승인(APPROVED) -> 사용(IN_USE) -> 반납(RETURNED)
+  const handleCreateRequest = async (payload: {
     employeeId: string;
     vehicleId: string;
     purpose: TripPurpose;
     destination: string;
     plannedTimeWindow: string;
     notes: string;
-  }): DispatchResult => {
-    const emp = employees.find((e) => e.id === payload.employeeId);
-    const veh = vehicles.find((v) => v.id === payload.vehicleId);
-    if (!emp || !veh) return { ok: false, message: '운전자 또는 차량 정보를 찾을 수 없습니다.' };
-
-    const timestamp = nowTimeStr();
-
-    // Check if employee is blocked by Admin or if vehicle is locked
-    if (emp.dispatchAllowed === false) {
-      setPushStream((prev) => [
-        {
-          id: `push-blk-${Date.now()}`,
-          time: timestamp,
-          target: 'DRIVER',
-          message: `🚫 [배차 신청 차단됨] ${emp.name.split(' (')[0]}님은 권한 미준수 또는 무단반출 이력으로 관리자에 의해 배차 자격이 일시 정지되었습니다.`,
-          level: 'CRITICAL',
-        },
-        ...prev,
-      ]);
-      return { ok: false, message: '배차 자격이 일시 정지되어 신청할 수 없습니다. 관리자에게 문의하세요.' };
-    }
-
-    if (veh.isLockedByAdmin) {
-      setPushStream((prev) => [
-        {
-          id: `push-vlk-${Date.now()}`,
-          time: timestamp,
-          target: 'DRIVER',
-          message: `🚫 [차량 잠금 상태] #${veh.fleetNumber}호차(${veh.plateNumber})는 관리자에 의해 배차 차단(점검) 상태입니다.`,
-          level: 'CRITICAL',
-        },
-        ...prev,
-      ]);
-      return { ok: false, message: `#${veh.fleetNumber}호차는 관리자가 잠근 차량(점검)이라 신청할 수 없습니다.` };
-    }
-
-    const conflict = findDispatchConflict(veh, reservations, CREATE_BLOCKING_STAGES);
-    if (conflict) {
-      pushDispatchBlocked('DRIVER', `🚫 [중복 배차 신청 차단] ${emp.name.split(' (')[0]}님의 신청을 막았습니다. ${conflict}`);
-      return { ok: false, message: conflict };
-    }
-
-    const autoApprove = policyConfig.autoApproveWhenManagerAway;
-    const initialStage = autoApprove ? 'APPROVED' : 'REQUESTED';
-
-    const newRes: VehicleReservation = {
-      id: `res-${Date.now()}`,
-      vehicleId: veh.id,
-      fleetNumber: veh.fleetNumber,
-      plateNumber: veh.plateNumber,
-      modelName: veh.modelName,
-      employeeId: emp.id,
-      employeeName: emp.name,
-      department: emp.department,
-      purpose: payload.purpose,
-      destination: payload.destination,
-      plannedTimeWindow: payload.plannedTimeWindow,
-      stage: initialStage,
-      requestedAt: timestamp,
-      approvedAt: autoApprove ? timestamp : null,
-      approvedBy: autoApprove ? '관리자 부재 중 자동승인 (Auto-Approve)' : null,
-      startedAt: null,
-      returnedAt: null,
-      startOdometerKm: veh.cumulativeGpsKm,
-      endOdometerKm: null,
-      returnParkingZone: null,
-      keyReturnedToBox: false,
-      notes: payload.notes,
-    };
-
-    setReservations((prev) => [newRes, ...prev]);
-    setActiveTab('DISPATCH_WORKFLOW');
-
-    if (autoApprove) {
-      setPushStream((prev) => [
-        {
-          id: `push-a-${Date.now()}`,
-          time: timestamp,
-          target: 'DRIVER',
-          message: `✅ [배차 자동 승인] ${emp.name.split(' (')[0]}님, #${veh.fleetNumber}호차(${veh.plateNumber}) 신청이 자동 승인되었습니다. 키보관함에서 키를 수령해 운행을 시작하세요.`,
-          level: 'INFO',
-        },
-        ...prev,
-      ]);
-    } else {
-      setPushStream((prev) => [
-        {
-          id: `push-r-${Date.now()}`,
-          time: timestamp,
-          target: 'MANAGER',
-          message: `📋 [배차 승인 요청] ${emp.name.split(' (')[0]}님이 #${veh.fleetNumber}호차(${veh.plateNumber}) 배차를 신청했습니다. (행선지: ${payload.destination})`,
-          level: 'INFO',
-        },
-        ...prev,
-      ]);
-    }
-    return {
-      ok: true,
-      message: autoApprove
-        ? `#${veh.fleetNumber}호차 신청이 자동 승인되었습니다. 키를 수령해 운행을 시작하세요.`
-        : `#${veh.fleetNumber}호차 배차 신청 완료 — 관리자 승인을 기다리세요.`,
-    };
+  }): Promise<DispatchResult> => {
+    const result = await runAction({ type: 'dispatch.request', payload });
+    if (result.ok) setActiveTab('DISPATCH_WORKFLOW');
+    return result;
   };
 
-  const handleApproveRequest = (reservationId: string): DispatchResult => {
-    const res = reservations.find((r) => r.id === reservationId);
-    const veh = res && vehicles.find((v) => v.id === res.vehicleId);
-    if (!res || !veh) return { ok: false, message: '배차 건 또는 차량을 찾을 수 없습니다.' };
-    if (res.stage !== 'REQUESTED') return { ok: false, message: '승인대기 상태의 건만 승인할 수 있습니다.' };
-    const conflict = findDispatchConflict(veh, reservations, CONFIRM_BLOCKING_STAGES, res.id);
-    if (conflict) {
-      pushDispatchBlocked('MANAGER', `⚠️ [중복 배차 승인 차단] ${res.employeeName.split(' (')[0]}님 신청을 승인하지 않았습니다. ${conflict}`);
-      return { ok: false, message: conflict };
-    }
-    const timestamp = nowTimeStr();
+  const handleApproveRequest = (reservationId: string) =>
+    runAction({ type: 'dispatch.approve', payload: { reservationId } });
 
-    setReservations((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              stage: 'APPROVED',
-              approvedAt: timestamp,
-              approvedBy: '차량총괄관리자 (Fleet Admin)',
-              notes: '관리자 승인 완료 — 4400 Northpark Dr 키보관함 수령 가능',
-            }
-          : r
-      )
-    );
+  const handleRejectRequest = (reservationId: string) =>
+    runAction({ type: 'dispatch.reject', payload: { reservationId } });
 
-    setPushStream((prev) => [
-      {
-        id: `push-ap-${Date.now()}`,
-        time: timestamp,
-        target: 'DRIVER',
-        message: `✅ [배차 승인 완료] ${res.employeeName.split(' (')[0]}님, 신청하신 #${res.fleetNumber}호차(${res.plateNumber}) 배차가 승인되었습니다. 키 수령 후 사용을 시작하세요.`,
-        level: 'INFO',
-      },
-      ...prev,
-    ]);
-    return { ok: true, message: `#${res.fleetNumber}호차 승인 완료` };
+  const handleStartUsingVehicle = async (reservationId: string): Promise<DispatchResult> => {
+    const vehicleId = reservations.find((r) => r.id === reservationId)?.vehicleId;
+    const result = await runAction({ type: 'dispatch.start', payload: { reservationId } });
+    if (result.ok && vehicleId) setSelectedVehicleId(vehicleId);
+    return result;
   };
 
-  const handleRejectRequest = (reservationId: string) => {
-    const res = reservations.find((r) => r.id === reservationId);
-    if (!res) return;
-    const timestamp = nowTimeStr();
+  const handleReturnVehicle = (reservationId: string, parkingZone: string, keyReturnedToBox: boolean) =>
+    runAction({ type: 'dispatch.return', payload: { reservationId, parkingZone, keyReturnedToBox } });
 
-    setReservations((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              stage: 'REJECTED',
-              notes: '관리자 반려 (타 부서 긴급 일정 중복 또는 권한 미충족)',
-            }
-          : r
-      )
-    );
-
-    setPushStream((prev) => [
-      {
-        id: `push-rj-${Date.now()}`,
-        time: timestamp,
-        target: 'DRIVER',
-        message: `❌ [배차 반려 알림] ${res.employeeName.split(' (')[0]}님, #${res.fleetNumber}호차(${res.plateNumber}) 배차 신청이 반려되었습니다.`,
-        level: 'CRITICAL',
-      },
-      ...prev,
-    ]);
-  };
-
-  const handleStartUsingVehicle = (reservationId: string): DispatchResult => {
-    const res = reservations.find((r) => r.id === reservationId);
-    const veh = res && vehicles.find((v) => v.id === res.vehicleId);
-    if (!res || !veh) return { ok: false, message: '배차 건 또는 차량을 찾을 수 없습니다.' };
-    if (res.stage !== 'APPROVED') return { ok: false, message: '승인완료 상태의 건만 운행을 시작할 수 있습니다.' };
-    const conflict = findDispatchConflict(veh, reservations, CONFIRM_BLOCKING_STAGES, res.id);
-    if (conflict) {
-      pushDispatchBlocked('DRIVER', `🚫 [운행 시작 차단] ${res.employeeName.split(' (')[0]}님 운행 시작을 막았습니다. ${conflict}`);
-      return { ok: false, message: conflict };
-    }
-    const timestamp = nowTimeStr();
-
-    setReservations((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              stage: 'IN_USE',
-              startedAt: timestamp,
-              notes: `운행 시작 (${res.destination} 방면 이동 중 · 블루투스 자동 매칭 완료)`,
-            }
-          : r
-      )
-    );
-
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === res.vehicleId
-          ? {
-              ...v,
-              status: 'AUTHORIZED',
-              speedKmh: 58,
-              currentGForce: 1.01,
-              rssiDbm: -48,
-              currentDriverId: res.employeeId,
-              coPassengerIds: [],
-              driverSelectionReason: `정식 배차 승인(${res.id}) + 4400 Northpark Dr 키 수령 및 순정 블루투스 매칭`,
-              tripPurpose: res.purpose,
-              tripStartedAt: timestamp,
-              parkingZone: `${res.destination} 방면 정상 운행중`,
-              lat: 32.6912 + (Math.random() - 0.5) * 0.016,
-              lng: -85.3298 + (Math.random() - 0.5) * 0.016,
-            }
-          : v
-      )
-    );
-
-    setSelectedVehicleId(res.vehicleId);
-    setPushStream((prev) => [
-      {
-        id: `push-st-${Date.now()}`,
-        time: timestamp,
-        target: 'MANAGER',
-        message: `🚗 [차량 사용 시작] ${res.employeeName.split(' (')[0]}님이 승인된 #${res.fleetNumber}호차(${res.plateNumber}) 키를 수령해 운행을 개시했습니다.`,
-        level: 'INFO',
-      },
-      ...prev,
-    ]);
-    return { ok: true, message: `#${res.fleetNumber}호차 운행 시작` };
-  };
-
-  const handleReturnVehicle = (
-    reservationId: string,
-    parkingZone: string,
-    keyReturnedToBox: boolean
-  ) => {
-    const res = reservations.find((r) => r.id === reservationId);
-    if (!res) return;
-    const veh = vehicles.find((v) => v.id === res.vehicleId);
-    const timestamp = nowTimeStr();
-    // Distance actually accumulated by phone GPS since trip start (never negative)
-    const endOdometer = Number(
-      Math.max(veh?.cumulativeGpsKm ?? res.startOdometerKm, res.startOdometerKm).toFixed(1)
-    );
-    const drivenKm = Number((endOdometer - res.startOdometerKm).toFixed(1));
-
-    setReservations((prev) =>
-      prev.map((r) =>
-        r.id === reservationId
-          ? {
-              ...r,
-              stage: 'RETURNED',
-              returnedAt: timestamp,
-              endOdometerKm: endOdometer,
-              returnParkingZone: parkingZone,
-              keyReturnedToBox,
-              notes: `반납 완료 (${parkingZone} 주차 · 키보관함 반납: ${
-                keyReturnedToBox ? '완료' : '미확인'
-              } · +${drivenKm}km)`,
-            }
-          : r
-      )
-    );
-
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === res.vehicleId
-          ? {
-              ...v,
-              status: 'IDLE',
-              speedKmh: 0,
-              currentGForce: 1.0,
-              rssiDbm: -95,
-              currentDriverId: null,
-              coPassengerIds: [],
-              driverSelectionReason: null,
-              tripPurpose: null,
-              tripStartedAt: null,
-              cumulativeGpsKm: endOdometer,
-              lastVerifiedOdometerKm: endOdometer,
-              parkingZone: `${parkingZone} (반납 완료)`,
-              lat: 32.6912 + ((v.fleetNumber % 6) - 2.5) * 0.0012,
-              lng: -85.3298 + (Math.floor(v.fleetNumber / 6) - 2.5) * 0.0014,
-            }
-          : v
-      )
-    );
-
-    const newTaxRow: TaxLogEntry = {
-      id: `tax-${Date.now()}`,
-      date: todayDateStr(),
-      plateNumber: `${res.plateNumber} (${res.fleetNumber}호차)`,
-      modelName: veh?.modelName || res.modelName,
-      department: res.department.split(' (')[0],
-      driverName: res.employeeName,
-      authType: 'PRE_REGISTERED',
-      purpose: res.purpose,
-      startTime: (res.startedAt || '20:00').slice(0, 5),
-      endTime: timestamp.slice(0, 5),
-      startOdometerKm: res.startOdometerKm,
-      endOdometerKm: endOdometer,
-      distanceKm: drivenKm,
-      autoReturnVerified: true,
-    };
-
-    setTaxLogs((prev) => [newTaxRow, ...prev]);
-    setPushStream((prev) => [
-      {
-        id: `push-rt-${Date.now()}`,
-        time: timestamp,
-        target: 'MANAGER',
-        message: `🅿️ [차량·키 반납 완료] ${res.employeeName.split(' (')[0]}님이 #${res.fleetNumber}호차(${res.plateNumber})를 ${parkingZone}에 반납하고 키보관함 거치를 완료했습니다. (+${drivenKm}km 운행기록부 자동 생성)`,
-        level: 'INFO',
-      },
-      ...prev,
-    ]);
-  };
-
-  // ============================================================================
-  // ADMIN CONSOLE HANDLERS (Vehicle Registry, Odometer Audit, Employee Governance, Incident Resolution)
-  // ============================================================================
-
-  const handleUpdateVehicleMac = (
-    vehicleId: string,
-    newMac: string,
-    newBleUuid: string
-  ) => {
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId
-          ? { ...v, btMacAddress: newMac, bleBeaconUuid: newBleUuid }
-          : v
-      )
-    );
-  };
-
-  const handleAuditVehicleOdometer = (
-    vehicleId: string,
-    actualOdometerKm: number
-  ) => {
-    const veh = vehicles.find((v) => v.id === vehicleId);
-    if (!veh) return;
-    const timestamp = nowTimeStr();
-    const diffKm = Number((actualOdometerKm - veh.cumulativeGpsKm).toFixed(1));
-
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId
-          ? {
-              ...v,
-              lastVerifiedOdometerKm: actualOdometerKm,
-              lastOdometerAuditAt: timestamp,
-            }
-          : v
-      )
-    );
-
-    if (diffKm >= 5) {
-      const suspectEmp =
-        employees.find((e) => e.permissionStatus !== 'OK') || employees[2];
-      const newGhost: GhostTripCase = {
-        id: `ghost-${Date.now()}`,
-        vehicleId: veh.id,
-        plateNumber: `${veh.plateNumber} (${veh.fleetNumber}호차)`,
-        modelName: veh.modelName,
-        windowStart: '실사 직전 공백구간',
-        windowEnd: timestamp.slice(0, 5),
-        unaccountedKm: diffKm,
-        parkingZoneChangedFrom: veh.parkingZone,
-        parkingZoneChangedTo: '실사 계기판 불일치 적발',
-        status: 'OPEN_INVESTIGATION',
-        suspectEmployees: [
-          {
-            employeeId: suspectEmp.id,
-            name: suspectEmp.name,
-            department: suspectEmp.department,
-            confidenceScore: 91,
-            evidence: [
-              `실제 계기판(${actualOdometerKm}km)이 앱 GPS 누적(${veh.cumulativeGpsKm}km)보다 +${diffKm}km 초과`,
-              `공백 시간대 4400 Northpark Dr 차고지 출입 및 권한 비활성(${suspectEmp.permissionStatus}) 일치`,
-            ],
-          },
-        ],
-      };
-      setGhostTrips((prev) => [newGhost, ...prev]);
-      setPushStream((prev) => [
-        {
-          id: `push-gh-${Date.now()}`,
-          time: timestamp,
-          target: 'MANAGER',
-          message: `🕵️ [계기판 실사 불일치 · 유령 주행 적발] #${veh.fleetNumber}호차(${veh.plateNumber})에서 +${diffKm}km 미기록 주행이 확인되어 유력 용의자(${suspectEmp.name})를 특정했습니다!`,
-          level: 'CRITICAL',
-        },
-        ...prev,
-      ]);
-    }
-  };
-
-  const handleToggleVehicleLock = (vehicleId: string) => {
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId ? { ...v, isLockedByAdmin: !v.isLockedByAdmin } : v
-      )
-    );
-  };
-
-  const handleToggleEmployeeDispatch = (employeeId: string) => {
-    setEmployees((prev) =>
-      prev.map((e) =>
-        e.id === employeeId
-          ? { ...e, dispatchAllowed: e.dispatchAllowed === false ? true : false }
-          : e
-      )
-    );
-  };
-
-  const handleSendPermissionWarningPush = (employeeId: string) => {
-    const emp = employees.find((e) => e.id === employeeId);
-    if (!emp) return;
-    const timestamp = nowTimeStr();
-    setPushStream((prev) => [
-      {
-        id: `push-pw-${Date.now()}`,
-        time: timestamp,
-        target: 'DRIVER',
-        message: `⚠️ [관리자 권한 복구 지시] ${emp.name.split(' (')[0]}님, 현재 스마트폰 ${emp.permissionStatus} 상태입니다. 즉시 위치/블루투스 권한을 켜지 않으면 법인차량 배차가 자동 차단됩니다.`,
-        level: 'CRITICAL',
-      },
-      ...prev,
-    ]);
-  };
-
-  const handleAddEmployee = (empData: {
-    name: string;
-    role: string;
-    department: string;
-    phone: string;
-  }) => {
-    const newEmp: Employee = {
-      id: `emp-${Date.now()}`,
-      name: empData.name,
-      role: empData.role,
-      department: empData.department,
-      phone: empData.phone,
-      permissionStatus: 'OK',
-      lastHeartbeatAt: '방금 전 (신규 등록)',
-      inGarageGeofence: true,
-      lastKeyboxAccessAt: null,
-      dispatchAllowed: true,
-      violationCount: 0,
-    };
-    setEmployees((prev) => [newEmp, ...prev]);
-  };
-
-  // Applies a vehicle CSV import plan computed (and previewed) in the Admin Console
-  const handleApplyVehicleImport = (nextVehicles: Vehicle[], summary: string) => {
-    setVehicles(nextVehicles);
-    setPushStream((prev) => [
-      {
-        id: `push-vcsv-${Date.now()}`,
-        time: nowTimeStr(),
-        target: 'MANAGER',
-        message: `📥 [차량 정보 등록] ${summary}`,
-        level: 'INFO',
-      },
-      ...prev,
-    ]);
-  };
-
-  const handleBulkImportEmployees = (rows: EmployeeCsvRow[]) => {
-    const timestamp = nowTimeStr();
-    setEmployees((prev) => {
-      const next = [...prev];
-      rows.forEach((row, index) => {
-        const idx = next.findIndex(
-          (e) =>
-            e.name.toLowerCase() === row.name.toLowerCase() ||
-            e.phone === row.phone
-        );
-        if (idx >= 0) {
-          next[idx] = {
-            ...next[idx],
-            name: row.name,
-            role: row.role,
-            department: row.department,
-            phone: row.phone,
-            dispatchAllowed: row.dispatchAllowed,
-          };
-        } else {
-          next.push({
-            id: `emp-csv-${Date.now()}-${index}`,
-            name: row.name,
-            role: row.role,
-            department: row.department,
-            phone: row.phone,
-            permissionStatus: 'OK',
-            lastHeartbeatAt: '방금 전 (CSV 일괄등록)',
-            inGarageGeofence: true,
-            lastKeyboxAccessAt: null,
-            dispatchAllowed: row.dispatchAllowed,
-            violationCount: 0,
-          });
-        }
-      });
-      return next;
-    });
-
-    setPushStream((prev) => [
-      {
-        id: `push-ecsv-${Date.now()}`,
-        time: timestamp,
-        target: 'MANAGER',
-        message: `📥 [사용자 CSV 일괄 등록] 관리자가 CSV 업로드로 임직원(운전자) ${rows.length}명 정보를 일괄 등록/업데이트했습니다.`,
-        level: 'INFO',
-      },
-      ...prev,
-    ]);
-  };
-
-  const handleResolveIncident = (
-    incidentId: string,
-    resolutionNote: string,
-    suspendDriver: boolean
-  ) => {
-    const inc = incidents.find((i) => i.id === incidentId);
-    if (!inc) return;
-
-    setIncidents((prev) =>
-      prev.map((i) =>
-        i.id === incidentId
-          ? {
-              ...i,
-              resolved: true,
-              managerResolutionNote: resolutionNote,
-            }
-          : i
-      )
-    );
-
-    if (suspendDriver && inc.driverId) {
-      setEmployees((prev) =>
-        prev.map((e) =>
-          e.id === inc.driverId
-            ? {
-                ...e,
-                dispatchAllowed: false,
-                violationCount: (e.violationCount || 0) + 1,
-              }
-            : e
-        )
-      );
-    }
-  };
-
-  // ============================================================================
-  // SENSOR & UNAUTHORIZED HANDLERS (No In-Car Dashcam — 100% Smartphone IMU)
-  // ============================================================================
-
-  const handleAuthorizedCheckout = (
+  const handleAuthorizedCheckout = async (
     employeeId: string,
     vehicleId: string,
     purpose: TripPurpose
-  ): DispatchResult => {
-    const emp = employees.find((e) => e.id === employeeId);
-    const veh = vehicles.find((v) => v.id === vehicleId);
-    if (!emp || !veh) return { ok: false, message: '운전자 또는 차량 정보를 찾을 수 없습니다.' };
-
-    // Driver already holds an approved booking for this car: start it instead of a new one
-    const ownApproved = reservations.find(
-      (r) => r.vehicleId === vehicleId && r.employeeId === employeeId && r.stage === 'APPROVED'
-    );
-    if (ownApproved) return handleStartUsingVehicle(ownApproved.id);
-
-    if (emp.dispatchAllowed === false) {
-      return { ok: false, message: '배차 자격이 일시 정지되어 출발할 수 없습니다. 관리자에게 문의하세요.' };
-    }
-    if (veh.isLockedByAdmin) {
-      return { ok: false, message: `#${veh.fleetNumber}호차는 관리자가 잠근 차량(점검)이라 출발할 수 없습니다.` };
-    }
-    const conflict = findDispatchConflict(veh, reservations, CREATE_BLOCKING_STAGES);
-    if (conflict) {
-      pushDispatchBlocked('DRIVER', `🚫 [중복 출발 차단] ${emp.name.split(' (')[0]}님의 1초 출발을 막았습니다. ${conflict}`);
-      return { ok: false, message: conflict };
-    }
-
-    const timestamp = nowTimeStr();
-    const quickRes: VehicleReservation = {
-      id: `res-${Date.now()}`,
-      vehicleId: veh.id,
-      fleetNumber: veh.fleetNumber,
-      plateNumber: veh.plateNumber,
-      modelName: veh.modelName,
-      employeeId: emp.id,
-      employeeName: emp.name,
-      department: emp.department,
-      purpose,
-      destination: 'I-85 Opelika Corridor (원터치 자율반출)',
-      plannedTimeWindow: `${timestamp.slice(0, 5)} ~ 당일복귀`,
-      stage: 'IN_USE',
-      requestedAt: timestamp,
-      approvedAt: timestamp,
-      approvedBy: '원터치 자율반출 자동승인',
-      startedAt: timestamp,
-      returnedAt: null,
-      startOdometerKm: veh.cumulativeGpsKm,
-      endOdometerKm: null,
-      returnParkingZone: null,
-      keyReturnedToBox: false,
-      notes: '관리자 부재 시 1초 원터치 자율 반출로 즉시 운행 개시',
-    };
-
-    setReservations((prev) => [quickRes, ...prev]);
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId
-          ? {
-              ...v,
-              status: 'AUTHORIZED',
-              speedKmh: 46,
-              currentGForce: 1.02,
-              rssiDbm: -48,
-              currentDriverId: employeeId,
-              coPassengerIds: [],
-              driverSelectionReason:
-                '1초 원터치 자율 반출 사전 등록 + 차량 순정 블루투스 자동 매칭',
-              tripPurpose: purpose,
-              tripStartedAt: timestamp,
-              parkingZone: `I-85 Opelika Corridor 정상 외근 주행중 (${purpose})`,
-              lat: 32.6912 + (Math.random() - 0.5) * 0.015,
-              lng: -85.3298 + (Math.random() - 0.5) * 0.015,
-            }
-          : v
-      )
-    );
-    setSelectedVehicleId(vehicleId);
-    setPushStream((prev) => [
-      {
-        id: `push-${Date.now()}`,
-        time: timestamp,
-        target: 'MANAGER',
-        message: `✅ [원터치 자율 반출] ${emp.name}님이 ${veh.fleetNumber}호차(${veh.plateNumber})를 [${purpose}] 목적으로 정상 반출했습니다.`,
-        level: 'INFO',
-      },
-      ...prev,
-    ]);
-    return { ok: true, message: `#${veh.fleetNumber}호차 1초 출발 — 운행이 기록되었습니다.` };
+  ): Promise<DispatchResult> => {
+    const result = await runAction({ type: 'dispatch.quickStart', payload: { employeeId, vehicleId, purpose } });
+    if (result.ok) setSelectedVehicleId(vehicleId);
+    return result;
   };
 
-  const handleUnauthorizedKeyTheft = (
+  const handleLateReasonSubmit = (vehicleId: string, purpose: TripPurpose) =>
+    runAction({ type: 'dispatch.lateReason', payload: { vehicleId, purpose } });
+
+  const handleAutoReturnToGarage = (vehicleId: string) =>
+    runAction({ type: 'dispatch.autoReturn', payload: { vehicleId } });
+
+  // Admin console (server checks the PIN on every call)
+  const handleUpdateVehicleMac = (vehicleId: string, newMac: string, newBleUuid: string) =>
+    runAndNotify({ type: 'vehicle.updatePairing', payload: { vehicleId, btMacAddress: newMac, bleBeaconUuid: newBleUuid } });
+
+  const handleAuditVehicleOdometer = (vehicleId: string, actualOdometerKm: number) =>
+    runAndNotify({ type: 'vehicle.auditOdometer', payload: { vehicleId, actualOdometerKm } }, true);
+
+  const handleToggleVehicleLock = (vehicleId: string) =>
+    runAndNotify({ type: 'vehicle.toggleLock', payload: { vehicleId } });
+
+  const handleToggleEmployeeDispatch = (employeeId: string) =>
+    runAndNotify({ type: 'employee.toggleDispatch', payload: { employeeId } });
+
+  const handleSendPermissionWarningPush = (employeeId: string) =>
+    runAndNotify({ type: 'employee.warn', payload: { employeeId } }, true);
+
+  const handleAddEmployee = (empData: { name: string; role: string; department: string; phone: string }) =>
+    runAndNotify({ type: 'employee.add', payload: empData }, true);
+
+  const handleImportVehicles = (rows: VehicleCsvRow[], mode: VehicleImportMode, source: string) =>
+    runAction({ type: 'vehicle.import', payload: { rows, mode, source } });
+
+  const handleBulkImportEmployees = (rows: EmployeeCsvRow[]) =>
+    runAndNotify({ type: 'employee.import', payload: { rows } }, true);
+
+  const handleResolveIncident = (incidentId: string, resolutionNote: string, suspendDriver: boolean) =>
+    runAndNotify({ type: 'incident.resolve', payload: { incidentId, resolutionNote, suspendDriver } });
+
+  const handleUpdatePolicy = (nextConfig: SystemPolicyConfig) =>
+    runAndNotify({ type: 'policy.update', payload: { policyConfig: nextConfig } });
+
+  // Demo sensor simulations (server allows them only in DEMO mode)
+  const handleUnauthorizedKeyTheft = async (
     employeeId: string,
     vehicleId: string,
     coPassengerId: string | null
-  ) => {
-    const emp = employees.find((e) => e.id === employeeId);
-    const coEmp = coPassengerId ? employees.find((e) => e.id === coPassengerId) : null;
-    const veh = vehicles.find((v) => v.id === vehicleId);
-    if (!emp || !veh) return;
-
-    const timestamp = nowTimeStr();
-    const reason = coEmp
-      ? `차량 내 블랙박스 없이 다인 탑승 감지(${emp.name}, ${coEmp.name}) → 1순위 키보관함 BLE(${policyConfig.keyboxBleRadiusM}m) 선진입 및 2순위 운전석 핸즈프리 주 연결(-46dBm vs -74dBm)로 [${emp.name}] 주 운전자 자동 특정`
-      : `차량 내 블랙박스 없이 키보관함(${policyConfig.keyboxBleRadiusM}m) 접근 후 ${veh.plateNumber} 블루투스(-46dBm) + 시속 ${policyConfig.unauthorizedSpeedThresholdKmh}km/h 초과 주행 감지`;
-
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId
-          ? {
-              ...v,
-              status: 'UNAUTHORIZED',
-              speedKmh: 64,
-              currentGForce: 1.18,
-              rssiDbm: -46,
-              currentDriverId: employeeId,
-              coPassengerIds: coEmp ? [coEmp.id] : [],
-              driverSelectionReason: reason,
-              tripPurpose: '미입력(무단반출)',
-              tripStartedAt: timestamp,
-              parkingZone:
-                '🚨 4400 Northpark Dr 무단 이탈 → I-85 주행중 (실시간 추적 활성)',
-              lat: 32.6912 + (Math.random() - 0.5) * 0.014,
-              lng: -85.3298 + (Math.random() - 0.5) * 0.014,
-            }
-          : v
-      )
-    );
-
-    const newIncident: IncidentEvent = {
-      id: `inc-${Date.now()}`,
-      vehicleId,
-      plateNumber: `${veh.plateNumber} (${veh.fleetNumber}호차)`,
-      driverId: emp.id,
-      driverName: `${emp.name} (${emp.department})`,
-      coPassengerNames: coEmp ? [`${coEmp.name} (동승자 자동분류)`] : [],
-      eventType: 'UNAUTHORIZED_START',
-      title: `🚨 보고 없이 자동차키 무단 반출 및 주행 포착 (${veh.fleetNumber}호차 · ${veh.plateNumber})`,
-      description: reason,
-      gForce: 1.18,
-      deltaSpeedKmh: 34,
-      gyroYawDegPerSec: 3.8,
-      impactDirection: '정상 주행 궤적 (충돌 없음)',
-      speedTrace: [0, 12, 19, 31, 45, 54, 60, 63, 64, 62, 65, 64],
-      locationLabel: '4400 Northpark Dr, Opelika, AL 36801 이탈 → I-85 진입',
-      occurredAt: timestamp,
-      resolved: false,
-      sensorFusionVerdict: 'N/A',
-    };
-
-    setIncidents((prev) => [newIncident, ...prev]);
-    setGeofenceLogs((prev) => [
-      {
-        id: `geo-${Date.now()}`,
-        employeeId: emp.id,
-        employeeName: emp.name,
-        department: emp.department,
-        zoneType: 'KEYBOX_3M',
-        action: 'ENTER',
-        timestamp,
-        permissionState: emp.permissionStatus,
-        note: `관리자 부재 중 앱 미등록 상태로 키 보관함 접근 후 ${veh.fleetNumber}호차 시동·출발`,
-      },
-      ...prev,
-    ]);
-    setSelectedVehicleId(vehicleId);
-    setPushStream((prev) => [
-      {
-        id: `push-m-${Date.now()}`,
-        time: timestamp,
-        target: 'MANAGER',
-        message: `🚨 [Red Alert · 무단 운행] ${emp.name}님이 사전 보고 없이 ${veh.fleetNumber}호차(${veh.plateNumber})를 끌고 나갔습니다!`,
-        level: 'CRITICAL',
-      },
-      {
-        id: `push-d-${Date.now() + 1}`,
-        time: timestamp,
-        target: 'DRIVER',
-        message: `⚠️ [운전자 경고] ${emp.name}님, ${veh.plateNumber} 미승인 운행이 관리자에게 실시간 보고되었습니다. 즉시 사유를 입력하세요.`,
-        level: 'CRITICAL',
-      },
-      ...prev,
-    ]);
+  ): Promise<DispatchResult> => {
+    const result = await runAction({ type: 'demo.unauthorizedStart', payload: { employeeId, vehicleId, coPassengerId } });
+    if (result.ok) setSelectedVehicleId(vehicleId);
+    return result;
   };
 
-  const handleLateReasonSubmit = (vehicleId: string, purpose: TripPurpose) => {
-    const veh = vehicles.find((v) => v.id === vehicleId);
-    if (!veh) return;
-    const emp =
-      employees.find((e) => e.id === veh.currentDriverId) || employees[0];
-    const timestamp = nowTimeStr();
-
-    const lateRes: VehicleReservation = {
-      id: `res-${Date.now()}`,
-      vehicleId: veh.id,
-      fleetNumber: veh.fleetNumber,
-      plateNumber: veh.plateNumber,
-      modelName: veh.modelName,
-      employeeId: emp.id,
-      employeeName: emp.name,
-      department: emp.department,
-      purpose,
-      destination: '선출발 후보고 전환 운행',
-      plannedTimeWindow: `${timestamp.slice(0, 5)} ~ 당일복귀`,
-      stage: 'IN_USE',
-      requestedAt: timestamp,
-      approvedAt: timestamp,
-      approvedBy: '선출발 후보고 (경고 알림 응답)',
-      startedAt: veh.tripStartedAt || timestamp,
-      returnedAt: null,
-      startOdometerKm: veh.cumulativeGpsKm,
-      endOdometerKm: null,
-      returnParkingZone: null,
-      keyReturnedToBox: false,
-      notes: '미승인 출발 경고 수신 후 운행 목적 사후 등록',
-    };
-
-    setReservations((prev) => [lateRes, ...prev]);
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId
-          ? {
-              ...v,
-              status: 'AUTHORIZED',
-              tripPurpose: purpose,
-              parkingZone: `선출발 후보고 전환 (${purpose})`,
-            }
-          : v
-      )
-    );
-    setPushStream((prev) => [
-      {
-        id: `push-${Date.now()}`,
-        time: timestamp,
-        target: 'MANAGER',
-        message: `📝 [사후 사유 입력됨] ${veh.fleetNumber}호차(${veh.plateNumber}) 운전자가 경고 알림 확인 후 [${purpose}] 사유를 사후 등록했습니다. ('선출발 후보고' 이력 보존)`,
-        level: 'INFO',
-      },
-      ...prev,
-    ]);
-  };
-
-  const handleSimulateCrashOrDrop = (vehicleId: string, isRealCrash: boolean) => {
-    const veh = vehicles.find((v) => v.id === vehicleId);
-    if (!veh) return;
-    const emp = employees.find((e) => e.id === veh.currentDriverId) || employees[0];
-    const timestamp = nowTimeStr();
-
-    if (isRealCrash) {
-      setVehicles((prev) =>
-        prev.map((v) =>
-          v.id === vehicleId
-            ? {
-                ...v,
-                status: 'INCIDENT',
-                speedKmh: 0,
-                currentGForce: 3.24,
-                currentDriverId: emp.id,
-                parkingZone: '💥 무블랙박스 스마트폰 3.24G 충격 감지 후 비상정차 중',
-              }
-            : v
-        )
-      );
-
-      const crashEvent: IncidentEvent = {
-        id: `inc-${Date.now()}`,
-        vehicleId,
-        plateNumber: `${veh.plateNumber} (${veh.fleetNumber}호차)`,
-        driverId: emp.id,
-        driverName: `${emp.name} (${emp.department})`,
-        coPassengerNames: [],
-        eventType: 'IMPACT_SHOCK',
-        title: `💥 [무블랙박스 스마트폰 6축 센서 재구성] 3.24G 충돌 가속도 및 급정차 감지 (${veh.fleetNumber}호차)`,
-        description: `차량에 블랙박스가 없는 상태에서 운전자(${emp.name}) 스마트폰의 6축 IMU 센서(피크 3.24G + 자이로 요잉 38.4°/s 좌전방 충격 벡터)와 2초 내 -44km/h 급감속 정차를 결합해 실제 차량 접촉사고를 자동 재구성했습니다.`,
-        gForce: 3.24,
-        deltaSpeedKmh: -44,
-        gyroYawDegPerSec: 38.4,
-        impactDirection: '좌측 전방 25° 추돌 벡터 (스마트폰 6축 IMU 역산)',
-        speedTrace: [52, 54, 56, 55, 53, 50, 44, 8, 0, 0, 0, 0],
-        locationLabel:
-          'I-85 Exit 64 / Northpark Dr 인근, Opelika, AL 36801 (GPS 좌표 자동 박제)',
-        occurredAt: timestamp,
-        resolved: false,
-        sensorFusionVerdict: 'CONFIRMED_CRASH',
-      };
-
-      setIncidents((prev) => [crashEvent, ...prev]);
+  const handleSimulateCrashOrDrop = async (vehicleId: string, isRealCrash: boolean): Promise<DispatchResult> => {
+    const result = await runAction({ type: 'demo.crashOrDrop', payload: { vehicleId, isRealCrash } });
+    if (result.ok && isRealCrash) {
       setSelectedVehicleId(vehicleId);
       setActiveTab('NO_DASHCAM_INCIDENTS');
-      setPushStream((prev) => [
-        {
-          id: `push-${Date.now()}`,
-          time: timestamp,
-          target: 'MANAGER',
-          message: `💥 [무블랙박스 사고 재구성] ${veh.fleetNumber}호차(${emp.name}) 스마트폰에서 3.24G 충격 + 자이로 회전(38.4°/s) + 급정차가 감지되었습니다!`,
-          level: 'CRITICAL',
-        },
-        ...prev,
-      ]);
-    } else {
-      setPushStream((prev) => [
-        {
-          id: `push-${Date.now()}`,
-          time: timestamp,
-          target: 'MANAGER',
-          message: `🛡️ [Sensor Fusion 오탐 필터] ${veh.fleetNumber}호차에서 3.4G 단발 충격이 감지되었으나 주행 속도(Δv=0km/h)가 일정하여 '거치대 휴대폰 낙하'로 자동 제외했습니다.`,
-          level: 'INFO',
-        },
-        ...prev,
-      ]);
     }
+    return result;
   };
 
-  const handleTogglePermissionEvasion = (employeeId: string) => {
-    const emp = employees.find((e) => e.id === employeeId);
-    if (!emp) return;
-    const timestamp = nowTimeStr();
-    const nextStatus = emp.permissionStatus === 'OK' ? 'BT_OFF' : 'OK';
-
-    setEmployees((prev) =>
-      prev.map((e) =>
-        e.id === employeeId
-          ? {
-              ...e,
-              permissionStatus: nextStatus,
-              lastHeartbeatAt:
-                nextStatus === 'BT_OFF'
-                  ? `${timestamp} (차고지 내 BT 강제 OFF)`
-                  : '방금 전 (정상 복구)',
-            }
-          : e
-      )
-    );
-
-    if (nextStatus === 'BT_OFF') {
-      setGeofenceLogs((prev) => [
-        {
-          id: `geo-${Date.now()}`,
-          employeeId: emp.id,
-          employeeName: emp.name,
-          department: emp.department,
-          zoneType: 'GARAGE_150M',
-          action: 'PERMISSION_DISABLED_IN_ZONE',
-          timestamp,
-          permissionState: 'BT_OFF',
-          note: `⚠️ 차고지 지오펜스 내부에서 블루투스 권한 강제 OFF 감지 (우회 시도 주의)`,
-        },
-        ...prev,
-      ]);
-      setActiveTab('ANTI_EVASION');
-      setPushStream((prev) => [
-        {
-          id: `push-${Date.now()}`,
-          time: timestamp,
-          target: 'MANAGER',
-          message: `🕵️ [권한 회피 감지] ${emp.name}(${emp.department})님의 앱 블루투스 권한이 차고지 인근에서 꺼졌습니다. 유령 주행 감시 대상에 등록됩니다.`,
-          level: 'CRITICAL',
-        },
-        ...prev,
-      ]);
-    }
-  };
-
-  const handleAutoReturnToGarage = (vehicleId: string) => {
-    const veh = vehicles.find((v) => v.id === vehicleId);
-    if (!veh) return;
-    const emp = employees.find((e) => e.id === veh.currentDriverId) || employees[0];
-    const timestamp = nowTimeStr();
-    // Trip start odometer comes from the active reservation; fall back to last audit
-    const activeRes = reservations.find(
-      (r) => r.vehicleId === vehicleId && r.stage === 'IN_USE'
-    );
-    const endKm = Number(veh.cumulativeGpsKm.toFixed(1));
-    const startKm = Number(
-      Math.min(activeRes?.startOdometerKm ?? veh.lastVerifiedOdometerKm, endKm).toFixed(1)
-    );
-    const tripDistance = Number((endKm - startKm).toFixed(1));
-    const autoLot = `Northpark Lot A #${veh.fleetNumber.toString().padStart(2, '0')}`;
-
-    setReservations((prev) =>
-      prev.map((r) =>
-        r.vehicleId === vehicleId && r.stage === 'IN_USE'
-          ? {
-              ...r,
-              stage: 'RETURNED',
-              returnedAt: timestamp,
-              endOdometerKm: endKm,
-              returnParkingZone: autoLot,
-              keyReturnedToBox: true,
-              notes: `차고지 지오펜스 복귀 + 블루투스 해제로 무조작 자동 반납 완료 (+${tripDistance}km)`,
-            }
-          : r
-      )
-    );
-
-    const newTaxRow: TaxLogEntry = {
-      id: `tax-${Date.now()}`,
-      date: todayDateStr(),
-      plateNumber: `${veh.plateNumber} (${veh.fleetNumber}호차)`,
-      modelName: veh.modelName,
-      department: emp.department.split(' (')[0],
-      driverName: emp.name,
-      authType: veh.status === 'UNAUTHORIZED' ? 'UNAUTHORIZED' : 'PRE_REGISTERED',
-      purpose: veh.tripPurpose || '일반업무/외근',
-      startTime: veh.tripStartedAt?.slice(0, 5) || '19:50',
-      endTime: timestamp.slice(0, 5),
-      startOdometerKm: startKm,
-      endOdometerKm: endKm,
-      distanceKm: tripDistance,
-      autoReturnVerified: true,
-    };
-
-    setTaxLogs((prev) => [newTaxRow, ...prev]);
-    setVehicles((prev) =>
-      prev.map((v) =>
-        v.id === vehicleId
-          ? {
-              ...v,
-              status: 'IDLE',
-              speedKmh: 0,
-              currentGForce: 1.0,
-              rssiDbm: -95,
-              currentDriverId: null,
-              coPassengerIds: [],
-              driverSelectionReason: null,
-              tripPurpose: null,
-              tripStartedAt: null,
-              lastVerifiedOdometerKm: endKm,
-              parkingZone: `${autoLot} (자동반납 완료)`,
-              lat: 32.6912 + ((v.fleetNumber % 6) - 2.5) * 0.0012,
-              lng: -85.3298 + (Math.floor(v.fleetNumber / 6) - 2.5) * 0.0014,
-            }
-          : v
-      )
-    );
-    setPushStream((prev) => [
-      {
-        id: `push-${Date.now()}`,
-        time: timestamp,
-        target: 'MANAGER',
-        message: `🅿️ [무조작 자동 반납] ${veh.fleetNumber}호차(${veh.plateNumber})가 4400 Northpark Dr(Opelika, AL) 차고지 복귀 및 시동 종료되어 자동 반납되었습니다.`,
-        level: 'INFO',
-      },
-      ...prev,
-    ]);
+  const handleTogglePermissionEvasion = async (employeeId: string): Promise<DispatchResult> => {
+    const turningOff = employees.find((e) => e.id === employeeId)?.permissionStatus === 'OK';
+    const result = await runAction({ type: 'demo.permissionToggle', payload: { employeeId } });
+    if (result.ok && turningOff) setActiveTab('ANTI_EVASION');
+    return result;
   };
 
   const handleExportTaxCsv = () => {
@@ -1678,30 +602,30 @@ export default function FleetGuardCockpitPage() {
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  dbSyncState === 'ERROR'
+                  sync.status === 'ERROR'
                     ? 'bg-[#DC2626]'
-                    : dbSyncState === 'SAVING' || dbSyncState === 'HYDRATING'
+                    : sync.status === 'SAVING' || sync.status === 'HYDRATING'
                       ? 'bg-[#FBBF24] animate-pulse'
                       : 'bg-[#10B981]'
                 }`}
               />
               <span
-                className={dbSyncState === 'ERROR' ? 'text-[#DC2626] font-semibold' : 'text-[#52525B]'}
-                title={dbError ?? undefined}
+                className={sync.status === 'ERROR' ? 'text-[#DC2626] font-semibold' : 'text-[#52525B]'}
+                title={sync.error ?? (dbLastUpdated ? `last change ${dbLastUpdated}` : undefined)}
               >
-                {dbSyncState === 'ERROR'
-                  ? isHydratedRef.current
+                {sync.status === 'ERROR'
+                  ? sync.hydrated
                     ? isEng
                       ? 'Save failed'
                       : 'DB 저장 실패'
                     : isEng
                       ? 'DB load failed'
                       : 'DB 불러오기 실패'
-                  : dbSyncState === 'HYDRATING'
+                  : sync.status === 'HYDRATING'
                     ? isEng
                       ? 'Loading'
                       : '불러오는 중'
-                    : dbSyncState === 'SAVING'
+                    : sync.status === 'SAVING'
                       ? isEng
                         ? 'Saving'
                         : '저장중'
@@ -1709,19 +633,16 @@ export default function FleetGuardCockpitPage() {
                         ? 'DB Synced'
                         : 'DB 동기화'}
               </span>
-              {dbSyncState === 'ERROR' && !isHydratedRef.current && (
+              {sync.status === 'ERROR' && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setDbSyncState('HYDRATING');
-                    setHydrateAttempt((n) => n + 1);
-                  }}
+                  onClick={() => void sync.refresh()}
                   className="ml-1 text-[#DC2626] underline"
                 >
                   {isEng ? 'Retry' : '다시 시도'}
                 </button>
               )}
-              {dataMode === 'DEMO' && dbSyncState !== 'ERROR' && (
+              {dataMode === 'DEMO' && sync.status !== 'ERROR' && (
                 <button
                   type="button"
                   onClick={handleResetDatabase}
@@ -1776,6 +697,21 @@ export default function FleetGuardCockpitPage() {
       </header>
 
       <main className="max-w-[1600px] mx-auto px-4 lg:px-8 pt-4 space-y-4">
+        {actionNotice && (
+          <div
+            role="alert"
+            data-testid="action-notice"
+            className={`px-3 py-2 rounded-lg text-xs flex items-start justify-between gap-2 ${
+              actionNotice.ok ? 'bg-[#10B981]/10 text-[#047857]' : 'bg-[#FF5B4F]/10 text-[#DC2626]'
+            }`}
+          >
+            <span>{actionNotice.ok ? '✅ ' : '🚫 '}{actionNotice.message}</span>
+            <button type="button" onClick={() => setActionNotice(null)} className="shrink-0 underline">
+              {isEng ? 'Close' : '닫기'}
+            </button>
+          </div>
+        )}
+
         {/* ============================================================================
             TAB 1 (DEFAULT): 임직원 차량 신청 · 반납 운영화면 (설명 문구 제거 · 초간결 UI)
             ============================================================================ */}
@@ -1839,6 +775,7 @@ export default function FleetGuardCockpitPage() {
                   onTogglePermissionEvasion={handleTogglePermissionEvasion}
                   onAutoReturnToGarage={handleAutoReturnToGarage}
                   qrScan={qrScan}
+                  dataMode={dataMode}
                 />
               </div>
 
@@ -1865,10 +802,10 @@ export default function FleetGuardCockpitPage() {
                     employees={employees}
                     autoApproveWhenManagerAway={policyConfig.autoApproveWhenManagerAway}
                     onToggleAutoApprove={() =>
-                      setPolicyConfig((prev) => ({
-                        ...prev,
-                        autoApproveWhenManagerAway: !prev.autoApproveWhenManagerAway,
-                      }))
+                      void handleUpdatePolicy({
+                        ...policyConfig,
+                        autoApproveWhenManagerAway: !policyConfig.autoApproveWhenManagerAway,
+                      })
                     }
                     onCreateRequest={handleCreateRequest}
                     onApproveRequest={handleApproveRequest}
@@ -2006,11 +943,11 @@ export default function FleetGuardCockpitPage() {
             onAddEmployee={handleAddEmployee}
             reservations={reservations}
             dataMode={dataMode}
-            onApplyVehicleImport={handleApplyVehicleImport}
+            onImportVehicles={handleImportVehicles}
             onClearDemoData={handleClearDemoData}
             onBulkImportEmployees={handleBulkImportEmployees}
             onResolveIncident={handleResolveIncident}
-            onUpdatePolicyConfig={(nextCfg) => setPolicyConfig(nextCfg)}
+            onUpdatePolicyConfig={handleUpdatePolicy}
             onLockAdminConsole={() => {
               setIsAdminUnlocked(false);
               setViewMode('EMPLOYEE_OPS');
@@ -2219,11 +1156,11 @@ export default function FleetGuardCockpitPage() {
                       employees={employees}
                       autoApproveWhenManagerAway={policyConfig.autoApproveWhenManagerAway}
                       onToggleAutoApprove={() =>
-                        setPolicyConfig((prev) => ({
-                          ...prev,
-                          autoApproveWhenManagerAway: !prev.autoApproveWhenManagerAway,
-                        }))
-                      }
+                      void handleUpdatePolicy({
+                        ...policyConfig,
+                        autoApproveWhenManagerAway: !policyConfig.autoApproveWhenManagerAway,
+                      })
+                    }
                       onCreateRequest={handleCreateRequest}
                       onApproveRequest={handleApproveRequest}
                       onRejectRequest={handleRejectRequest}
@@ -2585,6 +1522,7 @@ export default function FleetGuardCockpitPage() {
                   onTogglePermissionEvasion={handleTogglePermissionEvasion}
                   onAutoReturnToGarage={handleAutoReturnToGarage}
                   qrScan={qrScan}
+                  dataMode={dataMode}
                 />
 
                 {/* Bilateral Real-Time Alert Stream */}

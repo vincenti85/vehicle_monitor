@@ -32,15 +32,15 @@ interface ReservationWorkflowPanelProps {
     destination: string;
     plannedTimeWindow: string;
     notes: string;
-  }) => DispatchResult;
-  onApproveRequest: (reservationId: string) => DispatchResult;
-  onRejectRequest: (reservationId: string) => void;
-  onStartUsingVehicle: (reservationId: string) => DispatchResult;
+  }) => Promise<DispatchResult>;
+  onApproveRequest: (reservationId: string) => Promise<DispatchResult>;
+  onRejectRequest: (reservationId: string) => Promise<DispatchResult>;
+  onStartUsingVehicle: (reservationId: string) => Promise<DispatchResult>;
   onReturnVehicle: (
     reservationId: string,
     parkingZone: string,
     keyReturnedToBox: boolean
-  ) => void;
+  ) => Promise<DispatchResult>;
   lang?: AppLang;
 }
 
@@ -70,6 +70,19 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
 
   const [returnZoneMap, setReturnZoneMap] = useState<Record<string, string>>({});
   const [notice, setNotice] = useState<DispatchResult | null>(null);
+  const [busy, setBusy] = useState<boolean>(false);
+
+  // Waits for the server and shows the real outcome; ignores clicks while in flight
+  const run = async (pending: Promise<DispatchResult>): Promise<DispatchResult> => {
+    setBusy(true);
+    try {
+      const result = await pending;
+      setNotice(result);
+      return result;
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // Defaults point at sample records; snap to real ones once the fleet/roster is replaced
   useEffect(() => {
@@ -91,23 +104,22 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
       ? reservations
       : reservations.filter((r) => r.stage === stageFilter);
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = onCreateRequest({
+    const result = await run(onCreateRequest({
       employeeId: empId,
       vehicleId: vehId,
       purpose,
       destination,
       plannedTimeWindow: timeWindow,
       notes,
-    });
-    setNotice(result);
+    }));
     // Keep the form open on a blocked request so the user can pick another vehicle
     if (result.ok) setShowRequestForm(false);
   };
 
   return (
-    <div className="p-4 space-y-3 bg-[#FAFAFA]">
+    <div aria-busy={busy} className={`p-4 space-y-3 bg-[#FAFAFA] ${busy ? 'pointer-events-none opacity-70' : ''}`}>
       {/* Minimal Filter & Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-black/[0.08]">
         <div className="flex flex-wrap items-center gap-1">
@@ -354,7 +366,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                   <>
                     <button
                       type="button"
-                      onClick={() => setNotice(onApproveRequest(res.id))}
+                      onClick={() => void run(onApproveRequest(res.id))}
                       className="px-2.5 py-1 rounded-md bg-[#10B981] text-white text-xs font-medium flex items-center gap-1"
                     >
                       <CheckCircle2 className="w-3 h-3" />
@@ -362,7 +374,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                     </button>
                     <button
                       type="button"
-                      onClick={() => onRejectRequest(res.id)}
+                      onClick={() => void run(onRejectRequest(res.id))}
                       className="px-2.5 py-1 rounded-md bg-[#FF5B4F]/15 text-[#DC2626] text-xs font-medium flex items-center gap-1"
                     >
                       <XCircle className="w-3 h-3" />
@@ -374,7 +386,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                 {res.stage === 'APPROVED' && (
                   <button
                     type="button"
-                    onClick={() => setNotice(onStartUsingVehicle(res.id))}
+                    onClick={() => void run(onStartUsingVehicle(res.id))}
                     className="px-3 py-1 rounded-md bg-[#0A72EF] text-white text-xs font-medium flex items-center gap-1"
                   >
                     <Play className="w-3 h-3" />
@@ -406,7 +418,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
 
                     <button
                       type="button"
-                      onClick={() => onReturnVehicle(res.id, defaultZone, true)}
+                      onClick={() => void run(onReturnVehicle(res.id, defaultZone, true))}
                       className="px-2.5 py-1 rounded-md bg-[#10B981] text-white text-xs font-medium flex items-center gap-1"
                     >
                       <RotateCcw className="w-3 h-3" />

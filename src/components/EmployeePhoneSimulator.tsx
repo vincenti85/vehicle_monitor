@@ -42,25 +42,26 @@ interface EmployeePhoneSimulatorProps {
     destination: string;
     plannedTimeWindow: string;
     notes: string;
-  }) => DispatchResult;
-  onApproveRequest: (reservationId: string) => DispatchResult;
-  onStartUsingVehicle: (reservationId: string) => DispatchResult;
+  }) => Promise<DispatchResult>;
+  onApproveRequest: (reservationId: string) => Promise<DispatchResult>;
+  onStartUsingVehicle: (reservationId: string) => Promise<DispatchResult>;
   onReturnVehicle: (
     reservationId: string,
     parkingZone: string,
     keyReturnedToBox: boolean
-  ) => void;
-  onAuthorizedCheckout: (employeeId: string, vehicleId: string, purpose: TripPurpose) => DispatchResult;
+  ) => Promise<DispatchResult>;
+  onAuthorizedCheckout: (employeeId: string, vehicleId: string, purpose: TripPurpose) => Promise<DispatchResult>;
   onUnauthorizedKeyTheft: (
     employeeId: string,
     vehicleId: string,
     coPassengerId: string | null
-  ) => void;
-  onLateReasonSubmit: (vehicleId: string, purpose: TripPurpose) => void;
-  onSimulateCrashOrDrop: (vehicleId: string, isRealCrash: boolean) => void;
-  onTogglePermissionEvasion: (employeeId: string) => void;
-  onAutoReturnToGarage: (vehicleId: string) => void;
+  ) => Promise<DispatchResult>;
+  onLateReasonSubmit: (vehicleId: string, purpose: TripPurpose) => Promise<DispatchResult>;
+  onSimulateCrashOrDrop: (vehicleId: string, isRealCrash: boolean) => Promise<DispatchResult>;
+  onTogglePermissionEvasion: (employeeId: string) => Promise<DispatchResult>;
+  onAutoReturnToGarage: (vehicleId: string) => Promise<DispatchResult>;
   qrScan?: QrScanResult | null;
+  dataMode?: 'DEMO' | 'LIVE';
   lang?: AppLang;
 }
 
@@ -79,6 +80,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   onTogglePermissionEvasion,
   onAutoReturnToGarage,
   qrScan = null,
+  dataMode = 'DEMO',
   lang = 'KOR',
 }) => {
   const isEng = lang === 'ENG';
@@ -97,11 +99,18 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
     useState<RealDeviceTelemetrySnapshot | null>(null);
   const stopSensorRef = useRef<(() => void) | null>(null);
   const [dispatchNotice, setDispatchNotice] = useState<DispatchResult | null>(null);
+  const [busy, setBusy] = useState<boolean>(false);
 
-  // Shows the real outcome (blocked or done) instead of assuming success
-  const showDispatchResult = (result: DispatchResult) => {
-    setDispatchNotice(result);
-    setSimFeedback(result.message);
+  // Waits for the server and shows the real outcome; ignores clicks while a request is in flight
+  const showDispatchResult = async (pending: Promise<DispatchResult>) => {
+    setBusy(true);
+    try {
+      const result = await pending;
+      setDispatchNotice(result);
+      setSimFeedback(result.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   // Defaults point at sample records; snap to real ones once the fleet/roster is replaced
@@ -186,7 +195,8 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
 
   return (
     <div
-      className="rounded-xl bg-[#FAFAFA] p-4 flex flex-col justify-between"
+      aria-busy={busy}
+      className={`rounded-xl bg-[#FAFAFA] p-4 flex flex-col justify-between ${busy ? 'pointer-events-none opacity-70' : ''}`}
       style={{
         boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px',
       }}
@@ -259,7 +269,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
           <button
             type="button"
             onClick={() => {
-              showDispatchResult(onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose));
+              void showDispatchResult(onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose));
             }}
             className="w-full py-2 px-3 rounded-lg bg-[#0A0A0A] hover:bg-[#27272A] text-[#FAFAFA] text-xs font-semibold flex items-center justify-center gap-1.5 transition"
           >
@@ -438,7 +448,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    showDispatchResult(onCreateRequest({
+                    void showDispatchResult(onCreateRequest({
                       employeeId: selectedEmpId,
                       vehicleId: selectedVehId,
                       purpose: selectedPurpose,
@@ -506,15 +516,17 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                           <span className="text-[11px] text-[#B45309] flex items-center gap-1">
                             <Clock className="w-3 h-3" /> {isEng ? 'Pending' : '승인대기'}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              showDispatchResult(onApproveRequest(res.id));
-                            }}
-                            className="px-2 py-0.5 rounded bg-[#10B981]/20 text-[#047857] text-[11px]"
-                          >
-                            {isEng ? 'Approve Now' : '즉시 승인'}
-                          </button>
+                          {dataMode === 'DEMO' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void showDispatchResult(onApproveRequest(res.id));
+                              }}
+                              className="px-2 py-0.5 rounded bg-[#10B981]/20 text-[#047857] text-[11px]"
+                            >
+                              {isEng ? 'Approve Now' : '즉시 승인'}
+                            </button>
+                          )}
                         </div>
                       )}
 
@@ -522,7 +534,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            showDispatchResult(onStartUsingVehicle(res.id));
+                            void showDispatchResult(onStartUsingVehicle(res.id));
                           }}
                           className="w-full py-1.5 rounded bg-[#0A72EF] text-white text-xs font-medium flex items-center justify-center gap-1"
                         >
@@ -548,12 +560,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                               const fullZone = `${returnLot} #${res.fleetNumber
                                 .toString()
                                 .padStart(2, '0')}`;
-                              onReturnVehicle(res.id, fullZone, true);
-                              setSimFeedback(
-                                isEng
-                                  ? `Unit #${res.fleetNumber} Returned`
-                                  : `#${res.fleetNumber}호차 반납 완료`
-                              );
+                              void showDispatchResult(onReturnVehicle(res.id, fullZone, true));
                             }}
                             className="flex-1 py-1 rounded bg-[#10B981] text-white text-xs font-medium flex items-center justify-center gap-1"
                           >
@@ -571,12 +578,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onAutoReturnToGarage(selectedVehId);
-                  setSimFeedback(
-                    isEng
-                      ? `Unit #${currentVeh.fleetNumber} Auto-Returned to Garage`
-                      : `#${currentVeh.fleetNumber}호차 차고지 자동반납 완료`
-                  );
+                  void showDispatchResult(onAutoReturnToGarage(selectedVehId));
                 }}
                 className="w-full py-2 px-3 rounded-lg bg-[#10B981] hover:bg-[#059669] text-white text-xs font-medium flex items-center justify-center gap-1.5 transition"
               >
@@ -603,7 +605,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  showDispatchResult(onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose));
+                  void showDispatchResult(onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose));
                 }}
                 className="px-2.5 py-1 rounded bg-[#0A72EF] text-white text-xs"
               >
@@ -648,16 +650,11 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    onUnauthorizedKeyTheft(
+                    void showDispatchResult(onUnauthorizedKeyTheft(
                       selectedEmpId,
                       selectedVehId,
                       includeCoPassenger ? coPassengerId : null
-                    );
-                    setSimFeedback(
-                      isEng
-                        ? `Unit #${currentVeh.fleetNumber} Unauthorized Alert`
-                        : `#${currentVeh.fleetNumber}호차 무단운행 감지 (Red Alert)`
-                    );
+                    ));
                   }}
                   className="flex-1 py-1.5 rounded bg-[#FF5B4F] text-white text-xs font-medium flex items-center justify-center gap-1"
                 >
@@ -668,8 +665,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      onLateReasonSubmit(selectedVehId, selectedPurpose);
-                      setSimFeedback(isEng ? 'Late reason submitted' : '사후 사유 입력됨');
+                      void showDispatchResult(onLateReasonSubmit(selectedVehId, selectedPurpose));
                     }}
                     className="px-2.5 py-1.5 rounded bg-[#FFFFFF] text-[#0A0A0A] text-[11px]"
                   >
@@ -683,8 +679,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onSimulateCrashOrDrop(selectedVehId, true);
-                  setSimFeedback(isEng ? '3.24G Impact Detected' : '3.24G 충돌 감지됨');
+                  void showDispatchResult(onSimulateCrashOrDrop(selectedVehId, true));
                 }}
                 className="py-2 px-2 rounded-lg bg-[#FFFFFF] text-[#B45309] text-xs font-medium flex items-center justify-center gap-1"
                 style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
@@ -695,8 +690,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  onSimulateCrashOrDrop(selectedVehId, false);
-                  setSimFeedback(isEng ? 'Phone Drop Filtered' : '단순 낙하 제외됨');
+                  void showDispatchResult(onSimulateCrashOrDrop(selectedVehId, false));
                 }}
                 className="py-2 px-2 rounded-lg bg-[#FFFFFF] text-[#52525B] text-xs font-medium"
                 style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
@@ -708,8 +702,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
             <button
               type="button"
               onClick={() => {
-                onTogglePermissionEvasion(selectedEmpId);
-                setSimFeedback(isEng ? 'BT Permission Toggled' : '블루투스 권한 토글됨');
+                void showDispatchResult(onTogglePermissionEvasion(selectedEmpId));
               }}
               className="w-full py-1.5 rounded-lg bg-[#FFFFFF] text-xs text-[#52525B] flex items-center justify-center gap-1.5"
               style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}

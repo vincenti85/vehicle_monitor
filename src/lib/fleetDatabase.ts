@@ -18,7 +18,11 @@ import {
   INITIAL_TAX_LOGS,
   INITIAL_VEHICLES,
 } from '@/data/initialFleetData';
-import { FleetStorageUnavailableError, getFleetStorage } from '@/lib/fleetStorage';
+import {
+  FleetStorageConflictError,
+  FleetStorageUnavailableError,
+  getFleetStorage,
+} from '@/lib/fleetStorage';
 
 export { FleetStorageUnavailableError } from '@/lib/fleetStorage';
 
@@ -38,6 +42,8 @@ export interface FleetDatabaseSchema {
   lastUpdatedAt: string;
   storageEngine: 'PERSISTENT_JSON_DB' | 'SUPABASE_POSTGRES';
   dataMode: FleetDataMode;
+  /** Incremented on every write; clients poll with it to detect changes. */
+  revision: number;
   vehicles: Vehicle[];
   employees: Employee[];
   reservations: VehicleReservation[];
@@ -95,6 +101,7 @@ export function createSeedDatabase(): FleetDatabaseSchema {
     lastUpdatedAt: new Date().toISOString(),
     storageEngine: 'PERSISTENT_JSON_DB',
     dataMode: 'DEMO',
+    revision: 0,
     vehicles: INITIAL_VEHICLES,
     employees: INITIAL_EMPLOYEES,
     reservations: INITIAL_RESERVATIONS,
@@ -119,48 +126,136 @@ export function getStorageBackendName() {
   return getFleetStorage().name;
 }
 
-async function persist(db: FleetDatabaseSchema): Promise<FleetDatabaseSchema> {
-  await getFleetStorage().save(JSON.stringify(db, null, 2));
-  return db;
+/** Thrown when a demo-only operation is attempted on a database already holding real data. */
+export class LiveDataProtectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'LiveDataProtectedError';
+  }
 }
 
-/**
- * Reads the database. Creates the demo seed only when no database exists yet.
- * Throws FleetStorageUnavailableError when the store exists but cannot be read or parsed,
- * so callers never mistake an outage for an empty database and overwrite real data.
- */
-export async function readFleetDatabase(): Promise<FleetDatabaseSchema> {
-  const raw = await getFleetStorage().load();
-  if (raw === null) {
-    return persist(createSeedDatabase());
-  }
+const MAX_WRITE_ATTEMPTS = 5;
+const READ_CACHE_TTL_MS = 3000;
+export const PUSH_STREAM_LIMIT = 200;
+
+interface LoadedDatabase {
+  db: FleetDatabaseSchema;
+  etag: string | null;
+}
+
+function parseDatabase(json: string): FleetDatabaseSchema {
   try {
-    const parsed = JSON.parse(raw) as Partial<FleetDatabaseSchema>;
-    return { ...parsed, dataMode: parsed.dataMode ?? 'DEMO' } as FleetDatabaseSchema;
+    const parsed = JSON.parse(json) as Partial<FleetDatabaseSchema>;
+    return {
+      ...parsed,
+      dataMode: parsed.dataMode ?? 'DEMO',
+      revision: parsed.revision ?? 0,
+    } as FleetDatabaseSchema;
   } catch (err) {
     throw new FleetStorageUnavailableError('Fleet database is not valid JSON', { cause: err });
   }
 }
 
-export async function writeFleetDatabase(
-  nextState: Partial<FleetDatabaseSchema>
-): Promise<FleetDatabaseSchema> {
-  const current = await readFleetDatabase();
-  return persist({
-    ...current,
-    ...nextState,
-    dataMode: current.dataMode,
-    lastUpdatedAt: new Date().toISOString(),
-  });
+/** Loads the current document; a missing document is reported as the (unsaved) demo seed. */
+async function loadDatabase(): Promise<LoadedDatabase> {
+  const doc = await getFleetStorage().load();
+  if (doc === 'NOT_MODIFIED') throw new FleetStorageUnavailableError('Unexpected 304 without ifNoneMatch');
+  if (doc === null) return { db: createSeedDatabase(), etag: null };
+  return { db: parseDatabase(doc.json), etag: doc.etag };
+}
+
+// Per-instance cache so frequent polling does not read the store on every request
+let readCache: { db: FleetDatabaseSchema; etag: string; fetchedAt: number } | null = null;
+
+function rememberRead(db: FleetDatabaseSchema, etag: string) {
+  readCache = { db, etag, fetchedAt: Date.now() };
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+export interface Mutation<R> {
+  db: FleetDatabaseSchema;
+  result: R;
+}
+
+/**
+ * Read-modify-write with optimistic concurrency: applies the mutator to the latest stored
+ * document and saves only if nobody wrote in between, retrying on conflict. Returning the
+ * same db object means "no change" and skips the write. Errors thrown by the mutator
+ * (e.g. LiveDataProtectedError) propagate without writing.
+ */
+export async function mutateFleetDatabase<R>(
+  mutator: (db: FleetDatabaseSchema) => Mutation<R> | Promise<Mutation<R>>
+): Promise<Mutation<R>> {
+  const storage = getFleetStorage();
+  const attemptAll = async (): Promise<Mutation<R>> => {
+    for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt += 1) {
+      const { db, etag } = await loadDatabase();
+      const outcome = await mutator(db);
+      if (outcome.db === db && etag !== null) return outcome;
+
+      const next: FleetDatabaseSchema = {
+        ...outcome.db,
+        // A brand-new seed is revision 0; any change (including one applied to a fresh seed) bumps it
+        revision: etag === null ? (outcome.db === db ? 0 : 1) : db.revision + 1,
+        lastUpdatedAt: new Date().toISOString(),
+        pushStream: outcome.db.pushStream.slice(0, PUSH_STREAM_LIMIT),
+      };
+      try {
+        const newEtag = await storage.save(JSON.stringify(next, null, 2), { ifMatch: etag });
+        rememberRead(next, newEtag);
+        return { db: next, result: outcome.result };
+      } catch (err) {
+        if (!(err instanceof FleetStorageConflictError)) throw err;
+        await sleep(attempt * (20 + Math.random() * 60));
+      }
+    }
+    throw new FleetStorageUnavailableError('Fleet database is busy; please retry');
+  };
+  return storage.exclusive ? storage.exclusive(attemptAll) : attemptAll();
+}
+
+/**
+ * Reads the database, creating the demo seed only when none exists yet.
+ * Throws FleetStorageUnavailableError when the store cannot be read or parsed, so callers
+ * never mistake an outage for an empty database and overwrite real data.
+ */
+export async function readFleetDatabase(): Promise<FleetDatabaseSchema> {
+  const { db, etag } = await loadDatabase();
+  if (etag !== null) {
+    rememberRead(db, etag);
+    return db;
+  }
+  return (await mutateFleetDatabase((seed) => ({ db: seed, result: null }))).db;
+}
+
+/** Polling read: serves a fresh-enough cached copy and revalidates with ifNoneMatch. */
+export async function readFleetDatabaseCached(): Promise<FleetDatabaseSchema> {
+  const cached = readCache;
+  if (cached && Date.now() - cached.fetchedAt < READ_CACHE_TTL_MS) return cached.db;
+  if (!cached) return readFleetDatabase();
+  const doc = await getFleetStorage().load({ ifNoneMatch: cached.etag });
+  if (doc === 'NOT_MODIFIED') {
+    rememberRead(cached.db, cached.etag);
+    return cached.db;
+  }
+  if (doc === null) return readFleetDatabase();
+  const db = parseDatabase(doc.json);
+  rememberRead(db, doc.etag);
+  return db;
+}
+
+/** Pure: the demo seed in place of the current state. Throws once real data is live. */
+export function resetDemoState(current: FleetDatabaseSchema): FleetDatabaseSchema {
+  if (current.dataMode === 'LIVE') {
+    throw new LiveDataProtectedError('Live data is protected; demo reset is disabled.');
+  }
+  return { ...createSeedDatabase(), revision: current.revision };
 }
 
 /** Restores the demo seed. Refused once real data is live, so a stray click cannot wipe it. */
 export async function resetFleetDatabase(): Promise<FleetDatabaseSchema> {
-  const current = await readFleetDatabase();
-  if (current.dataMode === 'LIVE') {
-    throw new LiveDataProtectedError('Live data is protected; demo reset is disabled.');
-  }
-  return persist(createSeedDatabase());
+  return (await mutateFleetDatabase((current) => ({ db: resetDemoState(current), result: null }))).db;
 }
 
 function resetVehicleOperationalState(v: Vehicle): Vehicle {
@@ -180,14 +275,6 @@ function resetVehicleOperationalState(v: Vehicle): Vehicle {
   };
 }
 
-/** Thrown when a demo-only operation is attempted on a database already holding real data. */
-export class LiveDataProtectedError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'LiveDataProtectedError';
-  }
-}
-
 export interface ClearDemoResult {
   db: FleetDatabaseSchema;
   removedDemoEmployees: number;
@@ -199,32 +286,37 @@ export interface ClearDemoResult {
  * (reservations, incidents, ghost trips, geofence logs, tax logs, alerts) and puts every
  * vehicle back in the garage. Demo employees are removed only if real ones exist.
  */
-export async function clearDemoData(removeDemoEmployees: boolean): Promise<ClearDemoResult> {
-  const current = await readFleetDatabase();
+export function clearDemoState(
+  current: FleetDatabaseSchema,
+  removeDemoEmployees: boolean
+): { db: FleetDatabaseSchema; result: Omit<ClearDemoResult, 'db'> } {
   if (current.dataMode === 'LIVE') {
     throw new LiveDataProtectedError('Demo data was already cleared; live records are kept.');
   }
   const realEmployees = current.employees.filter((e) => !DEMO_EMPLOYEE_IDS.has(e.id));
   const canRemoveDemo = removeDemoEmployees && realEmployees.length > 0;
   const employees = canRemoveDemo ? realEmployees : current.employees;
-
-  const db = await persist({
-    ...current,
-    dataMode: 'LIVE',
-    lastUpdatedAt: new Date().toISOString(),
-    vehicles: current.vehicles.map(resetVehicleOperationalState),
-    employees: employees.map((e) => ({ ...e, violationCount: 0 })),
-    reservations: [],
-    incidents: [],
-    geofenceLogs: [],
-    ghostTrips: [],
-    taxLogs: [],
-    pushStream: [],
-  });
-
   return {
-    db,
-    removedDemoEmployees: current.employees.length - employees.length,
-    keptDemoEmployeesBecauseNoRealOnes: removeDemoEmployees && !canRemoveDemo,
+    db: {
+      ...current,
+      dataMode: 'LIVE',
+      vehicles: current.vehicles.map(resetVehicleOperationalState),
+      employees: employees.map((e) => ({ ...e, violationCount: 0 })),
+      reservations: [],
+      incidents: [],
+      geofenceLogs: [],
+      ghostTrips: [],
+      taxLogs: [],
+      pushStream: [],
+    },
+    result: {
+      removedDemoEmployees: current.employees.length - employees.length,
+      keptDemoEmployeesBecauseNoRealOnes: removeDemoEmployees && !canRemoveDemo,
+    },
   };
+}
+
+export async function clearDemoData(removeDemoEmployees: boolean): Promise<ClearDemoResult> {
+  const { db, result } = await mutateFleetDatabase((current) => clearDemoState(current, removeDemoEmployees));
+  return { db, ...result };
 }

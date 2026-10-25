@@ -3,9 +3,12 @@
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, PencilLine, Plus } from 'lucide-react';
 import { Vehicle, VehicleReservation } from '@/types/fleet';
+import { DispatchResult } from '@/utils/dispatchRules';
 import {
   MAX_FLEET_SIZE,
+  VehicleImportMode,
   VehicleInputValues,
+  VehicleCsvRow,
   planVehicleImport,
   validateVehicleInput,
 } from '@/utils/vehicleImport';
@@ -14,7 +17,7 @@ interface VehicleFormPanelProps {
   vehicles: Vehicle[];
   reservations: VehicleReservation[];
   dataMode: 'DEMO' | 'LIVE';
-  onApplyVehicleImport: (nextVehicles: Vehicle[], summary: string) => void;
+  onImportVehicles: (rows: VehicleCsvRow[], mode: VehicleImportMode, source: string) => Promise<DispatchResult>;
 }
 
 const NEW_VEHICLE = 'NEW';
@@ -48,12 +51,13 @@ export const VehicleFormPanel: React.FC<VehicleFormPanelProps> = ({
   vehicles,
   reservations,
   dataMode,
-  onApplyVehicleImport,
+  onImportVehicles,
 }) => {
   const [open, setOpen] = useState<boolean>(false);
   const [target, setTarget] = useState<string>(NEW_VEHICLE);
   const [form, setForm] = useState<VehicleInputValues>(EMPTY_FORM);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [saving, setSaving] = useState<boolean>(false);
 
   const sorted = useMemo(
     () => [...vehicles].sort((a, b) => a.fleetNumber - b.fleetNumber),
@@ -75,7 +79,7 @@ export const VehicleFormPanel: React.FC<VehicleFormPanelProps> = ({
   const setField = (key: keyof VehicleInputValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const values = editing ? { ...form, fleetNumber: String(editing.fleetNumber) } : form;
     const { row, error } = validateVehicleInput(values);
@@ -103,7 +107,13 @@ export const VehicleFormPanel: React.FC<VehicleFormPanelProps> = ({
 
     const unit = `#${row.fleetNumber.toString().padStart(2, '0')}호차`;
     const action = editing ? '정보 수정' : '신규 등록';
-    onApplyVehicleImport(plan.next, `관리자 직접 입력: ${unit} ${action} (${row.plateNumber} · ${row.modelName})`);
+    setSaving(true);
+    const res = await onImportVehicles([row], 'UPSERT', `관리자 직접 입력: ${unit} ${action} (${row.plateNumber} · ${row.modelName})`);
+    setSaving(false);
+    if (!res.ok) {
+      setResult(res);
+      return;
+    }
 
     const notes = [
       plan.odometerSkipped.length > 0 ? '운행중이라 계기판 값은 반영하지 않았습니다.' : '',
@@ -212,6 +222,7 @@ export const VehicleFormPanel: React.FC<VehicleFormPanelProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="submit"
+              disabled={saving}
               className="px-3 py-1.5 rounded-md bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-semibold flex items-center gap-1.5"
             >
               {editing ? <PencilLine className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}

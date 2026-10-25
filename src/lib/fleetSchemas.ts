@@ -12,6 +12,7 @@ const tripPurpose = z.enum([
   '출퇴근(승인)',
   '미입력(무단반출)',
 ]);
+export const TripPurposeSchema = tripPurpose;
 const nullableStr = z.string().nullable();
 
 export const VehicleSchema = z

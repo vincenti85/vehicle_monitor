@@ -42,6 +42,9 @@ import {
 import { VehicleImportPanel } from '@/components/VehicleImportPanel';
 import { VehicleFormPanel } from '@/components/VehicleFormPanel';
 import { buildVehicleDeepLink, createQrSvg, resolveAppBaseUrl } from '@/utils/vehicleQr';
+import type { EmployeeCsvRow } from '@/domain/admin';
+import { DispatchResult } from '@/utils/dispatchRules';
+import { VehicleCsvRow, VehicleImportMode } from '@/utils/vehicleImport';
 
 const escapeHtml = (value: string): string =>
   value
@@ -50,14 +53,6 @@ const escapeHtml = (value: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-
-export interface EmployeeCsvRow {
-  name: string;
-  role: string;
-  department: string;
-  phone: string;
-  dispatchAllowed: boolean;
-}
 
 interface AdminManagementConsoleProps {
   vehicles: Vehicle[];
@@ -72,7 +67,7 @@ interface AdminManagementConsoleProps {
   onAddEmployee: (emp: { name: string; role: string; department: string; phone: string }) => void;
   reservations: VehicleReservation[];
   dataMode: 'DEMO' | 'LIVE';
-  onApplyVehicleImport: (nextVehicles: Vehicle[], summary: string) => void;
+  onImportVehicles: (rows: VehicleCsvRow[], mode: VehicleImportMode, source: string) => Promise<DispatchResult>;
   onClearDemoData: (removeDemoEmployees: boolean) => Promise<{ ok: boolean; message: string }>;
   onBulkImportEmployees: (rows: EmployeeCsvRow[]) => void;
   onResolveIncident: (incidentId: string, resolutionNote: string, suspendDriver: boolean) => void;
@@ -100,7 +95,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   onAddEmployee,
   reservations,
   dataMode,
-  onApplyVehicleImport,
+  onImportVehicles,
   onClearDemoData,
   onBulkImportEmployees,
   onResolveIncident,
@@ -455,14 +450,14 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
             vehicles={vehicles}
             reservations={reservations}
             dataMode={dataMode}
-            onApplyVehicleImport={onApplyVehicleImport}
+            onImportVehicles={onImportVehicles}
           />
 
           <VehicleImportPanel
             vehicles={vehicles}
             reservations={reservations}
             dataMode={dataMode}
-            onApplyVehicleImport={onApplyVehicleImport}
+            onImportVehicles={onImportVehicles}
             onClearDemoData={onClearDemoData}
           />
 

@@ -3,9 +3,11 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, ShieldCheck, Upload } from 'lucide-react';
 import { Vehicle, VehicleReservation } from '@/types/fleet';
+import { DispatchResult } from '@/utils/dispatchRules';
 import {
   MAX_FLEET_SIZE,
   ParsedVehicleCsv,
+  VehicleCsvRow,
   VehicleImportMode,
   VehicleImportPlan,
   parseVehicleCsv,
@@ -16,7 +18,7 @@ interface VehicleImportPanelProps {
   vehicles: Vehicle[];
   reservations: VehicleReservation[];
   dataMode: 'DEMO' | 'LIVE';
-  onApplyVehicleImport: (nextVehicles: Vehicle[], summary: string) => void;
+  onImportVehicles: (rows: VehicleCsvRow[], mode: VehicleImportMode, source: string) => Promise<DispatchResult>;
   onClearDemoData: (removeDemoEmployees: boolean) => Promise<{ ok: boolean; message: string }>;
 }
 
@@ -57,7 +59,7 @@ export const VehicleImportPanel: React.FC<VehicleImportPanelProps> = ({
   vehicles,
   reservations,
   dataMode,
-  onApplyVehicleImport,
+  onImportVehicles,
   onClearDemoData,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -67,6 +69,7 @@ export const VehicleImportPanel: React.FC<VehicleImportPanelProps> = ({
   const [removeDemoEmployees, setRemoveDemoEmployees] = useState<boolean>(true);
   const [confirmClear, setConfirmClear] = useState<boolean>(false);
   const [clearing, setClearing] = useState<boolean>(false);
+  const [applying, setApplying] = useState<boolean>(false);
 
   const protectBusy = dataMode === 'LIVE';
   const plans = useMemo(() => {
@@ -91,17 +94,18 @@ export const VehicleImportPanel: React.FC<VehicleImportPanelProps> = ({
     e.target.value = '';
   };
 
-  const handleApply = (mode: VehicleImportMode) => {
-    if (!plans) return;
-    const plan = plans[mode];
-    const label = mode === 'REPLACE' ? '전체 교체' : '추가·갱신';
-    const summary = `${fileName} → ${label}: ${describePlan(plan, mode)}`;
-    onApplyVehicleImport(plan.next, summary);
-    setResult({
-      ok: true,
-      message: `✅ ${summary}. 차량 정보가 바뀌었으면 QR 키고리 시트를 다시 인쇄하세요.`,
-    });
-    setParsed(null);
+  const handleApply = async (mode: VehicleImportMode) => {
+    if (!parsed || !plans) return;
+    setApplying(true);
+    // The server recomputes the plan against the latest data and is the final word
+    const res = await onImportVehicles(parsed.rows, mode, `CSV ${fileName}`);
+    setApplying(false);
+    setResult(
+      res.ok
+        ? { ok: true, message: `✅ ${res.message}. 차량 정보가 바뀌었으면 QR 키고리 시트를 다시 인쇄하세요.` }
+        : res
+    );
+    if (res.ok) setParsed(null);
   };
 
   const handleClearDemo = async () => {
@@ -247,8 +251,8 @@ export const VehicleImportPanel: React.FC<VehicleImportPanelProps> = ({
                     )}
                     <button
                       type="button"
-                      disabled={blocked}
-                      onClick={() => handleApply(mode)}
+                      disabled={blocked || applying}
+                      onClick={() => void handleApply(mode)}
                       className={`mt-1 px-3 py-1.5 rounded-md text-xs font-semibold ${
                         blocked
                           ? 'bg-[#E4E4E7] text-[#A1A1AA] cursor-not-allowed'
