@@ -4,6 +4,7 @@ import React from 'react';
 import { Navigation, ShieldAlert, Zap } from 'lucide-react';
 import { Employee, IncidentEvent, Vehicle } from '@/types/fleet';
 import { AppLang, formatEmpName, formatParkingZone } from '@/utils/i18n';
+import { TripSignalBadge } from './TripSignalBadge';
 
 interface TeslaTelemetryMapProps {
   vehicles: Vehicle[];
@@ -12,6 +13,8 @@ interface TeslaTelemetryMapProps {
   onSelectVehicle: (vehicle: Vehicle) => void;
   latestIncidentForSelected?: IncidentEvent;
   lang?: AppLang;
+  /** Show phone GPS freshness for vehicles on a trip (LIVE data only) */
+  showGpsSignal?: boolean;
 }
 
 export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
@@ -21,6 +24,7 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
   onSelectVehicle,
   latestIncidentForSelected,
   lang = 'KOR',
+  showGpsSignal = false,
 }) => {
   const isEng = lang === 'ENG';
 
@@ -179,6 +183,7 @@ export const TeslaTelemetryMap: React.FC<TeslaTelemetryMapProps> = ({
                 </h3>
               </div>
               <p className="text-xs text-[#71717A] mt-0.5">{selectedVehicle.modelName}</p>
+              {showGpsSignal && <TripSignalBadge vehicle={selectedVehicle} isEng={isEng} className="mt-1" />}
             </div>
 
             <span

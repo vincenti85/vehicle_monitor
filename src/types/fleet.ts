@@ -46,6 +46,8 @@ export interface Vehicle {
   headingDeg: number;
   isLockedByAdmin?: boolean;
   lastOdometerAuditAt?: string;
+  lastFixAt?: string; // ISO time of the latest phone GPS fix on a trip
+  lastFixAccuracyM?: number;
 }
 
 export interface VehicleReservation {
@@ -71,6 +73,17 @@ export interface VehicleReservation {
   returnParkingZone: string | null;
   keyReturnedToBox: boolean;
   notes: string;
+  gpsTrack?: TripGpsTrack;
+}
+
+/** Running summary of the driver's phone GPS fixes for one trip. */
+export interface TripGpsTrack {
+  fixCount: number;
+  gpsKm: number; // sum of straight lines between fixes (shorter than the road distance)
+  maxSpeedKmh: number;
+  lastLat: number;
+  lastLng: number;
+  lastFixAt: string; // ISO
 }
 
 export interface Employee {

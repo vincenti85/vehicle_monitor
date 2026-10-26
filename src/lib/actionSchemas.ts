@@ -43,6 +43,16 @@ export const ActionRequestSchema = z.discriminatedUnion('type', [
   action('dispatch.approve', z.object({ reservationId: id })),
   action('dispatch.reject', z.object({ reservationId: id })),
   action('dispatch.start', z.object({ reservationId: id })),
+  // Driver phone GPS while a trip is IN_USE
+  action('trip.position', z.object({
+    reservationId: id,
+    employeeId: id,
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    speedKmh: z.number().min(0).max(400).nullable(),
+    headingDeg: z.number().min(0).max(360).nullable(),
+    accuracyM: z.number().min(0).max(100_000),
+  })),
   action('dispatch.quickStart', z.object({ employeeId: id, vehicleId: id, purpose: TripPurposeSchema })),
   action('dispatch.return', z.object({ reservationId: id, parkingZone: z.string().trim().min(1).max(80), keyReturnedToBox: z.boolean() })),
   action('dispatch.autoReturn', z.object({ vehicleId: id })),

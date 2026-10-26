@@ -26,6 +26,7 @@ import {
   startDispatch,
   submitLateReason,
 } from './dispatch';
+import { recordTripPosition } from './trip';
 
 type PayloadOf<T extends ActionType> = Extract<ActionRequest, { type: T }>['payload'];
 
@@ -46,6 +47,7 @@ const ACTIONS: { [T in ActionType]: ActionSpec<T> } = {
   'dispatch.return': { run: returnVehicle },
   'dispatch.autoReturn': { run: autoReturnVehicle },
   'dispatch.lateReason': { run: submitLateReason },
+  'trip.position': { run: recordTripPosition },
   'vehicle.import': { admin: true, run: importVehicles },
   'vehicle.updatePairing': { admin: true, run: updatePairing },
   'vehicle.toggleLock': { admin: true, run: toggleVehicleLock },

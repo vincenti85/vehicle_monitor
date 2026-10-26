@@ -8,6 +8,7 @@ import {
   findDispatchConflict,
 } from '@/utils/dispatchRules';
 import { localDate, localTime } from './clock';
+import { describeGpsTrack } from './trip';
 import {
   ActionContext,
   ActionOutcome,
@@ -56,10 +57,11 @@ const mapReservation = (db: FleetDatabaseSchema, id: string, fn: (r: VehicleRese
   db.reservations.map((r) => (r.id === id ? fn(r) : r));
 
 /** Vehicle state while driving. LIVE mode keeps real values; DEMO shows a plausible trip. */
-function drivingState(db: FleetDatabaseSchema, v: Vehicle, demoSpeed: number, spread: number) {
+function drivingState(db: FleetDatabaseSchema, v: Vehicle, demoSpeed: number, spread: number, demoGForce: number) {
+  // A new trip starts without a GPS fix; LIVE never writes made-up sensor readings
   return db.dataMode === 'LIVE'
-    ? { speedKmh: 0, lat: v.lat, lng: v.lng }
-    : { speedKmh: demoSpeed, ...demoPositionNearHq(spread) };
+    ? { speedKmh: 0, lat: v.lat, lng: v.lng, lastFixAt: undefined }
+    : { speedKmh: demoSpeed, currentGForce: demoGForce, rssiDbm: -48, lastFixAt: undefined, ...demoPositionNearHq(spread) };
 }
 
 function parkedState(v: Vehicle, parkingZone: string, odometerKm?: number): Vehicle {
@@ -207,15 +209,13 @@ export function startDispatch(db: FleetDatabaseSchema, p: ReservationRef, ctx: A
   const vehicles = mapVehicle(db, veh.id, (v) => ({
     ...v,
     status: 'AUTHORIZED',
-    currentGForce: 1.01,
-    rssiDbm: -48,
     currentDriverId: res.employeeId,
     coPassengerIds: [],
     driverSelectionReason: `정식 배차 승인(${res.id}) + 4400 Northpark Dr 키 수령`,
     tripPurpose: res.purpose,
     tripStartedAt: time,
     parkingZone: `${res.destination} 방면 운행중`,
-    ...drivingState(db, v, 58, 0.016),
+    ...drivingState(db, v, 58, 0.016, 1.01),
   }));
   return {
     db: withAlerts(
@@ -276,15 +276,13 @@ export function quickStartDispatch(db: FleetDatabaseSchema, p: QuickStartPayload
   const vehicles = mapVehicle(db, veh.id, (v) => ({
     ...v,
     status: 'AUTHORIZED',
-    currentGForce: 1.02,
-    rssiDbm: -48,
     currentDriverId: emp.id,
     coPassengerIds: [],
     driverSelectionReason: '1초 원터치 자율 반출',
     tripPurpose: p.purpose,
     tripStartedAt: time,
     parkingZone: `외근 운행중 (${p.purpose})`,
-    ...drivingState(db, v, 46, 0.015),
+    ...drivingState(db, v, 46, 0.015, 1.02),
   }));
   return {
     db: withAlerts(
@@ -325,7 +323,7 @@ export function returnVehicle(db: FleetDatabaseSchema, p: ReturnPayload, ctx: Ac
     endOdometerKm: endOdometer,
     returnParkingZone: p.parkingZone,
     keyReturnedToBox: p.keyReturnedToBox,
-    notes: `반납 완료 (${p.parkingZone} 주차 · 키보관함 반납: ${p.keyReturnedToBox ? '완료' : '미확인'} · +${drivenKm}km)`,
+    notes: `반납 완료 (${p.parkingZone} 주차 · 키보관함 반납: ${p.keyReturnedToBox ? '완료' : '미확인'} · +${drivenKm}km · ${describeGpsTrack(res.gpsTrack)})`,
   }));
   const vehicles = mapVehicle(db, res.vehicleId, (v) => parkedState(v, `${p.parkingZone} (반납 완료)`, endOdometer));
   const log = taxRow(ctx, {

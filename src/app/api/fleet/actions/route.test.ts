@@ -74,6 +74,26 @@ describe('POST /api/fleet/actions', () => {
     expect(approved.ok).toBe(true);
   });
 
+  it('records the driver phone position on an IN_USE trip and shows it in polled state', async () => {
+    const created = await (await post(request8('emp-06'))).json();
+    const resId = created.data.reservations.find((r: { vehicleId: string }) => r.vehicleId === 'veh-8').id;
+    await post({ type: 'dispatch.approve', payload: { reservationId: resId } }, PIN);
+    await post({ type: 'dispatch.start', payload: { reservationId: resId } });
+
+    const ping = { reservationId: resId, employeeId: 'emp-06', lat: 32.65, lng: -85.38, speedKmh: 55, headingDeg: 180, accuracyM: 8 };
+    const sent = await (await post({ type: 'trip.position', payload: ping })).json();
+    expect(sent.ok).toBe(true);
+
+    const state = await (await GET(new NextRequest('http://localhost/api/fleet/state'))).json();
+    const veh = state.data.vehicles.find((v: { id: string }) => v.id === 'veh-8');
+    expect(veh).toMatchObject({ lat: 32.65, lng: -85.38, speedKmh: 55 });
+    expect(typeof veh.lastFixAt).toBe('string');
+
+    expect((await post({ type: 'trip.position', payload: { ...ping, lat: 999 } })).status).toBe(400);
+    const stranger = await (await post({ type: 'trip.position', payload: { ...ping, employeeId: 'emp-01' } })).json();
+    expect(stranger.ok).toBe(false);
+  });
+
   it('rejects malformed actions with 400', async () => {
     expect((await post({ type: 'dispatch.request', payload: { vehicleId: 'veh-8' } })).status).toBe(400);
     expect((await post({ type: 'nope', payload: {} })).status).toBe(400);

@@ -63,6 +63,8 @@ import type { FleetDataMode, FleetDatabaseSchema } from '@/lib/fleetDatabase';
 import type { ActionRequest } from '@/lib/actionSchemas';
 import type { EmployeeCsvRow } from '@/domain/admin';
 import { useFleetSync } from '@/hooks/useFleetSync';
+import { useTripPositionReporter } from '@/hooks/useTripPositionReporter';
+import { TripSignalBadge } from '@/components/TripSignalBadge';
 import { VehicleCsvRow, VehicleImportMode } from '@/utils/vehicleImport';
 import { DispatchResult } from '@/utils/dispatchRules';
 import { ReservationWorkflowPanel } from '@/components/ReservationWorkflowPanel';
@@ -228,6 +230,8 @@ export default function FleetGuardCockpitPage() {
   // Server is the source of truth: every write is one action; screens poll every 15 s
   const sync = useFleetSync(applyDbSnapshot, adminPin);
   const runAction = sync.runAction;
+  // This device reports GPS for trips it started from the employee phone screen
+  const tripReporter = useTripPositionReporter(reservations, runAction);
 
   /** Runs an action and reports failures (and, if asked, successes) in the page notice. */
   const runAndNotify = async (action: ActionRequest, notifySuccess = false): Promise<DispatchResult> => {
@@ -361,8 +365,22 @@ export default function FleetGuardCockpitPage() {
     return result;
   };
 
-  const handleReturnVehicle = (reservationId: string, parkingZone: string, keyReturnedToBox: boolean) =>
-    runAction({ type: 'dispatch.return', payload: { reservationId, parkingZone, keyReturnedToBox } });
+  /** Phone-screen start: also makes this device the trip's GPS reporter. */
+  const handlePhoneStartUsingVehicle = async (reservationId: string): Promise<DispatchResult> => {
+    const res = reservations.find((r) => r.id === reservationId);
+    const result = await handleStartUsingVehicle(reservationId);
+    if (result.ok && res) tripReporter.startTracking(res.vehicleId, res.employeeId);
+    return result;
+  };
+
+  const handleReturnVehicle = async (reservationId: string, parkingZone: string, keyReturnedToBox: boolean) => {
+    const tracked = tripReporter.reservationId === reservationId;
+    // Final position before parking, without holding the return up for a slow GPS
+    if (tracked) await Promise.race([tripReporter.sendNow(), new Promise((r) => setTimeout(r, 8_000))]);
+    const result = await runAction({ type: 'dispatch.return', payload: { reservationId, parkingZone, keyReturnedToBox } });
+    if (result.ok && tracked) tripReporter.stopTracking();
+    return result;
+  };
 
   const handleAuthorizedCheckout = async (
     employeeId: string,
@@ -370,15 +388,21 @@ export default function FleetGuardCockpitPage() {
     purpose: TripPurpose
   ): Promise<DispatchResult> => {
     const result = await runAction({ type: 'dispatch.quickStart', payload: { employeeId, vehicleId, purpose } });
-    if (result.ok) setSelectedVehicleId(vehicleId);
+    if (result.ok) {
+      setSelectedVehicleId(vehicleId);
+      tripReporter.startTracking(vehicleId, employeeId);
+    }
     return result;
   };
 
   const handleLateReasonSubmit = (vehicleId: string, purpose: TripPurpose) =>
     runAction({ type: 'dispatch.lateReason', payload: { vehicleId, purpose } });
 
-  const handleAutoReturnToGarage = (vehicleId: string) =>
-    runAction({ type: 'dispatch.autoReturn', payload: { vehicleId } });
+  const handleAutoReturnToGarage = async (vehicleId: string) => {
+    const result = await runAction({ type: 'dispatch.autoReturn', payload: { vehicleId } });
+    if (result.ok && tripReporter.target?.vehicleId === vehicleId) tripReporter.stopTracking();
+    return result;
+  };
 
   // Admin console (server checks the PIN on every call)
   const handleUpdateVehicleMac = (vehicleId: string, newMac: string, newBleUuid: string) =>
@@ -766,9 +790,10 @@ export default function FleetGuardCockpitPage() {
                   reservations={reservations}
                   onCreateRequest={handleCreateRequest}
                   onApproveRequest={handleApproveRequest}
-                  onStartUsingVehicle={handleStartUsingVehicle}
+                  onStartUsingVehicle={handlePhoneStartUsingVehicle}
                   onReturnVehicle={handleReturnVehicle}
                   onAuthorizedCheckout={handleAuthorizedCheckout}
+                  tripReporter={tripReporter}
                   onUnauthorizedKeyTheft={handleUnauthorizedKeyTheft}
                   onLateReasonSubmit={handleLateReasonSubmit}
                   onSimulateCrashOrDrop={handleSimulateCrashOrDrop}
@@ -1056,6 +1081,7 @@ export default function FleetGuardCockpitPage() {
               {/* Left 8 Cols */}
               <div className="lg:col-span-8 space-y-4">
                 <TeslaTelemetryMap
+                        showGpsSignal={dataMode === 'LIVE'}
                   lang={lang}
                   vehicles={vehicles}
                   employees={employees}
@@ -1236,6 +1262,7 @@ export default function FleetGuardCockpitPage() {
                                 {veh.speedKmh > 0 ? `${veh.speedKmh}km/h` : '0km/h'}
                               </span>
                             </div>
+                            {dataMode === 'LIVE' && <TripSignalBadge vehicle={veh} isEng={isEng} className="mt-1.5" />}
                           </button>
                         );
                       })}
@@ -1513,9 +1540,10 @@ export default function FleetGuardCockpitPage() {
                   reservations={reservations}
                   onCreateRequest={handleCreateRequest}
                   onApproveRequest={handleApproveRequest}
-                  onStartUsingVehicle={handleStartUsingVehicle}
+                  onStartUsingVehicle={handlePhoneStartUsingVehicle}
                   onReturnVehicle={handleReturnVehicle}
                   onAuthorizedCheckout={handleAuthorizedCheckout}
+                  tripReporter={tripReporter}
                   onUnauthorizedKeyTheft={handleUnauthorizedKeyTheft}
                   onLateReasonSubmit={handleLateReasonSubmit}
                   onSimulateCrashOrDrop={handleSimulateCrashOrDrop}

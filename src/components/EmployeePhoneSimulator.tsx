@@ -23,6 +23,8 @@ import {
 } from '@/utils/realDeviceSensors';
 import { AppLang, formatDeptName, formatEmpName } from '@/utils/i18n';
 import { DispatchResult } from '@/utils/dispatchRules';
+import type { TripReporter } from '@/hooks/useTripPositionReporter';
+import { TripGpsStatus } from './TripGpsStatus';
 
 // Result of opening the app from a vehicle key-tag QR (?unit=NN)
 export interface QrScanResult {
@@ -63,6 +65,8 @@ interface EmployeePhoneSimulatorProps {
   qrScan?: QrScanResult | null;
   dataMode?: 'DEMO' | 'LIVE';
   lang?: AppLang;
+  /** GPS reporter for trips driven with this device */
+  tripReporter?: TripReporter;
 }
 
 export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
@@ -82,6 +86,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   qrScan = null,
   dataMode = 'DEMO',
   lang = 'KOR',
+  tripReporter,
 }) => {
   const isEng = lang === 'ENG';
   const [phoneTab, setPhoneTab] = useState<'WORKFLOW' | 'SENSOR_TEST'>('WORKFLOW');
@@ -541,6 +546,10 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                           <Play className="w-3 h-3" />
                           {isEng ? 'Start Driving' : '운행 시작'}
                         </button>
+                      )}
+
+                      {res.stage === 'IN_USE' && tripReporter && (
+                        <TripGpsStatus reservation={res} reporter={tripReporter} isEng={isEng} />
                       )}
 
                       {res.stage === 'IN_USE' && (
