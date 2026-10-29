@@ -222,12 +222,13 @@ export const TelemetryPayloadSchema = z.object({
   deltaSpeedKmh: z.number().min(-300).max(300),
   gForce: z.number().min(0).max(50),
   gyroYawDegPerSec: z.number().min(0).max(2000),
-  hasActiveApproval: z.boolean(),
+  /** Ignored: approval is worked out on the server from reservations. Kept for old clients. */
+  hasActiveApproval: z.boolean().optional(),
   persistToDb: z.boolean().optional(),
 });
 
 export const AdminPinRequestSchema = z.object({
-  pin: z.string().regex(/^\d{4}$/),
+  pin: z.string().regex(/^\d{4,12}$/),
 });
 
 export type FleetStatePatch = z.infer<typeof FleetStatePatchSchema>;

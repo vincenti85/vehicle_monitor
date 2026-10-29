@@ -4,6 +4,7 @@ import path from 'path';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createFileBackend, setFleetStorageForTests } from '@/lib/fleetStorage';
+import { setPinThrottleStorageForTests } from '@/lib/adminPinGuard';
 import { POST } from './route';
 import { GET } from '../state/route';
 
@@ -31,9 +32,11 @@ describe('POST /api/fleet/actions', () => {
   beforeEach(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fleet-actions-'));
     setFleetStorageForTests(createFileBackend(dir, 'LOCAL_FILE'));
+    setPinThrottleStorageForTests(createFileBackend(dir, 'LOCAL_FILE', 'pin-throttle.json'));
   });
   afterEach(() => {
     setFleetStorageForTests(null);
+    setPinThrottleStorageForTests(null);
     fs.rmSync(dir, { recursive: true, force: true });
   });
 

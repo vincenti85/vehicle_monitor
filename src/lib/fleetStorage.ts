@@ -58,12 +58,12 @@ function isConcurrentOperationError(err: unknown): boolean {
   return err instanceof BlobError && /conflicting operation/i.test(err.message);
 }
 
-function createBlobBackend(): FleetStorageBackend {
+export function createBlobBackend(pathname: string = BLOB_PATHNAME): FleetStorageBackend {
   return {
     name: 'VERCEL_BLOB',
     async load(options) {
       try {
-        const result = await get(BLOB_PATHNAME, {
+        const result = await get(pathname, {
           access: 'private',
           useCache: false,
           ...(options?.ifNoneMatch ? { ifNoneMatch: options.ifNoneMatch } : {}),
@@ -77,7 +77,7 @@ function createBlobBackend(): FleetStorageBackend {
     },
     async save(json, { ifMatch }) {
       try {
-        const result = await put(BLOB_PATHNAME, json, {
+        const result = await put(pathname, json, {
           access: 'private',
           addRandomSuffix: false,
           contentType: 'application/json',
@@ -109,8 +109,12 @@ function withFileLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
 
 const hashOf = (text: string) => crypto.createHash('sha1').update(text).digest('hex');
 
-export function createFileBackend(dir: string, name: StorageBackendName): FleetStorageBackend {
-  const filePath = path.join(dir, DB_FILE_NAME);
+export function createFileBackend(
+  dir: string,
+  name: StorageBackendName,
+  fileName: string = DB_FILE_NAME
+): FleetStorageBackend {
+  const filePath = path.join(dir, fileName);
 
   const readRaw = async (): Promise<string | null> => {
     try {
@@ -168,11 +172,16 @@ export function getFleetStorageGeneration(): number {
 
 export function getFleetStorage(): FleetStorageBackend {
   if (testOverride) return testOverride;
+  return createDocumentStorage(BLOB_PATHNAME, DB_FILE_NAME);
+}
+
+/** Backend for a named document in the same store as the fleet database. */
+export function createDocumentStorage(blobPathname: string, fileName: string): FleetStorageBackend {
   if (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID) {
-    return createBlobBackend();
+    return createBlobBackend(blobPathname);
   }
   if (process.env.VERCEL) {
-    return createFileBackend(os.tmpdir(), 'EPHEMERAL_TMP');
+    return createFileBackend(os.tmpdir(), 'EPHEMERAL_TMP', fileName);
   }
-  return createFileBackend(path.join(process.cwd(), 'data'), 'LOCAL_FILE');
+  return createFileBackend(path.join(process.cwd(), 'data'), 'LOCAL_FILE', fileName);
 }

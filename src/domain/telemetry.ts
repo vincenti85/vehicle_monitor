@@ -15,8 +15,23 @@ export interface TelemetryEvaluation {
   incidentVerdict: IncidentVerdict;
 }
 
+export class UnknownEmployeeError extends Error {
+  constructor(employeeId: string) {
+    super(`Unknown employeeId: ${employeeId}`);
+    this.name = 'UnknownEmployeeError';
+  }
+}
+
+/** Approval comes from the stored bookings, never from the phone's own claim. */
+export function hasActiveApproval(db: FleetDatabaseSchema, employeeId: string, vehicleId: string): boolean {
+  return db.reservations.some(
+    (r) => r.employeeId === employeeId && r.vehicleId === vehicleId && (r.stage === 'APPROVED' || r.stage === 'IN_USE')
+  );
+}
+
 export function evaluateTelemetry(db: FleetDatabaseSchema, body: TelemetryPayload): TelemetryEvaluation {
   const policy = db.policyConfig;
+  const approved = hasActiveApproval(db, body.employeeId, body.vehicleId);
   const hqDistanceMeters = getDistanceFromOpelikaHq(body.lat, body.lng);
   let incidentVerdict: IncidentVerdict = 'NONE';
   if (body.gForce >= policy.crashGForceThreshold) {
@@ -26,7 +41,7 @@ export function evaluateTelemetry(db: FleetDatabaseSchema, body: TelemetryPayloa
   return {
     hqDistanceMeters,
     inGarageGeofence: hqDistanceMeters <= policy.garageGeofenceRadiusM,
-    isUnauthorizedDriving: !body.hasActiveApproval && body.speedKmh >= policy.unauthorizedSpeedThresholdKmh,
+    isUnauthorizedDriving: !approved && body.speedKmh >= policy.unauthorizedSpeedThresholdKmh,
     incidentVerdict,
   };
 }
@@ -37,10 +52,11 @@ export function applyTelemetry(
   body: TelemetryPayload,
   ctx: ActionContext
 ): { db: FleetDatabaseSchema; result: TelemetryEvaluation } {
+  const emp = db.employees.find((e) => e.id === body.employeeId);
+  if (!emp) throw new UnknownEmployeeError(body.employeeId);
   const result = evaluateTelemetry(db, body);
   if (!body.persistToDb) return { db, result };
 
-  const emp = db.employees.find((e) => e.id === body.employeeId) || db.employees[0];
   const crashed = result.incidentVerdict === 'CONFIRMED_CRASH';
   const vehicles = db.vehicles.map((v) =>
     v.id === body.vehicleId
@@ -49,7 +65,7 @@ export function applyTelemetry(
           status: crashed ? ('INCIDENT' as const) : result.isUnauthorizedDriving ? ('UNAUTHORIZED' as const) : v.status,
           speedKmh: crashed ? 0 : body.speedKmh,
           currentGForce: body.gForce,
-          currentDriverId: emp?.id ?? v.currentDriverId,
+          currentDriverId: emp.id,
           lat: body.lat,
           lng: body.lng,
         }
@@ -61,8 +77,8 @@ export function applyTelemetry(
     id: newId('inc-api', ctx.now),
     vehicleId: body.vehicleId,
     plateNumber: body.plateNumber,
-    driverId: emp?.id ?? null,
-    driverName: emp ? `${emp.name} (${emp.department})` : '미상',
+    driverId: emp.id,
+    driverName: `${emp.name} (${emp.department})`,
     coPassengerNames: [],
     eventType: 'IMPACT_SHOCK',
     title: `💥 [텔레메트리 수신] 스마트폰 ${body.gForce}G 충격 감지`,

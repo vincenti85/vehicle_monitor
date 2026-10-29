@@ -7,6 +7,8 @@ import { localTime } from './clock';
 export interface ActionContext {
   now: Date;
   isAdmin: boolean;
+  /** Driver phone token from the x-driver-token header (see lib/driverToken). */
+  driverToken?: string | null;
 }
 
 export interface ActionOutcome {

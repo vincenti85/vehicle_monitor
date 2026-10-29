@@ -195,6 +195,14 @@ export function startDispatch(db: FleetDatabaseSchema, p: ReservationRef, ctx: A
   const veh = res && db.vehicles.find((v) => v.id === res.vehicleId);
   if (!res || !veh) return refuse(db, '배차 건 또는 차량을 찾을 수 없습니다.');
   if (res.stage !== 'APPROVED') return refuse(db, '승인완료 상태의 건만 운행을 시작할 수 있습니다.');
+  // Suspension or a vehicle lock may have happened after approval
+  const emp = db.employees.find((e) => e.id === res.employeeId);
+  if (emp?.dispatchAllowed === false) {
+    return refuse(db, '배차 자격이 일시 정지되어 출발할 수 없습니다. 관리자에게 문의하세요.');
+  }
+  if (veh.isLockedByAdmin) {
+    return refuse(db, `#${veh.fleetNumber}호차는 관리자가 잠근 차량(점검)이라 출발할 수 없습니다.`);
+  }
   const conflict = findDispatchConflict(veh, db.reservations, CONFIRM_BLOCKING_STAGES, res.id);
   if (conflict) {
     return refuseWithNotice(db, ctx, 'DRIVER', `🚫 [운행 시작 차단] ${shortName(res.employeeName)}님 운행 시작을 막았습니다. ${conflict}`, conflict);
@@ -242,6 +250,10 @@ export function quickStartDispatch(db: FleetDatabaseSchema, p: QuickStartPayload
   }
   if (veh.isLockedByAdmin) {
     return refuse(db, `#${veh.fleetNumber}호차는 관리자가 잠근 차량(점검)이라 출발할 수 없습니다.`);
+  }
+  // Without an approved booking, a 1-second start is only allowed while auto-approval is on
+  if (!db.policyConfig.autoApproveWhenManagerAway) {
+    return refuse(db, '지금은 관리자 승인이 필요합니다. 배차 신청 후 승인되면 출발하세요.');
   }
   const conflict = findDispatchConflict(veh, db.reservations, CREATE_BLOCKING_STAGES);
   if (conflict) {
