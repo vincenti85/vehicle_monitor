@@ -42,6 +42,10 @@ interface ReservationWorkflowPanelProps {
     keyReturnedToBox: boolean
   ) => Promise<DispatchResult>;
   lang?: AppLang;
+  /** Approve/reject and the approval policy toggle are shown to unlocked admins only. */
+  isAdmin?: boolean;
+  /** Hide the inline request form where the phone app already offers one. */
+  showRequestButton?: boolean;
 }
 
 export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> = ({
@@ -56,6 +60,8 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
   onStartUsingVehicle,
   onReturnVehicle,
   lang = 'KOR',
+  isAdmin = false,
+  showRequestButton = true,
 }) => {
   const isEng = lang === 'ENG';
   const [stageFilter, setStageFilter] = useState<'ALL' | ReservationStage>('ALL');
@@ -169,6 +175,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
         </div>
 
         <div className="flex items-center gap-1.5">
+          {isAdmin && (
           <button
             type="button"
             onClick={onToggleAutoApprove}
@@ -188,7 +195,9 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
                 ? 'Manual Approval'
                 : '수동승인'}
           </button>
+          )}
 
+          {showRequestButton && (
           <button
             type="button"
             onClick={() => setShowRequestForm((p) => !p)}
@@ -197,6 +206,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
             <ClipboardPlus className="w-3.5 h-3.5" />
             {isEng ? 'New Request' : '배차 신청'}
           </button>
+          )}
         </div>
       </div>
 
@@ -216,7 +226,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
       )}
 
       {/* Compact New Request Form */}
-      {showRequestForm && (
+      {showRequestButton && showRequestForm && (
         <form
           onSubmit={handleFormSubmit}
           className="p-3 rounded-lg bg-[#FFFFFF] space-y-2.5"
@@ -362,7 +372,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
               </div>
 
               <div className="flex items-center gap-1.5 shrink-0">
-                {res.stage === 'REQUESTED' && (
+                {res.stage === 'REQUESTED' && isAdmin && (
                   <>
                     <button
                       type="button"

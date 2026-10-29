@@ -22,6 +22,7 @@ import {
   FleetStorageConflictError,
   FleetStorageUnavailableError,
   getFleetStorage,
+  getFleetStorageGeneration,
 } from '@/lib/fleetStorage';
 
 export { FleetStorageUnavailableError } from '@/lib/fleetStorage';
@@ -165,10 +166,30 @@ async function loadDatabase(): Promise<LoadedDatabase> {
 }
 
 // Per-instance cache so frequent polling does not read the store on every request
-let readCache: { db: FleetDatabaseSchema; etag: string; fetchedAt: number } | null = null;
+let readCache: { db: FleetDatabaseSchema; etag: string; fetchedAt: number; generation: number } | null = null;
 
 function rememberRead(db: FleetDatabaseSchema, etag: string) {
-  readCache = { db, etag, fetchedAt: Date.now() };
+  readCache = { db, etag, fetchedAt: Date.now(), generation: getFleetStorageGeneration() };
+}
+
+function currentCache() {
+  return readCache && readCache.generation === getFleetStorageGeneration() ? readCache : null;
+}
+
+/**
+ * Latest document for a write. Revalidates the cached copy with ifNoneMatch, so an
+ * unchanged store costs a 304 instead of a full download and JSON parse. Mutators are
+ * pure, so handing them the cached object is safe; the save still checks the ETag.
+ */
+async function loadDatabaseForWrite(): Promise<LoadedDatabase> {
+  const cached = currentCache();
+  if (!cached) return loadDatabase();
+  const doc = await getFleetStorage().load({ ifNoneMatch: cached.etag });
+  if (doc === 'NOT_MODIFIED') return { db: cached.db, etag: cached.etag };
+  if (doc === null) return { db: createSeedDatabase(), etag: null };
+  const db = parseDatabase(doc.json);
+  rememberRead(db, doc.etag);
+  return { db, etag: doc.etag };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -189,10 +210,22 @@ export async function mutateFleetDatabase<R>(
 ): Promise<Mutation<R>> {
   const storage = getFleetStorage();
   const attemptAll = async (): Promise<Mutation<R>> => {
+    // First try saves straight onto the cached copy: the ETag check rejects it if anyone
+    // wrote since, so the common case costs one storage round trip instead of two.
+    let useCache = true;
     for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt += 1) {
-      const { db, etag } = await loadDatabase();
+      const cached = useCache ? currentCache() : null;
+      useCache = false;
+      const { db, etag } = cached ? { db: cached.db, etag: cached.etag } : await loadDatabaseForWrite();
       const outcome = await mutator(db);
-      if (outcome.db === db && etag !== null) return outcome;
+      if (outcome.db === db && etag !== null) {
+        // A refusal decided on unverified cached data is re-checked against the store
+        if (cached) {
+          attempt -= 1;
+          continue;
+        }
+        return outcome;
+      }
 
       const next: FleetDatabaseSchema = {
         ...outcome.db,
@@ -202,7 +235,8 @@ export async function mutateFleetDatabase<R>(
         pushStream: outcome.db.pushStream.slice(0, PUSH_STREAM_LIMIT),
       };
       try {
-        const newEtag = await storage.save(JSON.stringify(next, null, 2), { ifMatch: etag });
+        // Compact JSON: about a third smaller than indented, so every read and write moves less
+        const newEtag = await storage.save(JSON.stringify(next), { ifMatch: etag });
         rememberRead(next, newEtag);
         return { db: next, result: outcome.result };
       } catch (err) {
@@ -231,7 +265,7 @@ export async function readFleetDatabase(): Promise<FleetDatabaseSchema> {
 
 /** Polling read: serves a fresh-enough cached copy and revalidates with ifNoneMatch. */
 export async function readFleetDatabaseCached(): Promise<FleetDatabaseSchema> {
-  const cached = readCache;
+  const cached = currentCache();
   if (cached && Date.now() - cached.fetchedAt < READ_CACHE_TTL_MS) return cached.db;
   if (!cached) return readFleetDatabase();
   const doc = await getFleetStorage().load({ ifNoneMatch: cached.etag });

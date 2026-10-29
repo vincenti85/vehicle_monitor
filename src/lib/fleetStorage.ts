@@ -9,7 +9,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { BlobPreconditionFailedError, get, put } from '@vercel/blob';
+import { BlobError, BlobPreconditionFailedError, get, put } from '@vercel/blob';
 
 export type StorageBackendName = 'VERCEL_BLOB' | 'LOCAL_FILE' | 'EPHEMERAL_TMP';
 
@@ -53,6 +53,11 @@ export function toStrongEtag(etag: string): string {
   return etag.startsWith('W/') ? etag.slice(2) : etag;
 }
 
+// Blob has no dedicated class for its 409 response; it arrives as a BlobError with this text
+function isConcurrentOperationError(err: unknown): boolean {
+  return err instanceof BlobError && /conflicting operation/i.test(err.message);
+}
+
 function createBlobBackend(): FleetStorageBackend {
   return {
     name: 'VERCEL_BLOB',
@@ -81,8 +86,9 @@ function createBlobBackend(): FleetStorageBackend {
         });
         return result.etag;
       } catch (err) {
-        // ETag mismatch, or another instance created the document first
-        if (err instanceof BlobPreconditionFailedError || ifMatch === null) {
+        // ETag mismatch, a concurrent write still in flight (409), or another instance
+        // created the document first: all mean "re-read and try again"
+        if (err instanceof BlobPreconditionFailedError || isConcurrentOperationError(err) || ifMatch === null) {
           throw new FleetStorageConflictError();
         }
         throw new FleetStorageUnavailableError('Vercel Blob write failed', { cause: err });
@@ -147,10 +153,17 @@ export function createFileBackend(dir: string, name: StorageBackendName): FleetS
 }
 
 let testOverride: FleetStorageBackend | null = null;
+let storageGeneration = 0;
 
 /** Test hook: route all database access to the given backend (null restores the default). */
 export function setFleetStorageForTests(backend: FleetStorageBackend | null) {
   testOverride = backend;
+  storageGeneration += 1;
+}
+
+/** Changes whenever the backend is swapped, so caches of the old store are not reused. */
+export function getFleetStorageGeneration(): number {
+  return storageGeneration;
 }
 
 export function getFleetStorage(): FleetStorageBackend {

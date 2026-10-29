@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FleetStorageBackend,
   FleetStorageConflictError,
@@ -103,5 +103,43 @@ describe('fleet database on a compare-and-swap backend (Blob semantics)', () => 
     for (const o of outcomes) {
       if (o.status === 'rejected') expect(o.reason).toBeInstanceOf(FleetStorageUnavailableError);
     }
+  });
+
+  it('writes on an up-to-date cache with a single save and no download', async () => {
+    const backend = createFakeCasBackend();
+    setFleetStorageForTests(backend);
+    await readFleetDatabase();
+    const loads = vi.spyOn(backend, 'load');
+    const saves = vi.spyOn(backend, 'save');
+    const out = await mutateFleetDatabase((db) => ({ db: { ...db, pushStream: [alert('fast')] }, result: 1 }));
+    expect(out.db.revision).toBe(1);
+    expect(loads).not.toHaveBeenCalled();
+    expect(saves).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-applies the change on fresh data when another instance wrote first', async () => {
+    const backend = createFakeCasBackend();
+    setFleetStorageForTests(backend);
+    await readFleetDatabase();
+    // Another instance writes behind this instance's cache
+    const doc = (await backend.load()) as StoredDocument;
+    const other = { ...JSON.parse(doc.json), revision: 1, pushStream: [alert('other')] };
+    await backend.save(JSON.stringify(other), { ifMatch: doc.etag });
+
+    const out = await mutateFleetDatabase((db) => ({ db: { ...db, pushStream: [alert('mine'), ...db.pushStream] }, result: 1 }));
+    expect(out.db.revision).toBe(2);
+    expect(out.db.pushStream.map((p) => p.id)).toEqual(['mine', 'other']);
+  });
+
+  it('confirms a refusal against fresh data before reporting it', async () => {
+    const backend = createFakeCasBackend();
+    setFleetStorageForTests(backend);
+    await readFleetDatabase();
+    const doc = (await backend.load()) as StoredDocument;
+    await backend.save(JSON.stringify({ ...JSON.parse(doc.json), revision: 1, pushStream: [alert('other')] }), { ifMatch: doc.etag });
+
+    // The mutator refuses (no change) unless it sees the other instance's write
+    const out = await mutateFleetDatabase((db) => ({ db, result: db.pushStream.some((p) => p.id === 'other') }));
+    expect(out.result).toBe(true);
   });
 });

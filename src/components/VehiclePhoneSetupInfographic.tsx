@@ -26,110 +26,110 @@ const HOTSPOTS: HotspotItem[] = [
   {
     id: 'QR_KEY',
     stepNumber: '01',
-    badgeKor: '방식 A · 무설정 1초 연결 (권장)',
-    badgeEng: 'Method A · Zero-Config 1-Sec Scan (Recommended)',
-    titleKor: '자동차 스마트키 QR 태그 스캔 (페어링 불필요)',
-    titleEng: 'Vehicle Key-Fob QR Scan (No Pairing Required)',
-    subtitleKor: '운전석 탑승 후 차키 고리의 QR 코드를 스마트폰 카메라로 스캔',
-    subtitleEng: 'Scan the QR tag on the car key-fob with your smartphone camera',
+    badgeKor: '방식 A · 권장',
+    badgeEng: 'Method A · Recommended',
+    titleKor: '차키 QR 스캔',
+    titleEng: 'Key-Tag QR Scan',
+    subtitleKor: '휴대폰 카메라로 차키 QR을 스캔',
+    subtitleEng: 'Scan the key-tag QR with your phone camera',
     xPercent: 36,
     yPercent: 64,
     color: '#047857',
     actionStepsKor: [
-      '4400 Northpark Dr 키보관함에서 배정된 차량 키(QR 키링 부착)를 수령합니다.',
-      '스마트폰 기본 카메라(또는 임직원 웹앱 상단 [⚡ 차키 QR 1초 출발])로 차키 QR을 비춥니다.',
-      '블루투스 수동 검색·페어링 없이 #01~#30호차 차량 번호판(AL 41)과 운전자가 1초 만에 자동 매칭됩니다.',
+      '키보관함에서 차키를 받습니다.',
+      '카메라로 차키 QR을 비추면 앱에서 해당 차량이 선택됩니다.',
+      '[⚡ 바로 출발]을 누르면 운행이 시작됩니다.',
     ],
     actionStepsEng: [
-      'Pick up the assigned vehicle key (with QR key-tag attached) from the 4400 Northpark Dr keybox.',
-      'Scan the key QR tag using your phone camera or tap [⚡ 1-Sec Key QR Start] at the top of the app.',
-      'Instantly matches Unit #01~#30 (AL 41 plate) with the driver in 1 second without manual Bluetooth pairing.',
+      'Pick up the key from the keybox.',
+      'Scan the key QR; the app selects that vehicle.',
+      'Tap [⚡ Start now] to begin the trip.',
     ],
     zeroHardwarePointKor:
-      '차량에 별도 단말기를 달지 않고, 인쇄된 QR 스티커 1장으로 초기 블루투스 설정 복잡도를 100% 제거합니다.',
+      '차량 단말기 없이 QR 스티커 1장으로 끝납니다.',
     zeroHardwarePointEng:
-      'Eliminates 100% of Bluetooth setup complexity using a printed QR key-tag with zero in-car hardware.',
+      'No in-car hardware: one printed QR tag.',
   },
   {
     id: 'BT_AUDIO',
     stepNumber: '02',
-    badgeKor: '방식 B · 시동 연동 자동 매칭',
-    badgeEng: 'Method B · Ignition Auto-Match',
-    titleKor: '차량 대시보드 순정 블루투스 오디오 (RSSI 신호 판별)',
-    titleEng: 'In-Car Factory Bluetooth Audio (RSSI Driver Attribution)',
-    subtitleKor: '최초 1회 차량 오디오 연결 후 시동(ACC ON) 시 무조작 자동 인식',
-    subtitleEng: 'Pair once with factory audio; auto-connects on every ignition (ACC ON)',
+    badgeKor: '방식 B · 시동 연동',
+    badgeEng: 'Method B · Ignition',
+    titleKor: '차량 블루투스 자동 연결',
+    titleEng: 'Car Bluetooth Auto-Connect',
+    subtitleKor: '한 번 연결하면 시동 시 자동 인식',
+    subtitleEng: 'Pair once; auto-connects at ignition',
     xPercent: 52,
     yPercent: 48,
     color: '#3E6AE1',
     actionStepsKor: [
-      '차량 시동(ACC ON) 후 순정 오디오 화면에서 [Setup → Bluetooth → Add New]를 최초 1회만 연결합니다.',
-      '이후 탑승부터는 주머니에 휴대폰을 넣은 채 시동만 걸어도 차량 블루투스 MAC과 자동 연결됩니다.',
-      '동승 직원이 함께 타더라도 운전석 신호강도(RSSI -52dBm) + 걸음걸이 센서로 실제 운전자를 정확히 식별합니다.',
+      '시동 후 차량 화면 [Setup → Bluetooth → Add New]에서 1회 연결합니다.',
+      '다음부터는 시동만 걸면 자동 연결됩니다.',
+      '동승자가 있어도 운전석 신호 세기로 운전자를 구분합니다.',
     ],
     actionStepsEng: [
-      'Turn ignition ON and pair your phone once via [Setup → Bluetooth → Add New] on the car screen.',
-      'On all future trips, simply starting the engine automatically links your phone to the vehicle MAC.',
-      'Distinguishes the driver from co-passengers using driver-side RSSI (-52dBm) and door-entry gait sensors.',
+      'Pair once via [Setup → Bluetooth → Add New] on the car screen.',
+      'After that, starting the engine connects automatically.',
+      'Driver-side signal strength tells the driver from passengers.',
     ],
     zeroHardwarePointKor:
-      '별도 비콘(Beacon) 구매 없이 모든 법인차량에 기본 내장된 순정 핸즈프리 블루투스 오디오를 그대로 활용합니다.',
+      '별도 비콘 없이 순정 블루투스를 씁니다.',
     zeroHardwarePointEng:
-      'Uses existing factory hands-free Bluetooth audio built into every corporate vehicle ($0 beacon cost).',
+      'Uses the factory Bluetooth; no beacons.',
   },
   {
     id: 'IMU_MOUNT',
     stepNumber: '03',
-    badgeKor: '블랙박스 대체 · 6축 센서 퓨전',
-    badgeEng: 'Dashcam Replacement · 6-Axis Sensor Fusion',
-    titleKor: '센터페시아 스마트폰 거치 & 6축 IMU 사고 감지',
-    titleEng: 'Smartphone Cradle & 6-Axis IMU Crash Reconstruction',
-    subtitleKor: '차량 내 블랙박스 0대 환경에서 3축 가속도(G) + 3축 자이로(°/s) 작동',
-    subtitleEng: '3-Axis Accelerometer (G) + 3-Axis Gyroscope (°/s) with 0 in-car dashcams',
+    badgeKor: '블랙박스 대체',
+    badgeEng: 'Dashcam Replacement',
+    titleKor: '휴대폰 거치 · 사고 감지',
+    titleEng: 'Phone Mount · Crash Detection',
+    subtitleKor: '휴대폰 충격·회전 센서 사용',
+    subtitleEng: 'Uses the phone motion sensors',
     xPercent: 56,
     yPercent: 32,
     color: '#B45309',
     actionStepsKor: [
-      '운행 시작과 동시에 스마트폰 내장 6축 IMU(가속도계 + 자이로스코프)와 GPS가 백그라운드에서 켜집니다.',
-      '주행 중 2.5G 이상 충격 + 자이로 회전(≥25°/s) + 2초 내 급감속(Δv ≤ -20km/h) 동시 발생 시 실제 차량 충돌 사고로 자동 재구성합니다.',
-      '단순히 거치대에서 휴대폰이 바닥에 떨어진 경우(속도 변화 Δv = 0km/h)는 오탐 필터가 자동으로 걸러냅니다.',
+      '운행을 시작하면 센서와 GPS가 켜집니다.',
+      '2.5G 이상 충격 + 회전 + 급감속이 함께 오면 사고로 기록합니다.',
+      '휴대폰 낙하(속도 변화 없음)는 걸러냅니다.',
     ],
     actionStepsEng: [
-      'Phone 6-axis IMU (accelerometer + gyroscope) and GPS activate automatically when the trip starts.',
-      'Reconstructs real crashes when ≥2.5G shock + ≥25°/s yaw rotation + sudden deceleration (Δv ≤ -20km/h) occur together.',
-      'Automatically filters out false positives such as dropping the phone inside the cabin (Δv = 0km/h).',
+      'Sensors and GPS turn on when the trip starts.',
+      '≥2.5G shock + rotation + hard braking together is logged as a crash.',
+      'A dropped phone (no speed change) is filtered out.',
     ],
     zeroHardwarePointKor:
-      '대당 $300~$500의 블랙박스 및 OBD-II 장비를 30대 모두 제거하고 임직원 스마트폰 센서로 100% 대체합니다.',
+      '대당 $300~$500 블랙박스가 필요 없습니다.',
     zeroHardwarePointEng:
-      'Replaces $300~$500 dashcams and OBD-II dongles across all 30 vehicles using employee smartphone sensors.',
+      'No $300~$500 dashcam per vehicle.',
   },
   {
     id: 'ODOMETER_GEOFENCE',
     stepNumber: '04',
-    badgeKor: '차고지 자동 반납 & 프라이버시',
-    badgeEng: 'Auto-Return & Privacy Guard',
-    titleKor: '계기판 Odometer 교차검증 & 150m 차고지 자동 반납',
-    titleEng: 'Odometer Cross-Audit & 150m HQ Geofence Auto-Return',
-    subtitleKor: '4400 Northpark Dr 복귀·시동 OFF 시 무조작 반납 및 GPS 즉시 차단',
-    subtitleEng: 'Hands-free return upon entering 4400 Northpark Dr (150m) & turning engine OFF',
+    badgeKor: '자동 반납 · 사생활 보호',
+    badgeEng: 'Auto-Return · Privacy',
+    titleKor: '차고지 자동 반납',
+    titleEng: 'Garage Auto-Return',
+    subtitleKor: '차고지(150m)에서 시동을 끄면 반납',
+    subtitleEng: 'Engine off within 150m of the garage returns the car',
     xPercent: 42,
     yPercent: 36,
     color: '#7E22CE',
     actionStepsKor: [
-      '운행 종료 후 4400 Northpark Dr(Opelika, AL) 차고지 반경 150m 내 진입 후 시동을 끄면 버튼을 누르지 않아도 [자동 반납] 됩니다.',
-      '반납과 동시에 출발~도착 주행거리(km)가 사내 법인차량 운행기록부(내부 관리·회계 비용증빙용 CSV, 외부 기관 자동전송 없음)에 자동 기입됩니다.',
-      '하차 즉시 스마트폰 GPS 수집이 물리적으로 완전 차단(0 패킷)되어 퇴근 후 개인 사생활을 100% 보호합니다.',
+      '차고지 150m 안에서 시동을 끄면 자동 반납됩니다.',
+      '주행거리가 운행일지(사내용)에 자동 기록됩니다.',
+      '반납 후에는 GPS를 수집하지 않습니다.',
     ],
     actionStepsEng: [
-      'Entering the 150m geofence at 4400 Northpark Dr (Opelika, AL) and turning off the ignition automatically returns the vehicle.',
-      'Start/end mileage (km) is logged to the internal corporate mileage CSV (stored internally only; never sent externally).',
-      'GPS collection is physically terminated (0 packets) the moment you exit the vehicle, protecting off-duty privacy 100%.',
+      'Engine off within 150m of the garage returns the vehicle.',
+      'Mileage goes into the internal log automatically.',
+      'No GPS is collected after the return.',
     ],
     zeroHardwarePointKor:
-      '누군가 블루투스를 끄고 몰래 타더라도 다음 사용자의 계기판 주행거리(Odometer) 실사 차이로 유령 주행을 100% 적발합니다.',
+      '몰래 탄 운행도 계기판 실사 차이로 드러납니다.',
     zeroHardwarePointEng:
-      'Even if someone disables Bluetooth, odometer gap auditing between trips detects 100% of ghost trips.',
+      'Odometer audits reveal unlogged trips.',
   },
 ];
 
@@ -158,13 +158,13 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
           <h2 className="text-base font-semibold text-[#0A0A0A] flex items-center gap-2">
             <Car className="w-4 h-4 text-[#0A72EF]" />
             {isEng
-              ? 'Vehicle ↔ Smartphone Initial Setup & Sensor Infographic'
-              : '법인차량 ↔ 임직원 스마트폰 초기 연결 & 센서 인포그래픽'}
+              ? 'Car ↔ Phone Setup'
+              : '차량 ↔ 휴대폰 연결'}
           </h2>
           <p className="text-xs text-[#71717A] mt-0.5">
             {isEng
-              ? 'Click points ①~④ on the vehicle diagram to inspect QR boarding, Bluetooth attribution, 6-axis IMU crash sensing, and auto-return.'
-              : '차량 이미지의 ①~④번 포인트를 클릭하여 차키 QR 스캔, 블루투스 자동 매칭, 6축 충격 센서, 차고지 자동 반납 원리를 확인하세요.'}
+              ? 'Tap ①~④ on the car.'
+              : '차량의 ①~④를 눌러 보세요.'}
           </p>
         </div>
 
@@ -244,7 +244,7 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
               >
                 {isEng
                   ? '4400 Northpark Dr HQ Geofence (150m Radius · Auto-Return on Engine OFF)'
-                  : '4400 Northpark Dr 차고지 지오펜스 (반경 150m 진입 · 시동 OFF 시 자동 반납)'}
+                  : '차고지 150m · 시동 OFF 시 자동 반납'}
               </text>
 
               <rect x="205" y="68" width="76" height="24" rx="8" fill="#F4F4F5" stroke="#A1A1AA" strokeWidth="2" />
@@ -431,7 +431,7 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
               <p className="text-[#52525B]">
                 {isEng
                   ? 'Open URL in Chrome → Tap top-right [⋮] → Select [Add to Home screen / Install app].'
-                  : 'Chrome 접속 → 우측 상단 [⋮] 터치 → [홈 화면에 추가 / 앱 설치] 선택'}
+                  : 'Chrome [⋮] → [홈 화면에 추가]'}
               </p>
             </div>
             <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
@@ -440,8 +440,8 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
               </div>
               <p className="text-[#52525B]">
                 {isEng
-                  ? 'Tap [Connect Phone Sensors] → Allow Location (While using app), Nearby devices (Bluetooth), and Motion sensors.'
-                  : '[휴대폰 센서 연결] 터치 → 위치(앱 사용 중) + 근처 기기(블루투스) + 동작 센서 [허용]'}
+                  ? '[Sensors] → allow Location, Nearby devices, Motion'
+                  : '[센서 연결] → 위치·근처 기기·동작 [허용]'}
               </p>
             </div>
             <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
@@ -451,7 +451,7 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
               <p className="text-[#52525B]">
                 {isEng
                   ? 'Scan the Key QR tag (1 sec) or start engine (ACC ON) for automatic Bluetooth matching.'
-                  : '차키 QR 스캔(1초) 또는 시동(ACC ON) 시 블루투스 즉시 자동 매칭'}
+                  : '차키 QR 스캔 또는 시동 시 자동 연결'}
               </p>
             </div>
           </div>
@@ -464,7 +464,7 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
               <p className="text-[#52525B]">
                 {isEng
                   ? 'Open URL in iOS Safari → Tap bottom [Share ↑] → Select [Add to Home Screen].'
-                  : 'Safari 접속 → 하단 [공유 ↑] 터치 → [홈 화면에 추가] 선택'}
+                  : 'Safari [공유 ↑] → [홈 화면에 추가]'}
               </p>
             </div>
             <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
@@ -473,18 +473,18 @@ export const VehiclePhoneSetupInfographic: React.FC<VehiclePhoneSetupInfographic
               </div>
               <p className="text-[#52525B]">
                 {isEng
-                  ? 'Tap [Connect Phone Sensors] → Allow Motion & Orientation (6-axis IMU) and Location.'
-                  : '[휴대폰 센서 연결] 터치 → 동작 및 방향(6축 센서) + 위치 [허용]'}
+                  ? '[Sensors] → allow Motion and Location'
+                  : '[센서 연결] → 동작·위치 [허용]'}
               </p>
             </div>
             <div className="p-3 rounded-lg bg-[#FAFAFA] space-y-1">
               <div className="font-semibold text-[#B45309]">
-                {isEng ? '3. 1-Sec Key QR Boarding' : '3. 탑승 시 QR 스캔'}
+                {isEng ? '3. Scan Key QR' : '3. 탑승 시 QR 스캔'}
               </div>
               <p className="text-[#52525B]">
                 {isEng
-                  ? 'Scan the car key-fob QR tag (or tap [⚡ 1-Sec Key QR Start]) to start driving immediately.'
-                  : '차키 QR 태그 스캔(또는 [⚡ 차키 QR 1초 출발]) 후 즉시 운행 시작'}
+                  ? 'Scan the key QR, then [⚡ Start now]'
+                  : '차키 QR 스캔 후 [⚡ 바로 출발]'}
               </p>
             </div>
           </div>

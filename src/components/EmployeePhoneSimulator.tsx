@@ -6,7 +6,6 @@ import {
   Bluetooth,
   BluetoothOff,
   Car,
-  CheckCircle2,
   Clock,
   Play,
   QrCode,
@@ -67,7 +66,13 @@ interface EmployeePhoneSimulatorProps {
   lang?: AppLang;
   /** GPS reporter for trips driven with this device */
   tripReporter?: TripReporter;
+  /** Unlocked admins may approve their own demo requests from the phone. */
+  isAdmin?: boolean;
 }
+
+// Live sensor readings arrive at 60-100 Hz; the screen and the server need far less
+const SNAPSHOT_RENDER_INTERVAL_MS = 250;
+const IMPACT_REPORT_COOLDOWN_MS = 5_000;
 
 export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   vehicles,
@@ -87,6 +92,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   dataMode = 'DEMO',
   lang = 'KOR',
   tripReporter,
+  isAdmin = false,
 }) => {
   const isEng = lang === 'ENG';
   const [phoneTab, setPhoneTab] = useState<'WORKFLOW' | 'SENSOR_TEST'>('WORKFLOW');
@@ -112,7 +118,6 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
     try {
       const result = await pending;
       setDispatchNotice(result);
-      setSimFeedback(result.message);
     } finally {
       setBusy(false);
     }
@@ -132,6 +137,18 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
     }
   }, [employees, selectedEmpId, coPassengerId]);
 
+  // Sensor callbacks outlive renders, so they read the current selection through a ref
+  const selectionRef = useRef({ selectedVehId, selectedEmpId, vehicles, reservations });
+  selectionRef.current = { selectedVehId, selectedEmpId, vehicles, reservations };
+
+  // Stop GPS/motion listeners when this panel goes away (e.g. switching screens)
+  useEffect(() => () => stopSensorRef.current?.(), []);
+
+  // Sensor test is demo-only; the server refuses it on live data
+  useEffect(() => {
+    if (dataMode === 'LIVE') setPhoneTab('WORKFLOW');
+  }, [dataMode]);
+
   // Key-tag QR scan: preselect the scanned vehicle (never starts a trip by itself)
   useEffect(() => {
     if (!qrScan) return;
@@ -150,21 +167,30 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
       return;
     }
 
+    let lastRenderAt = 0;
+    let lastImpactAt = 0;
     const cleanup = await startRealDeviceSensors((snap) => {
-      setLiveSnapshot(snap);
-      if (snap.gForce > 2.5) {
+      const now = Date.now();
+      if (now - lastRenderAt >= SNAPSHOT_RENDER_INTERVAL_MS) {
+        lastRenderAt = now;
+        setLiveSnapshot(snap);
+      }
+      // One report per impact: a dropped phone fires dozens of events above the threshold
+      if (snap.gForce > 2.5 && now - lastImpactAt >= IMPACT_REPORT_COOLDOWN_MS) {
+        lastImpactAt = now;
+        const sel = selectionRef.current;
         fetch('/api/fleet/telemetry', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            vehicleId: selectedVehId,
-            employeeId: selectedEmpId,
+            vehicleId: sel.selectedVehId,
+            employeeId: sel.selectedEmpId,
             plateNumber:
-              vehicles.find((v) => v.id === selectedVehId)?.plateNumber ?? 'UNKNOWN',
-            hasActiveApproval: reservations.some(
+              sel.vehicles.find((v) => v.id === sel.selectedVehId)?.plateNumber ?? 'UNKNOWN',
+            hasActiveApproval: sel.reservations.some(
               (r) =>
-                r.vehicleId === selectedVehId &&
-                r.employeeId === selectedEmpId &&
+                r.vehicleId === sel.selectedVehId &&
+                r.employeeId === sel.selectedEmpId &&
                 (r.stage === 'APPROVED' || r.stage === 'IN_USE')
             ),
             lat: snap.lat ?? 32.6912,
@@ -212,7 +238,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
           <div className="flex items-center gap-2">
             <Smartphone className="w-4 h-4 text-[#0A72EF]" />
             <h3 className="text-sm font-semibold text-[#0A0A0A]">
-              {isEng ? 'Employee Mobile App' : '임직원 모바일 앱'}
+              {isEng ? 'My Vehicle' : '내 차량'}
             </h3>
           </div>
           <span
@@ -227,8 +253,8 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                 ? `${currentVeh.plateNumber} Active`
                 : `${currentVeh.plateNumber} 운행중`
               : isEng
-                ? 'GPS Off (Privacy Safe)'
-                : 'GPS 미수집 (보호중)'}
+                ? 'GPS off'
+                : 'GPS 꺼짐'}
           </span>
         </div>
 
@@ -245,11 +271,11 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
             <span>
               {qrVeh
                 ? isEng
-                  ? `Key QR recognized: Unit #${qrVeh.fleetNumber} (${qrVeh.plateNumber}) selected. Pick your name, then request or start.`
-                  : `차키 QR 인식: #${qrVeh.fleetNumber}호차(${qrVeh.plateNumber})가 선택되었습니다. 운전자를 확인한 뒤 신청 또는 출발하세요.`
+                  ? `Unit #${qrVeh.fleetNumber} (${qrVeh.plateNumber}) selected. Check your name, then go.`
+                  : `#${qrVeh.fleetNumber}호차(${qrVeh.plateNumber}) 선택됨. 이름 확인 후 출발하세요.`
                 : isEng
-                  ? `Unrecognized key QR${qrScan.unit ? ` (Unit #${qrScan.unit})` : ''}. Select the vehicle manually or ask the fleet admin.`
-                  : `등록되지 않은 차키 QR입니다${qrScan.unit ? ` (#${qrScan.unit}호차)` : ''}. 차량을 직접 선택하거나 관리자에게 문의하세요.`}
+                  ? `Unknown key QR${qrScan.unit ? ` (#${qrScan.unit})` : ''}. Pick the vehicle manually.`
+                  : `등록되지 않은 QR${qrScan.unit ? ` (#${qrScan.unit})` : ''}. 차량을 직접 고르세요.`}
             </span>
           </div>
         )}
@@ -280,8 +306,8 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
           >
             <QrCode className="w-3.5 h-3.5" />
             {isEng
-              ? `⚡ 1-Sec Key QR Start (Unit #${currentVeh.fleetNumber})`
-              : `⚡ 차키 QR 1초 출발 (#${currentVeh.fleetNumber}호차)`}
+              ? `⚡ Start #${currentVeh.fleetNumber} now`
+              : `⚡ #${currentVeh.fleetNumber}호차 바로 출발`}
           </button>
 
           <div className="grid grid-cols-2 gap-1.5">
@@ -301,8 +327,8 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                   ? 'Sensors ON'
                   : '센서 ON'
                 : isEng
-                  ? 'Connect Phone Sensors'
-                  : '휴대폰 센서 연결'}
+                  ? 'Sensors'
+                  : '센서 연결'}
             </button>
             <button
               type="button"
@@ -311,7 +337,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
               style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
             >
               <Bluetooth className="w-3 h-3 text-[#0A72EF]" />
-              {isEng ? 'Pair Bluetooth' : '블루투스 연결'}
+              {isEng ? 'Bluetooth' : '블루투스'}
             </button>
           </div>
 
@@ -371,7 +397,8 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
           </div>
         </div>
 
-        {/* Mode Switch Tabs */}
+        {/* Mode Switch Tabs (sensor test exists only for demo data) */}
+        {dataMode === 'DEMO' && (
         <div
           className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-[#FFFFFF]"
           style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
@@ -385,7 +412,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                 : 'text-[#71717A] hover:text-[#0A0A0A]'
             }`}
           >
-            {isEng ? 'Request · Return' : '신청 · 반납'}
+            {isEng ? 'Request' : '신청 · 반납'}
           </button>
           <button
             type="button"
@@ -396,9 +423,10 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                 : 'text-[#71717A] hover:text-[#0A0A0A]'
             }`}
           >
-            {isEng ? 'Sensor · Alert Test' : '센서 · 무단 테스트'}
+            {isEng ? 'Demo test' : '데모 테스트'}
           </button>
         </div>
+        )}
 
         {/* TAB 1: WORKFLOW */}
         {phoneTab === 'WORKFLOW' && (
@@ -409,7 +437,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
               style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
             >
               <span className="text-[11px] font-mono text-[#52525B] block">
-                {isEng ? '1. Request Vehicle' : '1. 배차 신청'}
+                {isEng ? 'Request' : '신청'}
               </span>
               <div className="grid grid-cols-2 gap-1.5">
                 <select
@@ -476,7 +504,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
             >
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-mono text-[#52525B]">
-                  {isEng ? '2. My Dispatch · Start · Return' : '2. 내 배차 · 출발 · 반납'}
+                  {isEng ? 'My trips' : '내 배차'}
                 </span>
                 <span className="text-[10px] font-mono text-[#71717A]">
                   {myReservations.length}
@@ -519,9 +547,9 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                       {res.stage === 'REQUESTED' && (
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-[11px] text-[#B45309] flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {isEng ? 'Pending' : '승인대기'}
+                            <Clock className="w-3 h-3" /> {isEng ? 'Waiting for approval' : '관리자 승인 대기'}
                           </span>
-                          {dataMode === 'DEMO' && (
+                          {dataMode === 'DEMO' && isAdmin && (
                             <button
                               type="button"
                               onClick={() => {
@@ -593,35 +621,16 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
               >
                 <Car className="w-3.5 h-3.5" />
                 {isEng
-                  ? `Auto-Return to HQ Garage (Unit #${currentVeh.fleetNumber})`
-                  : `차고지 복귀 자동반납 (#${currentVeh.fleetNumber}호차)`}
+                  ? `Return #${currentVeh.fleetNumber} at garage`
+                  : `#${currentVeh.fleetNumber}호차 차고지 반납`}
               </button>
             </div>
           </div>
         )}
 
         {/* TAB 2: SENSOR TEST */}
-        {phoneTab === 'SENSOR_TEST' && (
+        {phoneTab === 'SENSOR_TEST' && dataMode === 'DEMO' && (
           <div className="space-y-2">
-            <div
-              className="p-2.5 rounded-lg bg-[#FFFFFF] flex items-center justify-between gap-2"
-              style={{ boxShadow: 'rgba(0, 0, 0, 0.06) 0px 0px 0px 1px' }}
-            >
-              <span className="text-xs text-[#0A0A0A] flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#0A72EF]" />
-                {isEng ? '1-Tap Authorized Start' : '자율 반출 출발'}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  void showDispatchResult(onAuthorizedCheckout(selectedEmpId, selectedVehId, selectedPurpose));
-                }}
-                className="px-2.5 py-1 rounded bg-[#0A72EF] text-white text-xs"
-              >
-                {isEng ? 'Start' : '원터치 출발'}
-              </button>
-            </div>
-
             <div
               className="p-2.5 rounded-lg bg-[#FF5B4F]/10 space-y-2"
               style={{ boxShadow: 'rgba(255, 91, 79, 0.25) 0px 0px 0px 1px' }}
@@ -723,13 +732,12 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
         )}
       </div>
 
-      {/* Compact 1-Line Status Footer */}
-      <div className="mt-3 pt-2 border-t border-black/[0.06] flex items-center justify-between text-[11px] font-mono text-[#71717A]">
-        <span>{isEng ? 'STATUS' : '상태'}</span>
-        <span className="text-[#52525B] truncate max-w-[230px]">
-          {simFeedback || (isEng ? 'Ready' : '대기 중')}
-        </span>
-      </div>
+      {/* Sensor / Bluetooth status (dispatch outcomes show in the notice above) */}
+      {simFeedback && (
+        <div className="mt-3 pt-2 border-t border-black/[0.06] text-[11px] font-mono text-[#52525B] truncate">
+          {simFeedback}
+        </div>
+      )}
     </div>
   );
 };

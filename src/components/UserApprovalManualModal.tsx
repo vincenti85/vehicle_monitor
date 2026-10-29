@@ -158,7 +158,7 @@ export const UserApprovalManualModal: React.FC<UserApprovalManualModalProps> = (
                     </>
                   ) : (
                     <>
-                      휴대폰 앱의 <strong>[1. 차량 신청]</strong> 탭에서 본인 성명, 대기 차량(IDLE), 운행 목적, 행선지(Auburn, Montgomery 등), 사용 시간대를 입력 후 신청합니다.
+                      <strong>[차량 이용]</strong> 화면의 신청란에서 본인 성명, 대기 차량(IDLE), 운행 목적, 행선지(Auburn, Montgomery 등), 사용 시간대를 입력 후 신청합니다.
                     </>
                   )}
                 </p>
@@ -250,7 +250,7 @@ export const UserApprovalManualModal: React.FC<UserApprovalManualModalProps> = (
                     </>
                   ) : (
                     <>
-                      상단 <strong>[3. 관리자 설정 (PIN)]</strong> 클릭 시 총무팀/차량관리자에게만 부여된 <strong>4자리 보안 PIN 번호(<code className="text-[#B45309] font-mono">••••</code>)</strong>를 입력해야 관리자 콘솔에 진입할 수 있습니다.
+                      상단 <strong>[관리자 › 설정]</strong> 클릭 시 총무팀/차량관리자에게만 부여된 <strong>4자리 보안 PIN 번호(<code className="text-[#B45309] font-mono">••••</code>)</strong>를 입력해야 관리자 콘솔에 진입할 수 있습니다.
                     </>
                   )}
                 </p>

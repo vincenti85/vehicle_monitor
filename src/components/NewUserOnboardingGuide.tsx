@@ -521,7 +521,7 @@ export const NewUserOnboardingGuide: React.FC<NewUserOnboardingGuideProps> = ({
                       </>
                     ) : (
                       <>
-                        상단 <strong>[관리자 설정 (PIN)]</strong> 클릭 후 관리자 전용 4자리 보안 PIN(<code className="text-[#B45309] font-mono">••••</code>)을 입력하면 계기판 실사 대조(유령 주행 색출), 사고 처분, 임직원 자격 정지가 가능합니다.
+                        상단 <strong>[관리자 › 설정]</strong> 클릭 후 관리자 전용 4자리 보안 PIN(<code className="text-[#B45309] font-mono">••••</code>)을 입력하면 계기판 실사 대조(유령 주행 색출), 사고 처분, 임직원 자격 정지가 가능합니다.
                       </>
                     )}
                   </p>

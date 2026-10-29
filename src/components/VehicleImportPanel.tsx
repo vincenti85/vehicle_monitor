@@ -149,11 +149,14 @@ export const VehicleImportPanel: React.FC<VehicleImportPanelProps> = ({
           </h4>
           <p className="text-xs text-[#52525B]">
             {dataMode === 'DEMO'
-              ? `① 빈 양식에 실제 차량(최대 ${MAX_FLEET_SIZE}대)을 입력 → ② 업로드 후 미리보기 확인 → ③ [CSV로 전체 교체] → ④ 아래 [데모 기록 정리 후 실운영 전환]. 호차 번호(1~${MAX_FLEET_SIZE})가 QR 키고리와 연결되는 기준입니다.`
-              : '차량 추가·번호판 변경 등은 [현재 목록 내보내기]로 받은 파일을 고쳐 다시 업로드하세요. 운행중·예약된 차량은 삭제되지 않고 계기판 값도 덮어쓰지 않습니다.'}
+              ? `빈 양식 작성 → 업로드·미리보기 → 전체 교체 → 실운영 전환. 호차 번호(1~${MAX_FLEET_SIZE})가 QR 기준입니다.`
+              : '목록을 내보내 고친 뒤 다시 업로드하세요. 운행중 차량은 보호됩니다.'}
           </p>
-          <p className="text-[11px] font-mono text-[#71717A]">
-            열: {CSV_HEADERS.join(', ')} · 필수: fleetNumber, plateNumber, modelName · MAC 형식 A4:C1:38:7F:01:03
+          <p
+            className="text-[11px] font-mono text-[#71717A]"
+            title={`열: ${CSV_HEADERS.join(', ')} · MAC 형식 A4:C1:38:7F:01:03`}
+          >
+            필수 열: fleetNumber, plateNumber, modelName
           </p>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
@@ -282,8 +285,7 @@ export const VehicleImportPanel: React.FC<VehicleImportPanelProps> = ({
             데모 기록 정리 후 실운영 전환 (1회)
           </div>
           <p className="text-[#52525B]">
-            실제 차량을 등록한 뒤 실행하세요. 샘플 배차·사고·유령주행·지오펜스 기록·운행일지·알림을 모두 지우고, 모든 차량을 차고지 대기 상태로 되돌립니다.
-            전환 후에는 모의 주행이 꺼지고 데모 초기화가 차단되어 실데이터가 보호됩니다. 되돌릴 수 없습니다.
+            샘플 기록을 모두 지우고 차량을 차고지 대기로 돌립니다. 되돌릴 수 없습니다.
           </p>
           <label className="flex items-center gap-1.5 text-[#0A0A0A]">
             <input
@@ -291,7 +293,7 @@ export const VehicleImportPanel: React.FC<VehicleImportPanelProps> = ({
               checked={removeDemoEmployees}
               onChange={(e) => setRemoveDemoEmployees(e.target.checked)}
             />
-            샘플 임직원 8명도 삭제 (실제 임직원이 1명 이상 등록된 경우에만 삭제됨)
+            샘플 임직원도 삭제 (실제 임직원이 있을 때만)
           </label>
           {confirmClear ? (
             <div className="flex items-center gap-2">

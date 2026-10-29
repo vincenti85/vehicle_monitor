@@ -57,7 +57,7 @@ export const USER_APPROVAL_MANUAL_MARKDOWN = `# FleetGuard 30 법인차량 신�
 ## 제2장. 관리자(Fleet Admin) 승인 · 관제 · CSV 등록 매뉴얼
 
 ### 1. 관리자 화면 접속 (보안 PIN 인증)
-1. 상단 우측의 **[관리자 설정 (PIN)]** 버튼을 클릭합니다.
+1. 상단 우측의 **[관리자 › 설정]** 버튼을 클릭합니다.
 2. 보안 키패드 모달이 나타나면 관리자에게 부여된 **4자리 전용 보안 PIN 번호(\`••••\`)**를 입력해 잠금을 해제합니다.
 3. 자리를 비울 때는 관리자 콘솔 우측 상단의 **[🔒 관리자 화면 잠금]** 버튼을 눌러 다시 보호할 수 있습니다.
 
@@ -437,7 +437,7 @@ export function downloadManualAsHtml(lang: AppLang = 'KOR') {
   <h2>2. 관리자(Fleet Admin) 보안 접속 및 승인 매뉴얼</h2>
   <div class="card">
     <h3>① 관리자 콘솔 보안 PIN 잠금 해제</h3>
-    <p>상단 <strong>[관리자 설정 (PIN)]</strong> 클릭 시 보안 모달이 표시됩니다. 관리자에게 부여된 전용 <strong>4자리 보안 PIN(<code>••••</code>)</strong>을 입력하면 잠금이 해제됩니다.</p>
+    <p>상단 <strong>[관리자 › 설정]</strong> 클릭 시 보안 모달이 표시됩니다. 관리자에게 부여된 전용 <strong>4자리 보안 PIN(<code>••••</code>)</strong>을 입력하면 잠금이 해제됩니다.</p>
     <h3>② 사용자(임직원) 및 차량 30대 CSV 일괄 등록</h3>
     <p>관리자 화면의 <strong>[차량 30대 · 계기판 실사]</strong> 탭과 <strong>[임직원 자격 · 권한 통제]</strong> 탭에서 각각 <strong>[CSV 양식 다운로드]</strong>를 받아 엑셀로 편집한 후 <strong>[CSV 업로드]</strong>를 수행하면 즉시 서버 DB에 일괄 반영됩니다.</p>
     <h3>③ 무블랙박스 스마트폰 6축 센서 사고 판정 및 유령 주행 실사</h3>

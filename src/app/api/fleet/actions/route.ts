@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   const isAdmin = isAdminRequestSafe(req);
   if (requiresAdmin(action.type) && !isAdmin) {
     return NextResponse.json(
-      { ok: false, message: '관리자만 할 수 있는 작업입니다. 상단 [3. 관리자 설정]에서 PIN 인증 후 다시 시도하세요.' },
+      { ok: false, message: '관리자만 할 수 있는 작업입니다. 상단 [관리자] 메뉴에서 PIN 인증 후 다시 시도하세요.' },
       { status: 401 }
     );
   }

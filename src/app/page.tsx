@@ -23,7 +23,6 @@ import {
   Settings2,
   ShieldAlert,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   UserCheck,
   Zap,
@@ -83,7 +82,7 @@ type CockpitTab =
   | 'TAX_LOGBOOK';
 
 export default function FleetGuardCockpitPage() {
-  // Default initial screen is now EMPLOYEE_OPS (임직원 차량 신청·반납 운영화면)
+  // Default initial screen is the driver screen (차량 이용)
   const [viewMode, setViewMode] = useState<TopViewMode>('EMPLOYEE_OPS');
   const [lang, setLang] = useState<AppLang>('KOR');
   const isEng = lang === 'ENG';
@@ -112,15 +111,21 @@ export default function FleetGuardCockpitPage() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [showQuickGuideBar, setShowQuickGuideBar] = useState<boolean>(true);
 
-  const handleOpenAdminConsole = () => {
+  // Monitoring and settings are admin screens behind one PIN unlock; the PIN modal
+  // remembers which of the two was asked for and opens it after verification.
+  type AdminView = 'LIVE_MONITOR' | 'ADMIN_CONSOLE';
+  const [pendingAdminView, setPendingAdminView] = useState<AdminView>('ADMIN_CONSOLE');
+  const openAdminView = (target: AdminView) => {
     if (isAdminUnlocked) {
-      setViewMode('ADMIN_CONSOLE');
-    } else {
-      setPinInput('');
-      setPinError(null);
-      setShowPinModal(true);
+      setViewMode(target);
+      return;
     }
+    setPendingAdminView(target);
+    setPinInput('');
+    setPinError(null);
+    setShowPinModal(true);
   };
+  const handleOpenAdminConsole = () => openAdminView('ADMIN_CONSOLE');
 
   // PIN is verified server-side (FLEET_ADMIN_PIN env) and kept in memory only to
   // sign admin-only writes (policy changes, DB reset) with the x-admin-pin header.
@@ -141,16 +146,16 @@ export default function FleetGuardCockpitPage() {
         setShowPinModal(false);
         setPinInput('');
         setPinError(null);
-        setViewMode('ADMIN_CONSOLE');
+        setViewMode(pendingAdminView);
         return;
       }
       setPinError(
         res.status === 503
-          ? '서버에 관리자 PIN(FLEET_ADMIN_PIN)이 설정되지 않았습니다.'
-          : '보안 PIN 번호가 일치하지 않습니다. 관리자에게 문의하세요.'
+          ? '서버에 관리자 PIN이 설정되지 않았습니다.'
+          : 'PIN이 일치하지 않습니다.'
       );
     } catch {
-      setPinError('PIN 검증 서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.');
+      setPinError('서버에 연결할 수 없습니다. 다시 시도하세요.');
     }
     setTimeout(() => setPinInput(''), 350);
   };
@@ -264,6 +269,11 @@ export default function FleetGuardCockpitPage() {
     window.history.replaceState(null, '', `${pathname}${hash}`);
   }, [sync.hydrated, vehicles]);
 
+  const effectiveView: TopViewMode =
+    (viewMode === 'LIVE_MONITOR' || viewMode === 'ADMIN_CONSOLE') && !isAdminUnlocked
+      ? 'EMPLOYEE_OPS'
+      : viewMode;
+
   const handleResetDatabase = async () => {
     await runAndNotify({ type: 'admin.resetDemo', payload: {} }, true);
   };
@@ -281,8 +291,9 @@ export default function FleetGuardCockpitPage() {
 
   // Subtle simulated telemetry for the DEMO fleet only. In LIVE mode positions and
   // mileage must come from real devices, never from random values.
+  const isMonitorVisible = effectiveView === 'LIVE_MONITOR';
   useEffect(() => {
-    if (!liveTelemetryTick || dataMode === 'LIVE') return;
+    if (!liveTelemetryTick || dataMode === 'LIVE' || !isMonitorVisible) return;
     const timer = setInterval(() => {
       setVehicles((prev) =>
         prev.map((veh) => {
@@ -303,7 +314,7 @@ export default function FleetGuardCockpitPage() {
       );
     }, 2500);
     return () => clearInterval(timer);
-  }, [liveTelemetryTick, dataMode]);
+  }, [liveTelemetryTick, dataMode, isMonitorVisible]);
 
   const selectedVehicle = useMemo(
     () => vehicles.find((v) => v.id === selectedVehicleId) || vehicles[0],
@@ -319,6 +330,8 @@ export default function FleetGuardCockpitPage() {
     if (statusFilter === 'ALL') return vehicles;
     return vehicles.filter((v) => v.status === statusFilter);
   }, [vehicles, statusFilter]);
+
+  const driverAlerts = useMemo(() => pushStream.filter((p) => p.target === 'DRIVER'), [pushStream]);
 
   const counts = useMemo(() => {
     return {
@@ -525,66 +538,66 @@ export default function FleetGuardCockpitPage() {
             </span>
           </div>
 
-          {/* Center: 4 Primary Navigation Tabs */}
-          <div
+          {/* Center: driver screen, then the PIN-protected admin screens */}
+          <nav
+            aria-label={isEng ? 'Main menu' : '메인 메뉴'}
             className="flex flex-wrap items-center bg-[#FAFAFA] p-1 rounded-lg gap-1"
             style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
           >
             <button
               type="button"
               onClick={() => setViewMode('EMPLOYEE_OPS')}
+              aria-current={effectiveView === 'EMPLOYEE_OPS' ? 'page' : undefined}
               className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
-                viewMode === 'EMPLOYEE_OPS'
+                effectiveView === 'EMPLOYEE_OPS'
                   ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
                   : 'text-[#52525B] hover:text-[#0A0A0A]'
               }`}
             >
-              <Smartphone className="w-3.5 h-3.5" />
-              {isEng ? '1. Request & Return' : '1. 차량 신청 · 반납'}
+              <Car className="w-3.5 h-3.5" />
+              {isEng ? 'Use a Car' : '차량 이용'}
             </button>
+            <span className="mx-1 h-4 w-px bg-black/15" aria-hidden />
+            <span className="pl-1 pr-0.5 text-[10px] font-mono text-[#71717A] flex items-center gap-1">
+              {isAdminUnlocked ? (
+                <ShieldCheck className="w-3 h-3 text-[#047857]" />
+              ) : (
+                <Lock className="w-3 h-3 text-[#B45309]" />
+              )}
+              {isEng ? 'Admin' : '관리자'}
+            </span>
             <button
               type="button"
-              onClick={() => setViewMode('LIVE_MONITOR')}
+              onClick={() => openAdminView('LIVE_MONITOR')}
+              aria-current={effectiveView === 'LIVE_MONITOR' ? 'page' : undefined}
               className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
-                viewMode === 'LIVE_MONITOR'
+                effectiveView === 'LIVE_MONITOR'
                   ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
                   : 'text-[#52525B] hover:text-[#0A0A0A]'
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
-              {isEng ? '2. 30-Fleet Telemetry' : '2. 30대 실시간 관제'}
-            </button>
-            <button
-              type="button"
-              onClick={handleOpenAdminConsole}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
-                viewMode === 'ADMIN_CONSOLE'
-                  ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
-                  : 'text-[#52525B] hover:text-[#0A0A0A]'
-              }`}
-            >
-              {isAdminUnlocked ? (
-                <Settings2 className="w-3.5 h-3.5" />
-              ) : (
-                <Lock className="w-3.5 h-3.5 text-[#B45309]" />
+              {isEng ? 'Monitor' : '관제'}
+              {counts.pendingApproval > 0 && (
+                <span className="px-1.5 rounded-full bg-[#FBBF24] text-[#0A0A0A] text-[10px] font-mono">
+                  {counts.pendingApproval}
+                </span>
               )}
-              {isEng
-                ? `3. Admin Console ${isAdminUnlocked ? '' : '(PIN)'}`
-                : `3. 관리자 설정 ${isAdminUnlocked ? '' : '(PIN)'}`}
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('GUIDE_MANUAL')}
+              onClick={() => openAdminView('ADMIN_CONSOLE')}
+              aria-current={effectiveView === 'ADMIN_CONSOLE' ? 'page' : undefined}
               className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition ${
-                viewMode === 'GUIDE_MANUAL'
+                effectiveView === 'ADMIN_CONSOLE'
                   ? 'bg-[#0A0A0A] text-[#FAFAFA] font-semibold'
                   : 'text-[#52525B] hover:text-[#0A0A0A]'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5" />
-              {isEng ? '4. Guide & Manual' : '4. 가이드 · 매뉴얼'}
+              <Settings2 className="w-3.5 h-3.5" />
+              {isEng ? 'Settings' : '설정'}
             </button>
-          </div>
+          </nav>
 
           {/* Right: KOR / ENG Toggle + Minimal Status Controls */}
           <div className="flex items-center gap-1.5">
@@ -620,6 +633,21 @@ export default function FleetGuardCockpitPage() {
               </button>
             </div>
 
+            <button
+              type="button"
+              onClick={() => setViewMode('GUIDE_MANUAL')}
+              aria-current={effectiveView === 'GUIDE_MANUAL' ? 'page' : undefined}
+              className={`px-2.5 py-1 rounded-md text-[11px] flex items-center gap-1 transition ${
+                effectiveView === 'GUIDE_MANUAL'
+                  ? 'bg-[#0A0A0A] text-[#FAFAFA]'
+                  : 'bg-[#FAFAFA] text-[#0A0A0A] hover:bg-black/[0.06]'
+              }`}
+              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
+            >
+              <BookOpen className="w-3 h-3" />
+              {isEng ? 'Help' : '도움말'}
+            </button>
+
             <div
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#FAFAFA] text-[11px] font-mono"
               style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
@@ -641,10 +669,10 @@ export default function FleetGuardCockpitPage() {
                   ? sync.hydrated
                     ? isEng
                       ? 'Save failed'
-                      : 'DB 저장 실패'
+                      : '저장 실패'
                     : isEng
-                      ? 'DB load failed'
-                      : 'DB 불러오기 실패'
+                      ? 'Load failed'
+                      : '불러오기 실패'
                   : sync.status === 'HYDRATING'
                     ? isEng
                       ? 'Loading'
@@ -654,8 +682,8 @@ export default function FleetGuardCockpitPage() {
                         ? 'Saving'
                         : '저장중'
                       : isEng
-                        ? 'DB Synced'
-                        : 'DB 동기화'}
+                        ? 'Synced'
+                        : '동기화됨'}
               </span>
               {sync.status === 'ERROR' && (
                 <button
@@ -666,7 +694,7 @@ export default function FleetGuardCockpitPage() {
                   {isEng ? 'Retry' : '다시 시도'}
                 </button>
               )}
-              {dataMode === 'DEMO' && sync.status !== 'ERROR' && (
+              {dataMode === 'DEMO' && isAdminUnlocked && sync.status !== 'ERROR' && (
                 <button
                   type="button"
                   onClick={handleResetDatabase}
@@ -703,19 +731,10 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
                 <Activity className="w-3 h-3" />
-                {liveTelemetryTick ? (isEng ? 'DEMO SIM' : '데모 시뮬') : 'PAUSED'}
+                {liveTelemetryTick ? (isEng ? 'DEMO' : '데모') : isEng ? 'PAUSED' : '정지'}
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={handleExportTaxCsv}
-              className="px-2.5 py-1 rounded-md bg-[#FAFAFA] hover:bg-black/[0.06] text-[11px] font-mono text-[#0A0A0A] flex items-center gap-1 transition"
-              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
-            >
-              <Download className="w-3 h-3 text-[#0A72EF]" />
-              CSV
-            </button>
           </div>
         </div>
       </header>
@@ -739,46 +758,8 @@ export default function FleetGuardCockpitPage() {
         {/* ============================================================================
             TAB 1 (DEFAULT): 임직원 차량 신청 · 반납 운영화면 (설명 문구 제거 · 초간결 UI)
             ============================================================================ */}
-        {viewMode === 'EMPLOYEE_OPS' ? (
+        {effectiveView === 'EMPLOYEE_OPS' ? (
           <div className="space-y-4">
-            {/* Single-Line Compact Status Bar */}
-            <div
-              className="rounded-xl bg-[#FAFAFA] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs"
-              style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
-            >
-              <div className="flex flex-wrap items-center gap-3 font-mono">
-                <span className="text-[#0A0A0A] font-semibold font-sans">
-                  {isEng
-                    ? 'Employee Vehicle Request & Return'
-                    : '임직원 차량 신청 · 반납'}
-                </span>
-                <span className="text-black/15">|</span>
-                <span className="text-[#047857]">
-                  {isEng ? `Available ${counts.idle}` : `대기 ${counts.idle}대`}
-                </span>
-                <span className="text-[#B45309]">
-                  {isEng ? `Pending ${counts.pendingApproval}` : `승인대기 ${counts.pendingApproval}건`}
-                </span>
-                <span className="text-[#1D4ED8]">
-                  {isEng ? `Approved ${counts.approvedReady}` : `승인완료 ${counts.approvedReady}건`}
-                </span>
-                <span className="text-[#52525B]">
-                  {isEng ? `In Use ${counts.authorized}` : `운행중 ${counts.authorized}대`}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setViewMode('GUIDE_MANUAL')}
-                className="text-xs font-mono text-[#1D4ED8] hover:underline flex items-center gap-1"
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                {isEng
-                  ? 'View Vehicle Pairing Infographic & Manual →'
-                  : '차량 연결 인포그래픽 · 매뉴얼 보기 →'}
-              </button>
-            </div>
-
             {/* 2-Column Minimal Operations Workspace */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
               {/* Left 4 Cols: Employee Mobile App */}
@@ -801,6 +782,7 @@ export default function FleetGuardCockpitPage() {
                   onAutoReturnToGarage={handleAutoReturnToGarage}
                   qrScan={qrScan}
                   dataMode={dataMode}
+                  isAdmin={isAdminUnlocked}
                 />
               </div>
 
@@ -812,16 +794,16 @@ export default function FleetGuardCockpitPage() {
                 >
                   <div className="px-4 py-2.5 border-b border-black/[0.08] flex items-center justify-between">
                     <span className="text-xs font-semibold text-[#0A0A0A]">
-                      {isEng
-                        ? 'Dispatch Request · Approval · Active · Return Board'
-                        : '배차 신청 · 승인 · 운행 · 반납 목록'}
+                      {isEng ? 'Dispatch Board' : '배차 현황'}
                     </span>
-                    <span className="text-[11px] font-mono text-[#71717A]">
-                      {isEng ? `Total ${reservations.length}` : `총 ${reservations.length}건`}
+                    <span className="text-[11px] font-mono text-[#047857]">
+                      {isEng ? `${counts.idle} available` : `대기 ${counts.idle}대`}
                     </span>
                   </div>
                   <ReservationWorkflowPanel
                     lang={lang}
+                    isAdmin={isAdminUnlocked}
+                    showRequestButton={false}
                     reservations={reservations}
                     vehicles={vehicles}
                     employees={employees}
@@ -840,7 +822,8 @@ export default function FleetGuardCockpitPage() {
                   />
                 </div>
 
-                {/* Compact 3-Item Recent Log */}
+                {/* Driver alerts only; manager alerts stay on the admin monitor */}
+                {driverAlerts.length > 0 && (
                 <div
                   className="rounded-xl bg-[#FAFAFA] p-3.5"
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
@@ -848,14 +831,11 @@ export default function FleetGuardCockpitPage() {
                   <div className="flex items-center justify-between pb-2 border-b border-black/[0.08] text-xs">
                     <span className="font-semibold text-[#0A0A0A] flex items-center gap-1.5">
                       <BellRing className="w-3.5 h-3.5 text-[#059669]" />
-                      {isEng ? 'Recent Notifications' : '최근 알림'}
-                    </span>
-                    <span className="text-[10px] font-mono text-[#71717A]">
-                      {isEng ? `${pushStream.length} events` : `${pushStream.length}건`}
+                      {isEng ? 'Driver Alerts' : '운전자 알림'}
                     </span>
                   </div>
                   <div className="mt-2 space-y-1.5 max-h-[130px] overflow-y-auto">
-                    {pushStream.slice(0, 4).map((item) => (
+                    {driverAlerts.slice(0, 4).map((item) => (
                       <div
                         key={item.id}
                         className="px-2.5 py-1.5 rounded-md bg-[#FFFFFF] flex items-center justify-between gap-2 text-xs"
@@ -868,10 +848,11 @@ export default function FleetGuardCockpitPage() {
                     ))}
                   </div>
                 </div>
+                )}
               </div>
             </div>
           </div>
-        ) : viewMode === 'GUIDE_MANUAL' ? (
+        ) : effectiveView === 'GUIDE_MANUAL' ? (
           /* ============================================================================
              TAB 4 (SEPARATED MENU): 가이드 · 매뉴얼 · 차량 연결 인포그래픽 전용 화면
              ============================================================================ */
@@ -883,15 +864,8 @@ export default function FleetGuardCockpitPage() {
             >
               <div>
                 <h2 className="text-sm font-semibold text-[#0A0A0A]">
-                  {isEng
-                    ? 'Guide · Manual · Test Scenario Center'
-                    : '가이드 · 매뉴얼 · 테스트 시나리오 센터'}
+                  {isEng ? 'Help' : '도움말'}
                 </h2>
-                <p className="text-xs text-[#71717A] mt-0.5">
-                  {isEng
-                    ? 'Interactive Vehicle-to-Smartphone Pairing Infographic, 3-Step Onboarding Guide, Dispatch Manual & Test Scenarios.'
-                    : '차량 ↔ 핸드폰 초기 연결 인포그래픽, 3단계 온보딩 가이드, 신청·승인 매뉴얼 및 실전 테스트 시나리오를 한곳에서 확인합니다.'}
-                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -902,7 +876,7 @@ export default function FleetGuardCockpitPage() {
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#047857]" />
-                  {isEng ? 'New User 3-Step Guide' : '신규 이용자 3단계 가이드'}
+                  {isEng ? 'First-time Guide' : '처음 사용하기'}
                 </button>
                 <button
                   type="button"
@@ -910,7 +884,7 @@ export default function FleetGuardCockpitPage() {
                   className="px-3 py-1.5 rounded-lg bg-[#0A72EF] hover:bg-[#0060DF] text-xs font-medium text-white flex items-center gap-1.5 transition"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
-                  {isEng ? 'Request & Approval Manual' : '신청·승인 매뉴얼 다운로드'}
+                  {isEng ? 'Manual' : '매뉴얼'}
                 </button>
                 <a
                   href={isEng ? '/test-scenarios-en.html' : '/test-scenarios.html'}
@@ -919,7 +893,7 @@ export default function FleetGuardCockpitPage() {
                   className="px-3 py-1.5 rounded-lg bg-[#10B981] hover:bg-[#059669] text-xs font-medium text-white flex items-center gap-1.5 transition"
                 >
                   <ClipboardList className="w-3.5 h-3.5" />
-                  {isEng ? 'Test Scenarios (.HTML / Notion)' : '실전 테스트 시나리오 (.HTML / Notion)'}
+                  {isEng ? 'Test Scenarios' : '테스트 시나리오'}
                 </a>
                 <a
                   href={
@@ -933,7 +907,7 @@ export default function FleetGuardCockpitPage() {
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-[#B45309]" />
-                  {isEng ? 'Admin Setup Guide (.HTML)' : '관리자 초기 세팅 가이드 (.HTML)'}
+                  {isEng ? 'Admin Setup' : '관리자 초기 세팅'}
                 </a>
                 <a
                   href="/admin-guide/Vehicle_QR_Setup_OnePager_KOR.pdf"
@@ -943,7 +917,7 @@ export default function FleetGuardCockpitPage() {
                   style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
                 >
                   <Download className="w-3.5 h-3.5 text-[#1D4ED8]" />
-                  {isEng ? 'Vehicle QR Setup 1-Page (Letter PDF, KOR)' : '차량 QR 셋업 1페이지 (Letter PDF)'}
+                  {isEng ? 'QR Setup (PDF, KOR)' : 'QR 셋업 (PDF)'}
                 </a>
               </div>
             </div>
@@ -951,7 +925,7 @@ export default function FleetGuardCockpitPage() {
             {/* Vehicle-to-Smartphone Infographic */}
             <VehiclePhoneSetupInfographic lang={lang} />
           </div>
-        ) : viewMode === 'ADMIN_CONSOLE' && isAdminUnlocked ? (
+        ) : effectiveView === 'ADMIN_CONSOLE' ? (
           /* ============================================================================
              TAB 3: 시스템 관리자 설정 콘솔 (Requires Security PIN)
              ============================================================================ */
@@ -996,7 +970,7 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#DC2626]">
-                  <span>{isEng ? 'Unauthorized Trips' : '미승인 무단운행'}</span>
+                  <span>{isEng ? 'Unauthorized' : '무단운행'}</span>
                   <ShieldAlert className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -1016,7 +990,7 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#B45309]">
-                  <span>{isEng ? 'Crash & Permission Audit' : '충격·권한 감사'}</span>
+                  <span>{isEng ? 'Incidents' : '사고'}</span>
                   <Zap className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -1025,8 +999,8 @@ export default function FleetGuardCockpitPage() {
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
                     {isEng
-                      ? `events (BT/GPS OFF: ${counts.permissionEvasion})`
-                      : `건 (권한OFF ${counts.permissionEvasion}명)`}
+                      ? `· perm. off ${counts.permissionEvasion}`
+                      : `건 · 권한OFF ${counts.permissionEvasion}`}
                   </span>
                 </div>
               </button>
@@ -1038,7 +1012,7 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#1D4ED8]">
-                  <span>{isEng ? 'Authorized Active' : '정식 승인 운행'}</span>
+                  <span>{isEng ? 'Active' : '운행중'}</span>
                   <Car className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -1047,8 +1021,8 @@ export default function FleetGuardCockpitPage() {
                   </span>
                   <span className="text-xs font-mono text-[#71717A]">
                     {isEng
-                      ? `units (Pending: ${counts.pendingApproval})`
-                      : `대 (대기 ${counts.pendingApproval}건)`}
+                      ? `· pending ${counts.pendingApproval}`
+                      : `대 · 승인대기 ${counts.pendingApproval}`}
                   </span>
                 </div>
               </button>
@@ -1063,7 +1037,7 @@ export default function FleetGuardCockpitPage() {
                 style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
               >
                 <div className="flex items-center justify-between text-xs font-mono text-[#047857]">
-                  <span>{isEng ? 'Parked in Garage' : '차고지 대기중'}</span>
+                  <span>{isEng ? 'Parked' : '차고지 대기'}</span>
                   <ShieldCheck className="w-3.5 h-3.5" />
                 </div>
                 <div className="mt-1.5 flex items-baseline gap-1.5">
@@ -1106,15 +1080,13 @@ export default function FleetGuardCockpitPage() {
                         },
                         {
                           id: 'FLEET_MATRIX' as CockpitTab,
-                          label: isEng
-                            ? `30 Vehicles (${vehicles.length})`
-                            : `30대 차량 (${vehicles.length})`,
+                          label: isEng ? `Vehicles (${vehicles.length})` : `차량 (${vehicles.length})`,
                         },
                         {
                           id: 'NO_DASHCAM_INCIDENTS' as CockpitTab,
                           label: isEng
                             ? `Incidents (${incidents.length})`
-                            : `사고·무단 (${incidents.length})`,
+                            : `사고 (${incidents.length})`,
                         },
                         {
                           id: 'ANTI_EVASION' as CockpitTab,
@@ -1124,9 +1096,7 @@ export default function FleetGuardCockpitPage() {
                         },
                         {
                           id: 'TAX_LOGBOOK' as CockpitTab,
-                          label: isEng
-                            ? `IRS Mileage Log (${taxLogs.length})`
-                            : `운행일지 (${taxLogs.length})`,
+                          label: isEng ? `Mileage Log (${taxLogs.length})` : `운행일지 (${taxLogs.length})`,
                         },
                       ].map((tab) => (
                         <button
@@ -1149,9 +1119,9 @@ export default function FleetGuardCockpitPage() {
                         <Filter className="w-3.5 h-3.5 text-[#52525B] mr-1" />
                         {(
                           [
-                            { key: 'ALL', label: isEng ? 'All 30' : '전체 30대' },
+                            { key: 'ALL', label: isEng ? 'All' : '전체' },
                             { key: 'UNAUTHORIZED', label: isEng ? 'Unauth' : '무단운행' },
-                            { key: 'INCIDENT', label: isEng ? 'Incident' : '사고/충격' },
+                            { key: 'INCIDENT', label: isEng ? 'Incident' : '사고' },
                             { key: 'AUTHORIZED', label: isEng ? 'Active' : '정상운행' },
                             { key: 'IDLE', label: isEng ? 'Idle' : '대기중' },
                           ] as const
@@ -1177,6 +1147,7 @@ export default function FleetGuardCockpitPage() {
                   {activeTab === 'DISPATCH_WORKFLOW' && (
                     <ReservationWorkflowPanel
                       lang={lang}
+                      isAdmin
                       reservations={reservations}
                       vehicles={vehicles}
                       employees={employees}
@@ -1311,14 +1282,14 @@ export default function FleetGuardCockpitPage() {
                               }}
                               className="px-3 py-1.5 rounded-lg bg-[#3E6AE1]/20 hover:bg-[#3E6AE1]/30 text-[#1D4ED8] border border-[#3E6AE1]/40 text-xs font-mono"
                             >
-                              {isEng ? 'Focus Telemetry' : '차량 텔레메트리 보기'}
+                              {isEng ? 'Show on map' : '지도에서 보기'}
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleOpenAdminConsole()}
+                              onClick={() => setViewMode('ADMIN_CONSOLE')}
                               className="px-3 py-1 rounded-lg bg-black/[0.03] hover:bg-black/5 text-[#52525B] text-[11px] font-mono"
                             >
-                              {isEng ? 'Admin Action' : '관리자 처분 화면 이동'}
+                              {isEng ? 'Resolve' : '처분하기'}
                             </button>
                           </div>
                         </div>
@@ -1340,13 +1311,13 @@ export default function FleetGuardCockpitPage() {
                               <span className="text-xs font-semibold text-[#B45309]">
                                 {isEng
                                   ? `Ghost Trip Detected: ${gt.plateNumber} (${gt.modelName})`
-                                  : `유령 주행(Ghost Trip) 자동 탐지: ${gt.plateNumber} (${gt.modelName})`}
+                                  : `유령 주행 의심: ${gt.plateNumber} (${gt.modelName})`}
                               </span>
                             </div>
                             <span className="text-xs font-mono text-[#B45309]">
                               {isEng
                                 ? `Gap: ${gt.windowStart} ~ ${gt.windowEnd} · Unaccounted +${gt.unaccountedKm}km`
-                                : `공백 시간: ${gt.windowStart} ~ ${gt.windowEnd} · 미기록 주행거리 +${gt.unaccountedKm}km`}
+                                : `${gt.windowStart} ~ ${gt.windowEnd} · 미기록 +${gt.unaccountedKm}km`}
                             </span>
                           </div>
 
@@ -1385,7 +1356,7 @@ export default function FleetGuardCockpitPage() {
                         <div className="p-3 rounded-xl bg-[#F4F4F5] border border-black/5">
                           <h4 className="text-xs font-mono uppercase text-[#52525B] mb-2 flex items-center gap-1.5">
                             <UserCheck className="w-3.5 h-3.5 text-[#3E6AE1]" />
-                            {isEng ? 'Driver App Permission Heartbeat' : '운전자 앱 권한 하트비트 감시 현황'}
+                            {isEng ? 'App Permissions' : '앱 권한 상태'}
                           </h4>
                           <div className="space-y-1.5">
                             {employees.map((emp) => (
@@ -1416,9 +1387,7 @@ export default function FleetGuardCockpitPage() {
                         <div className="p-3 rounded-xl bg-[#F4F4F5] border border-black/5">
                           <h4 className="text-xs font-mono uppercase text-[#52525B] mb-2 flex items-center gap-1.5">
                             <Bluetooth className="w-3.5 h-3.5 text-[#059669]" />
-                            {isEng
-                              ? '4400 Northpark Dr (150m) & Keybox (3m) Logs'
-                              : '4400 Northpark Dr (150m) · 키보관함 (3m) 출입 로그'}
+                            {isEng ? 'Garage & Keybox Log' : '차고지 · 키보관함 기록'}
                           </h4>
                           <div className="space-y-2">
                             {geofenceLogs.slice(0, 5).map((log) => (
@@ -1449,9 +1418,7 @@ export default function FleetGuardCockpitPage() {
                     <div className="p-4 max-h-[420px] overflow-y-auto">
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs text-[#52525B]">
-                          {isEng
-                            ? 'IRS Sec. 274(d) compliant mileage logbook automatically generated upon garage geofence return.'
-                            : '차량 반납(수동 반납 또는 4400 Northpark Dr 차고지 복귀 자동 반납) 시 GPS 주행거리가 자동 적산되어 기록됩니다.'}
+                          {isEng ? 'Recorded automatically on return.' : '반납 시 자동 기록됩니다.'}
                         </p>
                         <button
                           type="button"
@@ -1459,7 +1426,7 @@ export default function FleetGuardCockpitPage() {
                           className="px-3 py-1.5 rounded-lg bg-[#3E6AE1] hover:bg-[#3259C7] text-white text-xs font-medium flex items-center gap-1.5 shrink-0"
                         >
                           <FileSpreadsheet className="w-3.5 h-3.5" />
-                          {isEng ? 'Download CSV' : '엑셀(CSV) 다운로드'}
+                          {isEng ? 'CSV' : 'CSV 다운로드'}
                         </button>
                       </div>
                       <div className="overflow-x-auto">
@@ -1531,28 +1498,8 @@ export default function FleetGuardCockpitPage() {
                 </div>
               </div>
 
-              {/* Right 4 Cols: Interactive BYOD Employee Smartphone Simulator + Live Push Stream */}
+              {/* Right 4 Cols: Live alert stream */}
               <div className="lg:col-span-4 space-y-5">
-                <EmployeePhoneSimulator
-                  lang={lang}
-                  vehicles={vehicles}
-                  employees={employees}
-                  reservations={reservations}
-                  onCreateRequest={handleCreateRequest}
-                  onApproveRequest={handleApproveRequest}
-                  onStartUsingVehicle={handlePhoneStartUsingVehicle}
-                  onReturnVehicle={handleReturnVehicle}
-                  onAuthorizedCheckout={handleAuthorizedCheckout}
-                  tripReporter={tripReporter}
-                  onUnauthorizedKeyTheft={handleUnauthorizedKeyTheft}
-                  onLateReasonSubmit={handleLateReasonSubmit}
-                  onSimulateCrashOrDrop={handleSimulateCrashOrDrop}
-                  onTogglePermissionEvasion={handleTogglePermissionEvasion}
-                  onAutoReturnToGarage={handleAutoReturnToGarage}
-                  qrScan={qrScan}
-                  dataMode={dataMode}
-                />
-
                 {/* Bilateral Real-Time Alert Stream */}
                 <div
                   className="rounded-xl bg-[#FFFFFF] p-4 border border-black/10"
@@ -1563,16 +1510,14 @@ export default function FleetGuardCockpitPage() {
                   <div className="flex items-center justify-between pb-2.5 border-b border-black/10">
                     <span className="text-xs font-semibold text-[#0A0A0A] flex items-center gap-1.5">
                       <BellRing className="w-3.5 h-3.5 text-[#E82127]" />
-                      {isEng
-                        ? 'Live Push Stream (Manager ↔ Driver)'
-                        : '실시간 양방향 푸시 알림 스트림 (관리자 ↔ 운전자)'}
+                      {isEng ? 'Live Alerts' : '실시간 알림'}
                     </span>
                     <span className="text-[10px] font-mono text-[#52525B]">
-                      {pushStream.length} EVENTS
+                      {pushStream.length}
                     </span>
                   </div>
 
-                  <div className="mt-3 space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                  <div className="mt-3 space-y-2 max-h-[640px] overflow-y-auto pr-1">
                     {pushStream.map((item) => (
                       <div
                         key={item.id}
@@ -1592,11 +1537,11 @@ export default function FleetGuardCockpitPage() {
                           >
                             {item.target === 'MANAGER'
                               ? isEng
-                                ? 'TO MANAGER'
-                                : '관리자 수신'
+                                ? 'Manager'
+                                : '관리자'
                               : isEng
-                                ? 'TO DRIVER'
-                                : '운전자 휴대폰 알림'}
+                                ? 'Driver'
+                                : '운전자'}
                           </span>
                           <span className="text-[#52525B]">{item.time}</span>
                         </div>
@@ -1626,12 +1571,10 @@ export default function FleetGuardCockpitPage() {
                 <KeyRound className="w-5 h-5 text-[#E82127]" />
               </div>
               <h3 className="text-base font-semibold text-[#0A0A0A]">
-                {isEng ? 'Admin Console Security PIN' : '관리자 콘솔 보안 PIN 인증'}
+                {isEng ? 'Admin PIN' : '관리자 PIN'}
               </h3>
               <p className="text-xs text-[#52525B]">
-                {isEng
-                  ? 'Enter the 4-digit security PIN to access the Admin Console.'
-                  : '관리자 화면(차량·임직원 CSV 등록, 사고 처분, 정책 변경) 접속을 위해 4자리 보안 PIN을 입력하세요.'}
+                {isEng ? 'Unlocks Monitor and Settings.' : '관제 · 설정 화면을 엽니다.'}
               </p>
             </div>
 
@@ -1657,7 +1600,7 @@ export default function FleetGuardCockpitPage() {
                     handleVerifyAdminPin(val);
                   }
                 }}
-                placeholder={isEng ? '4-Digit PIN' : 'PIN 4자리 입력'}
+                placeholder={isEng ? '4-digit PIN' : 'PIN 4자리'}
                 className="w-full text-center tracking-[0.8em] text-xl font-mono font-semibold rounded-xl bg-[#FAFAFA] border border-black/15 py-3 text-[#0A0A0A] focus:outline-none focus:border-[#3E6AE1]"
               />
 
@@ -1705,16 +1648,13 @@ export default function FleetGuardCockpitPage() {
               </div>
             </form>
 
-            <div className="pt-2 border-t border-black/10 flex items-center justify-between text-[11px] text-[#52525B]">
-              <span className="font-mono">
-                {isEng ? 'Role: Fleet Admin (Private PIN)' : '보안 등급: Fleet Admin (비공개 PIN)'}
-              </span>
+            <div className="pt-2 border-t border-black/10 flex justify-end text-[11px] text-[#52525B]">
               <button
                 type="button"
                 onClick={() => setShowPinModal(false)}
                 className="text-[#52525B] hover:text-[#0A0A0A] underline"
               >
-                {isEng ? 'Cancel & Close' : '취소 및 닫기'}
+                {isEng ? 'Cancel' : '취소'}
               </button>
             </div>
           </div>

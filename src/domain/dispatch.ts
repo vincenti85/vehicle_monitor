@@ -245,7 +245,7 @@ export function quickStartDispatch(db: FleetDatabaseSchema, p: QuickStartPayload
   }
   const conflict = findDispatchConflict(veh, db.reservations, CREATE_BLOCKING_STAGES);
   if (conflict) {
-    return refuseWithNotice(db, ctx, 'DRIVER', `🚫 [중복 출발 차단] ${shortName(emp.name)}님의 1초 출발을 막았습니다. ${conflict}`, conflict);
+    return refuseWithNotice(db, ctx, 'DRIVER', `🚫 [중복 출발 차단] ${shortName(emp.name)}님의 바로 출발을 막았습니다. ${conflict}`, conflict);
   }
 
   const time = localTime(ctx.now);
@@ -289,7 +289,7 @@ export function quickStartDispatch(db: FleetDatabaseSchema, p: QuickStartPayload
       { ...db, reservations: [reservation, ...db.reservations], vehicles },
       alert(ctx, 'MANAGER', 'INFO', `✅ [원터치 자율 반출] ${emp.name}님이 ${veh.fleetNumber}호차(${veh.plateNumber})를 [${p.purpose}] 목적으로 반출했습니다.`)
     ),
-    result: { ok: true, message: `#${veh.fleetNumber}호차 1초 출발 — 운행이 기록되었습니다.` },
+    result: { ok: true, message: `#${veh.fleetNumber}호차 바로 출발 — 운행이 기록되었습니다.` },
   };
 }
 
