@@ -23,6 +23,7 @@ import {
 import { AppLang, formatDeptName, formatEmpName } from '@/utils/i18n';
 import { DispatchResult } from '@/utils/dispatchRules';
 import type { TripReporter } from '@/hooks/useTripPositionReporter';
+import { driverHeaders, getEnrolledEmployeeId } from '@/lib/driverDevice';
 import { TripGpsStatus } from './TripGpsStatus';
 
 // Result of opening the app from a vehicle key-tag QR (?unit=NN)
@@ -97,6 +98,11 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   const isEng = lang === 'ENG';
   const [phoneTab, setPhoneTab] = useState<'WORKFLOW' | 'SENSOR_TEST'>('WORKFLOW');
   const [selectedEmpId, setSelectedEmpId] = useState<string>('emp-06');
+  // An enrolled phone starts on its own driver; the server rejects actions for anyone else
+  useEffect(() => {
+    const enrolled = getEnrolledEmployeeId();
+    if (enrolled) setSelectedEmpId(enrolled);
+  }, []);
   const [selectedVehId, setSelectedVehId] = useState<string>('veh-2');
   const [selectedPurpose, setSelectedPurpose] = useState<TripPurpose>('거래처방문');
   const [destination, setDestination] = useState<string>('HMMA Montgomery Plant');
@@ -181,18 +187,12 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
         const sel = selectionRef.current;
         fetch('/api/fleet/telemetry', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...driverHeaders() },
           body: JSON.stringify({
             vehicleId: sel.selectedVehId,
             employeeId: sel.selectedEmpId,
             plateNumber:
               sel.vehicles.find((v) => v.id === sel.selectedVehId)?.plateNumber ?? 'UNKNOWN',
-            hasActiveApproval: sel.reservations.some(
-              (r) =>
-                r.vehicleId === sel.selectedVehId &&
-                r.employeeId === sel.selectedEmpId &&
-                (r.stage === 'APPROVED' || r.stage === 'IN_USE')
-            ),
             lat: snap.lat ?? 32.6912,
             lng: snap.lng ?? -85.3298,
             speedKmh: snap.speedKmh,

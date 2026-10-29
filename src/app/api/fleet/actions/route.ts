@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ActionRequestSchema } from '@/lib/actionSchemas';
-import { isAdminRequestSafe } from '@/lib/adminAuth';
+import { AdminPinNotConfiguredError } from '@/lib/adminAuth';
+import { AdminPinCheck, checkAdminHeader, pinLockedResponse } from '@/lib/adminPinGuard';
 import { fleetErrorResponse } from '@/lib/apiErrors';
+import { toClientView } from '@/lib/clientView';
+import { DRIVER_TOKEN_HEADER } from '@/lib/driverToken';
 import { mutateFleetDatabase } from '@/lib/fleetDatabase';
 import { requiresAdmin, runAction } from '@/domain/actions';
 
@@ -26,18 +29,27 @@ export async function POST(req: NextRequest) {
   }
 
   const action = parsed.data;
-  const isAdmin = isAdminRequestSafe(req);
-  if (requiresAdmin(action.type) && !isAdmin) {
-    return NextResponse.json(
-      { ok: false, message: '관리자만 할 수 있는 작업입니다. 상단 [관리자] 메뉴에서 PIN 인증 후 다시 시도하세요.' },
-      { status: 401 }
-    );
-  }
-
   try {
+    let admin: AdminPinCheck | null = null;
+    try {
+      admin = await checkAdminHeader(req);
+    } catch (err) {
+      // A server without FLEET_ADMIN_PIN simply has no admins
+      if (!(err instanceof AdminPinNotConfiguredError)) throw err;
+    }
+    if (admin?.status === 'LOCKED') return pinLockedResponse(admin.retryAfterSec);
+    const isAdmin = admin?.status === 'OK';
+    if (requiresAdmin(action.type) && !isAdmin) {
+      return NextResponse.json(
+        { ok: false, message: '관리자만 할 수 있는 작업입니다. 상단 [관리자] 메뉴에서 PIN 인증 후 다시 시도하세요.' },
+        { status: 401 }
+      );
+    }
+
     const now = new Date();
-    const { db, result } = await mutateFleetDatabase((current) => runAction(current, action, { now, isAdmin }));
-    return NextResponse.json({ ok: result.ok, message: result.message, revision: db.revision, data: db });
+    const driverToken = req.headers.get(DRIVER_TOKEN_HEADER);
+    const { db, result } = await mutateFleetDatabase((current) => runAction(current, action, { now, isAdmin, driverToken }));
+    return NextResponse.json({ ok: result.ok, message: result.message, revision: db.revision, data: toClientView(db, { isAdmin }) });
   } catch (err) {
     return fleetErrorResponse(err);
   }

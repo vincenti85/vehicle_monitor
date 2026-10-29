@@ -2,6 +2,7 @@
 import { clearDemoState, resetDemoState } from '@/lib/fleetDatabase';
 import type { FleetDatabaseSchema } from '@/lib/fleetDatabase';
 import type { ActionRequest, ActionType } from '@/lib/actionSchemas';
+import { resolveDriverId } from '@/lib/driverToken';
 import {
   addEmployee,
   auditOdometer,
@@ -35,19 +36,29 @@ interface ActionSpec<T extends ActionType> {
   admin?: boolean;
   /** Allowed only while the database holds demo data. */
   demoOnly?: boolean;
+  /**
+   * Driver action: the employee who must be sending it (undefined = target not found, left
+   * to the action to refuse). In LIVE mode a non-admin caller needs that employee's phone token.
+   */
+  driver?: (db: FleetDatabaseSchema, payload: PayloadOf<T>) => string | null | undefined;
   run: (db: FleetDatabaseSchema, payload: PayloadOf<T>, ctx: ActionContext) => ActionOutcome;
 }
 
+const bookingDriver = (db: FleetDatabaseSchema, p: { reservationId: string }) =>
+  db.reservations.find((r) => r.id === p.reservationId)?.employeeId;
+const vehicleDriver = (db: FleetDatabaseSchema, p: { vehicleId: string }) =>
+  db.vehicles.find((v) => v.id === p.vehicleId)?.currentDriverId;
+
 const ACTIONS: { [T in ActionType]: ActionSpec<T> } = {
-  'dispatch.request': { run: requestDispatch },
+  'dispatch.request': { driver: (_db, p) => p.employeeId, run: requestDispatch },
   'dispatch.approve': { admin: true, run: approveDispatch },
   'dispatch.reject': { admin: true, run: rejectDispatch },
-  'dispatch.start': { run: startDispatch },
-  'dispatch.quickStart': { run: quickStartDispatch },
-  'dispatch.return': { run: returnVehicle },
-  'dispatch.autoReturn': { run: autoReturnVehicle },
-  'dispatch.lateReason': { run: submitLateReason },
-  'trip.position': { run: recordTripPosition },
+  'dispatch.start': { driver: bookingDriver, run: startDispatch },
+  'dispatch.quickStart': { driver: (_db, p) => p.employeeId, run: quickStartDispatch },
+  'dispatch.return': { driver: bookingDriver, run: returnVehicle },
+  'dispatch.autoReturn': { driver: vehicleDriver, run: autoReturnVehicle },
+  'dispatch.lateReason': { driver: vehicleDriver, run: submitLateReason },
+  'trip.position': { driver: bookingDriver, run: recordTripPosition },
   'vehicle.import': { admin: true, run: importVehicles },
   'vehicle.updatePairing': { admin: true, run: updatePairing },
   'vehicle.toggleLock': { admin: true, run: toggleVehicleLock },
@@ -95,5 +106,24 @@ export function runAction(db: FleetDatabaseSchema, action: ActionRequest, ctx: A
   if (spec.demoOnly && db.dataMode === 'LIVE') {
     return refuse(db, '센서·무단 시뮬레이션은 데모 모드에서만 사용할 수 있습니다.');
   }
+  const identityRefusal = checkDriverIdentity(db, spec, action.payload as never, ctx);
+  if (identityRefusal) return refuse(db, identityRefusal);
   return spec.run(db, action.payload as never, ctx);
+}
+
+/** Refusal message when a LIVE driver action does not come from that driver's enrolled phone. */
+function checkDriverIdentity<T extends ActionType>(
+  db: FleetDatabaseSchema,
+  spec: ActionSpec<T>,
+  payload: PayloadOf<T>,
+  ctx: ActionContext
+): string | null {
+  // DEMO data stays open so the demo works without enrolling phones
+  if (!spec.driver || ctx.isAdmin || db.dataMode !== 'LIVE') return null;
+  const required = spec.driver(db, payload);
+  if (required === undefined) return null;
+  const caller = resolveDriverId(db, ctx.driverToken);
+  if (!caller) return '이 휴대폰은 기기 등록이 되어 있지 않습니다. 관리자에게 기기 등록 링크를 받아 여세요.';
+  if (required !== caller) return '등록된 운전자 본인의 배차·차량만 조작할 수 있습니다.';
+  return null;
 }

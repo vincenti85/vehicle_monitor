@@ -62,6 +62,7 @@ import type { FleetDataMode, FleetDatabaseSchema } from '@/lib/fleetDatabase';
 import type { ActionRequest } from '@/lib/actionSchemas';
 import type { EmployeeCsvRow } from '@/domain/admin';
 import { useFleetSync } from '@/hooks/useFleetSync';
+import { captureEnrollmentFromUrl, enrollmentLink } from '@/lib/driverDevice';
 import { useTripPositionReporter } from '@/hooks/useTripPositionReporter';
 import { TripSignalBadge } from '@/components/TripSignalBadge';
 import { VehicleCsvRow, VehicleImportMode } from '@/utils/vehicleImport';
@@ -80,6 +81,9 @@ type CockpitTab =
   | 'NO_DASHCAM_INCIDENTS'
   | 'ANTI_EVASION'
   | 'TAX_LOGBOOK';
+
+/** Matches AdminPinRequestSchema (4-12 digits). */
+const MAX_PIN_LENGTH = 12;
 
 export default function FleetGuardCockpitPage() {
   // Default initial screen is the driver screen (차량 이용)
@@ -133,7 +137,7 @@ export default function FleetGuardCockpitPage() {
 
   const handleVerifyAdminPin = async (candidatePin?: string) => {
     const code = (candidatePin ?? pinInput).trim();
-    if (code.length !== 4) return;
+    if (code.length < 4) return;
     try {
       const res = await fetch('/api/admin/verify-pin', {
         method: 'POST',
@@ -149,10 +153,15 @@ export default function FleetGuardCockpitPage() {
         setViewMode(pendingAdminView);
         return;
       }
+      const body = await res.json().catch(() => null);
       setPinError(
         res.status === 503
           ? '서버에 관리자 PIN이 설정되지 않았습니다.'
-          : 'PIN이 일치하지 않습니다.'
+          : res.status === 429
+            ? body?.message ?? 'PIN을 여러 번 틀려 잠시 잠겼습니다.'
+            : typeof body?.attemptsLeft === 'number'
+              ? `PIN이 일치하지 않습니다. (남은 시도 ${body.attemptsLeft}회)`
+              : 'PIN이 일치하지 않습니다.'
       );
     } catch {
       setPinError('서버에 연결할 수 없습니다. 다시 시도하세요.');
@@ -160,13 +169,10 @@ export default function FleetGuardCockpitPage() {
     setTimeout(() => setPinInput(''), 350);
   };
 
+  // PINs may be 4-12 digits, so the PIN is submitted with 확인 / Enter rather than at 4 digits
   const handleDigitClick = (digit: string) => {
     setPinError(null);
-    const next = (pinInput + digit).slice(0, 4);
-    setPinInput(next);
-    if (next.length === 4) {
-      void handleVerifyAdminPin(next);
-    }
+    setPinInput((pinInput + digit).slice(0, MAX_PIN_LENGTH));
   };
 
   const [pushStream, setPushStream] = useState<
@@ -244,6 +250,12 @@ export default function FleetGuardCockpitPage() {
     if (!result.ok || notifySuccess) setActionNotice(result);
     return result;
   };
+
+  // Opening an admin's device link enrolls this phone as that driver
+  useEffect(() => {
+    const enrolled = captureEnrollmentFromUrl();
+    if (enrolled) setActionNotice({ ok: true, message: `이 휴대폰이 운전자(${enrolled}) 기기로 등록되었습니다.` });
+  }, []);
 
   useEffect(() => {
     if (!actionNotice) return;
@@ -415,6 +427,30 @@ export default function FleetGuardCockpitPage() {
     const result = await runAction({ type: 'dispatch.autoReturn', payload: { vehicleId } });
     if (result.ok && tripReporter.target?.vehicleId === vehicleId) tripReporter.stopTracking();
     return result;
+  };
+
+  // Device link: binds one employee's phone; the link is shown once and copied to the clipboard
+  const handleIssueDeviceLink = async (employeeId: string) => {
+    if (!adminPin) return;
+    try {
+      const res = await fetch('/api/admin/driver-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-pin': adminPin },
+        body: JSON.stringify({ employeeId }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || typeof body?.token !== 'string') {
+        setActionNotice({ ok: false, message: body?.message ?? `기기 등록 링크 발급 실패 (HTTP ${res.status})` });
+        return;
+      }
+      const link = enrollmentLink(body.token);
+      await navigator.clipboard?.writeText(link).catch(() => undefined);
+      window.prompt(`${body.message}
+운전자 휴대폰에서 이 링크를 여세요. (클립보드에 복사됨 · 다시 볼 수 없음)`, link);
+      void sync.refresh();
+    } catch {
+      setActionNotice({ ok: false, message: '서버에 연결할 수 없습니다.' });
+    }
   };
 
   // Admin console (server checks the PIN on every call)
@@ -938,6 +974,7 @@ export default function FleetGuardCockpitPage() {
             onAuditVehicleOdometer={handleAuditVehicleOdometer}
             onToggleVehicleLock={handleToggleVehicleLock}
             onToggleEmployeeDispatch={handleToggleEmployeeDispatch}
+            onIssueDeviceLink={handleIssueDeviceLink}
             onSendPermissionWarningPush={handleSendPermissionWarningPush}
             onAddEmployee={handleAddEmployee}
             reservations={reservations}
@@ -1578,7 +1615,7 @@ export default function FleetGuardCockpitPage() {
               </p>
             </div>
 
-            {/* 4-Digit PIN Indicator Dots + Direct Input */}
+            {/* PIN Direct Input */}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1589,18 +1626,14 @@ export default function FleetGuardCockpitPage() {
               <input
                 type="password"
                 inputMode="numeric"
-                maxLength={4}
+                maxLength={MAX_PIN_LENGTH}
                 autoFocus
                 value={pinInput}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
-                  setPinInput(val);
+                  setPinInput(e.target.value.replace(/[^0-9]/g, '').slice(0, MAX_PIN_LENGTH));
                   setPinError(null);
-                  if (val.length === 4) {
-                    handleVerifyAdminPin(val);
-                  }
                 }}
-                placeholder={isEng ? '4-digit PIN' : 'PIN 4자리'}
+                placeholder={isEng ? 'PIN, then Verify' : 'PIN 입력 후 확인'}
                 className="w-full text-center tracking-[0.8em] text-xl font-mono font-semibold rounded-xl bg-[#FAFAFA] border border-black/15 py-3 text-[#0A0A0A] focus:outline-none focus:border-[#3E6AE1]"
               />
 

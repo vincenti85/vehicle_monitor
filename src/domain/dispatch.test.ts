@@ -127,9 +127,11 @@ describe('quickStartDispatch (1-second start)', () => {
   });
 
   it('blocks when someone else holds the vehicle', () => {
-    const db = request(seed(), 'emp-06', 'veh-8').db;
+    const base = seed();
+    const db = request({ ...base, policyConfig: { ...base.policyConfig, autoApproveWhenManagerAway: true } }, 'emp-06', 'veh-8').db;
     const { db: after, result } = quickStartDispatch(db, { employeeId: 'emp-01', vehicleId: 'veh-8', purpose: '거래처방문' }, ctx());
     expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/이미 배차가 진행 중/);
     expect(openOn(after, 'veh-8')).toHaveLength(1);
   });
 });

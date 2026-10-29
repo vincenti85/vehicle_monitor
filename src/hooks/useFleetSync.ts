@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FleetDatabaseSchema } from '@/lib/fleetDatabase';
 import type { ActionRequest } from '@/lib/actionSchemas';
+import { driverHeaders } from '@/lib/driverDevice';
 import { DispatchResult } from '@/utils/dispatchRules';
 
 export const POLL_INTERVAL_MS = 15_000;
@@ -51,10 +52,18 @@ export function useFleetSync(
     }));
   }, []);
 
+  // Admins see employee phone numbers, so a fresh PIN forces a full reload instead of a 204
+  useEffect(() => {
+    revisionRef.current = null;
+  }, [adminPin]);
+
   const refresh = useCallback(async () => {
     const rev = revisionRef.current;
     try {
-      const res = await fetch(`/api/fleet/state${rev === null ? '' : `?rev=${rev}`}`, { cache: 'no-store' });
+      const res = await fetch(`/api/fleet/state${rev === null ? '' : `?rev=${rev}`}`, {
+        cache: 'no-store',
+        headers: adminPin ? { 'x-admin-pin': adminPin } : {},
+      });
       if (res.status === 204) {
         setState((s) => ({ ...s, error: null, lastSyncedAt: Date.now(), status: pendingActions.current > 0 ? 'SAVING' : 'SYNCED' }));
         return;
@@ -65,7 +74,7 @@ export function useFleetSync(
     } catch (err) {
       setState((s) => ({ ...s, status: 'ERROR', error: err instanceof Error ? err.message : 'DB load failed' }));
     }
-  }, [accept]);
+  }, [accept, adminPin]);
 
   // Initial load, 15 s polling while visible, immediate refresh when the user comes back
   useEffect(() => {
@@ -92,7 +101,11 @@ export function useFleetSync(
       try {
         const res = await fetch('/api/fleet/actions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(adminPin ? { 'x-admin-pin': adminPin } : {}) },
+          headers: {
+            'Content-Type': 'application/json',
+            ...driverHeaders(),
+            ...(adminPin ? { 'x-admin-pin': adminPin } : {}),
+          },
           body: JSON.stringify(action),
         });
         const body = await res.json().catch(() => null);

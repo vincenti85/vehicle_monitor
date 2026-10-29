@@ -98,6 +98,10 @@ export interface Employee {
   lastKeyboxAccessAt: string | null;
   dispatchAllowed?: boolean;
   violationCount?: number;
+  /** SHA-256 of the enrolled phone's driver token (server only; stripped from responses). */
+  deviceTokenHash?: string;
+  /** When the current phone link was issued (ISO). */
+  deviceEnrolledAt?: string;
 }
 
 export interface IncidentEvent {

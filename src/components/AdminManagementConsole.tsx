@@ -63,6 +63,8 @@ interface AdminManagementConsoleProps {
   onAuditVehicleOdometer: (vehicleId: string, actualOdometerKm: number) => void;
   onToggleVehicleLock: (vehicleId: string) => void;
   onToggleEmployeeDispatch: (employeeId: string) => void;
+  /** Issues a device link that binds the employee's phone (revokes the previous phone). */
+  onIssueDeviceLink: (employeeId: string) => void;
   onSendPermissionWarningPush: (employeeId: string) => void;
   onAddEmployee: (emp: { name: string; role: string; department: string; phone: string }) => void;
   reservations: VehicleReservation[];
@@ -91,6 +93,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   onAuditVehicleOdometer,
   onToggleVehicleLock,
   onToggleEmployeeDispatch,
+  onIssueDeviceLink,
   onSendPermissionWarningPush,
   onAddEmployee,
   reservations,
@@ -769,6 +772,16 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
                         복구 알림
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => onIssueDeviceLink(emp.id)}
+                      title={emp.deviceEnrolledAt ? `등록: ${new Date(emp.deviceEnrolledAt).toLocaleString()}` : '등록된 휴대폰 없음'}
+                      className="px-2.5 py-1 rounded-lg bg-white hover:bg-black/5 border border-black/15 text-[#0A0A0A] text-xs flex items-center gap-1"
+                    >
+                      <Smartphone className="w-3 h-3" />
+                      {emp.deviceEnrolledAt ? '기기 재등록' : '기기 등록 링크'}
+                    </button>
 
                     <button
                       type="button"
