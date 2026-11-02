@@ -6,6 +6,7 @@ import {
   SystemPolicyConfig,
   TaxLogEntry,
   Vehicle,
+  VehicleInspection,
   VehicleReservation,
 } from '@/types/fleet';
 import {
@@ -54,6 +55,8 @@ export interface FleetDatabaseSchema {
   taxLogs: TaxLogEntry[];
   policyConfig: SystemPolicyConfig;
   pushStream: PushAlertItem[];
+  /** Pre/post-trip checklists (added in 1.3.0; older documents load with []). */
+  inspections: VehicleInspection[];
 }
 
 export const DEMO_EMPLOYEE_IDS: ReadonlySet<string> = new Set(INITIAL_EMPLOYEES.map((e) => e.id));
@@ -98,7 +101,7 @@ const DEFAULT_PUSH_STREAM: PushAlertItem[] = [
 
 export function createSeedDatabase(): FleetDatabaseSchema {
   return {
-    version: '1.2.0',
+    version: '1.3.0',
     lastUpdatedAt: new Date().toISOString(),
     storageEngine: 'PERSISTENT_JSON_DB',
     dataMode: 'DEMO',
@@ -112,6 +115,7 @@ export function createSeedDatabase(): FleetDatabaseSchema {
     taxLogs: INITIAL_TAX_LOGS,
     policyConfig: INITIAL_POLICY_CONFIG,
     pushStream: DEFAULT_PUSH_STREAM,
+    inspections: [],
   };
 }
 
@@ -144,13 +148,20 @@ interface LoadedDatabase {
   etag: string | null;
 }
 
-function parseDatabase(json: string): FleetDatabaseSchema {
+/**
+ * Stored JSON -> database. Fields added after a document was written are filled with defaults
+ * (missing policy values from INITIAL_POLICY_CONFIG, inspections = []); stored values win.
+ * Free-text plannedTimeWindow rows need no change: without plannedStartAt/EndAt they are legacy.
+ */
+export function parseDatabase(json: string): FleetDatabaseSchema {
   try {
     const parsed = JSON.parse(json) as Partial<FleetDatabaseSchema>;
     return {
       ...parsed,
       dataMode: parsed.dataMode ?? 'DEMO',
       revision: parsed.revision ?? 0,
+      policyConfig: { ...INITIAL_POLICY_CONFIG, ...parsed.policyConfig },
+      inspections: Array.isArray(parsed.inspections) ? parsed.inspections : [],
     } as FleetDatabaseSchema;
   } catch (err) {
     throw new FleetStorageUnavailableError('Fleet database is not valid JSON', { cause: err });
@@ -309,6 +320,13 @@ function resetVehicleOperationalState(v: Vehicle): Vehicle {
   };
 }
 
+/** Sample inspections are cleared with the demo, so their locks must go too. */
+function releaseInspectionLock(v: Vehicle): Vehicle {
+  if (v.lockReason !== 'INSPECTION_FAILED') return v;
+  const { lockReason: _reason, lockInspectionId: _id, ...rest } = v;
+  return { ...rest, isLockedByAdmin: false };
+}
+
 export interface ClearDemoResult {
   db: FleetDatabaseSchema;
   removedDemoEmployees: number;
@@ -334,7 +352,7 @@ export function clearDemoState(
     db: {
       ...current,
       dataMode: 'LIVE',
-      vehicles: current.vehicles.map(resetVehicleOperationalState),
+      vehicles: current.vehicles.map((v) => releaseInspectionLock(resetVehicleOperationalState(v))),
       employees: employees.map((e) => ({ ...e, violationCount: 0 })),
       reservations: [],
       incidents: [],
@@ -342,6 +360,7 @@ export function clearDemoState(
       ghostTrips: [],
       taxLogs: [],
       pushStream: [],
+      inspections: [],
     },
     result: {
       removedDemoEmployees: current.employees.length - employees.length,

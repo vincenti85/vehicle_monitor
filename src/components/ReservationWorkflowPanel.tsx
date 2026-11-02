@@ -12,11 +12,15 @@ import {
 import {
   Employee,
   ReservationStage,
+  SystemPolicyConfig,
   TripPurpose,
   Vehicle,
   VehicleReservation,
 } from '@/types/fleet';
 import { DispatchResult } from '@/utils/dispatchRules';
+import { bookingPolicyOf } from '@/utils/bookingWindow';
+import { defaultSelection, evaluateSelection } from '@/utils/bookingSelection';
+import { BookingWindowPicker } from './BookingWindowPicker';
 import { AppLang, formatDeptName, formatEmpName, formatTripPurpose } from '@/utils/i18n';
 
 interface ReservationWorkflowPanelProps {
@@ -24,13 +28,16 @@ interface ReservationWorkflowPanelProps {
   vehicles: Vehicle[];
   employees: Employee[];
   autoApproveWhenManagerAway: boolean;
+  /** Booking limits/buffer for the request form (server re-checks). */
+  policyConfig?: Partial<SystemPolicyConfig>;
   onToggleAutoApprove: () => void;
   onCreateRequest: (payload: {
     employeeId: string;
     vehicleId: string;
     purpose: TripPurpose;
     destination: string;
-    plannedTimeWindow: string;
+    plannedStartAt: string;
+    plannedEndAt: string;
     notes: string;
   }) => Promise<DispatchResult>;
   onApproveRequest: (reservationId: string) => Promise<DispatchResult>;
@@ -53,6 +60,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
   vehicles,
   employees,
   autoApproveWhenManagerAway,
+  policyConfig = {},
   onToggleAutoApprove,
   onCreateRequest,
   onApproveRequest,
@@ -71,7 +79,7 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
   const [vehId, setVehId] = useState<string>('veh-8');
   const [purpose, setPurpose] = useState<TripPurpose>('거래처방문');
   const [destination, setDestination] = useState<string>('HMMA Montgomery, AL');
-  const [timeWindow, setTimeWindow] = useState<string>('21:30 ~ 23:30');
+  const [booking, setBooking] = useState(() => defaultSelection(new Date()));
   const [notes, setNotes] = useState<string>('');
 
   const [returnZoneMap, setReturnZoneMap] = useState<Record<string, string>>({});
@@ -110,14 +118,18 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
       ? reservations
       : reservations.filter((r) => r.stage === stageFilter);
 
+  const evaluated = evaluateSelection(booking, vehicles.find((v) => v.id === vehId), reservations, new Date(), policyConfig);
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (evaluated.problem || !evaluated.plannedStartAt || !evaluated.plannedEndAt) return;
     const result = await run(onCreateRequest({
       employeeId: empId,
       vehicleId: vehId,
       purpose,
       destination,
-      plannedTimeWindow: timeWindow,
+      plannedStartAt: evaluated.plannedStartAt,
+      plannedEndAt: evaluated.plannedEndAt,
       notes,
     }));
     // Keep the form open on a blocked request so the user can pick another vehicle
@@ -287,24 +299,25 @@ export const ReservationWorkflowPanel: React.FC<ReservationWorkflowPanelProps> =
               required
             />
 
-            <div className="flex gap-1.5">
-              <input
-                type="text"
-                value={timeWindow}
-                onChange={(e) => setTimeWindow(e.target.value)}
-                className="w-full rounded-md bg-[#FAFAFA] px-2 py-1.5 text-[#0A0A0A]"
-                style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
-                placeholder={isEng ? 'Time' : '시간'}
-                required
-              />
-              <button
-                type="submit"
-                className="px-3 py-1.5 rounded-md bg-[#0A0A0A] text-[#FAFAFA] font-semibold shrink-0"
-              >
-                {isEng ? 'Submit' : '등록'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={evaluated.problem !== null}
+              className="px-3 py-1.5 rounded-md bg-[#0A0A0A] text-[#FAFAFA] font-semibold shrink-0 disabled:opacity-50"
+            >
+              {isEng ? 'Submit' : '등록'}
+            </button>
           </div>
+          <BookingWindowPicker
+            value={booking}
+            onChange={setBooking}
+            vehicleId={vehId}
+            reservations={reservations}
+            bufferMinutes={bookingPolicyOf(policyConfig).bookingBufferMinutes}
+            plannedStartAt={evaluated.plannedStartAt}
+            plannedEndAt={evaluated.plannedEndAt}
+            problem={evaluated.problem}
+            isEng={isEng}
+          />
         </form>
       )}
 

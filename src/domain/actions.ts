@@ -27,6 +27,7 @@ import {
   startDispatch,
   submitLateReason,
 } from './dispatch';
+import { resolveInspection, submitInspection } from './inspection';
 import { recordTripPosition } from './trip';
 
 type PayloadOf<T extends ActionType> = Extract<ActionRequest, { type: T }>['payload'];
@@ -59,6 +60,8 @@ const ACTIONS: { [T in ActionType]: ActionSpec<T> } = {
   'dispatch.autoReturn': { driver: vehicleDriver, run: autoReturnVehicle },
   'dispatch.lateReason': { driver: vehicleDriver, run: submitLateReason },
   'trip.position': { driver: bookingDriver, run: recordTripPosition },
+  'inspection.submit': { driver: bookingDriver, run: submitInspection },
+  'inspection.resolve': { admin: true, run: resolveInspection },
   'vehicle.import': { admin: true, run: importVehicles },
   'vehicle.updatePairing': { admin: true, run: updatePairing },
   'vehicle.toggleLock': { admin: true, run: toggleVehicleLock },

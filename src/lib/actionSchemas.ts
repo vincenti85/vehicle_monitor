@@ -1,5 +1,6 @@
 // Request schema for POST /api/fleet/actions: one { type, payload } shape per action.
 import { z } from 'zod';
+import { windowShapeError } from '@/utils/bookingWindow';
 import { MAX_FLEET_SIZE } from '@/utils/vehicleImport';
 import { PolicyConfigSchema, TripPurposeSchema } from './fleetSchemas';
 
@@ -7,6 +8,46 @@ const id = z.string().min(1).max(100);
 const text = (max: number) => z.string().max(max);
 const action = <T extends string, P extends z.ZodTypeAny>(type: T, payload: P) =>
   z.object({ type: z.literal(type), payload }).strict();
+
+const latitude = z.number().min(-90).max(90);
+const longitude = z.number().min(-180).max(180);
+const accuracy = z.number().min(0).max(100_000);
+const isoDateTime = z.string().datetime({ offset: true });
+
+/** Booking window (AC-M1): ISO start/end together, or legacy free text alone. */
+function refineBookingWindow(
+  p: { plannedTimeWindow?: string; plannedStartAt?: string; plannedEndAt?: string },
+  ctx: z.RefinementCtx
+) {
+  if (p.plannedStartAt && p.plannedEndAt) {
+    const reason = windowShapeError(Date.parse(p.plannedStartAt), Date.parse(p.plannedEndAt));
+    if (reason) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['plannedEndAt'], message: reason });
+  } else if (p.plannedStartAt || p.plannedEndAt) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['plannedStartAt'], message: '시작·종료 시각을 함께 입력하세요.' });
+  } else if (!p.plannedTimeWindow) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['plannedStartAt'], message: '예약 시간(시작·종료)을 입력하세요.' });
+  }
+}
+
+const InspectionItemSchema = z
+  .object({ itemId: z.string().min(1).max(40), passed: z.boolean(), note: z.string().trim().max(200) })
+  .strict()
+  .refine((i) => i.passed || i.note.length > 0, { message: '불합격 항목은 메모가 필요합니다.', path: ['note'] });
+
+/** Checklist answers + GPS stamp; coordinates are null when location is unavailable (never blocks). */
+const InspectionAnswersSchema = z.object({
+  items: z
+    .array(InspectionItemSchema)
+    .min(1)
+    .max(20)
+    .refine((items) => new Set(items.map((i) => i.itemId)).size === items.length, '점검 항목이 중복되었습니다.'),
+  startedAt: isoDateTime,
+  startLat: latitude.nullable(),
+  startLng: longitude.nullable(),
+  submitLat: latitude.nullable(),
+  submitLng: longitude.nullable(),
+  accuracyM: accuracy.nullable(),
+});
 
 const VehicleRowSchema = z
   .object({
@@ -37,9 +78,11 @@ export const ActionRequestSchema = z.discriminatedUnion('type', [
     vehicleId: id,
     purpose: TripPurposeSchema,
     destination: z.string().trim().min(1).max(120),
-    plannedTimeWindow: z.string().trim().min(1).max(60),
+    plannedTimeWindow: z.string().trim().min(1).max(60).optional(),
+    plannedStartAt: isoDateTime.optional(),
+    plannedEndAt: isoDateTime.optional(),
     notes: text(200),
-  })),
+  }).superRefine(refineBookingWindow)),
   action('dispatch.approve', z.object({ reservationId: id })),
   action('dispatch.reject', z.object({ reservationId: id })),
   action('dispatch.start', z.object({ reservationId: id })),
@@ -47,14 +90,26 @@ export const ActionRequestSchema = z.discriminatedUnion('type', [
   action('trip.position', z.object({
     reservationId: id,
     employeeId: id,
-    lat: z.number().min(-90).max(90),
-    lng: z.number().min(-180).max(180),
+    lat: latitude,
+    lng: longitude,
     speedKmh: z.number().min(0).max(400).nullable(),
     headingDeg: z.number().min(0).max(360).nullable(),
-    accuracyM: z.number().min(0).max(100_000),
+    accuracyM: accuracy,
   })),
+  // Pre/post-trip checklist (driver) and fix record that clears an inspection lock (admin)
+  action('inspection.submit', InspectionAnswersSchema.extend({
+    reservationId: id,
+    employeeId: id,
+    kind: z.enum(['PRE_TRIP', 'POST_TRIP']),
+  })),
+  action('inspection.resolve', z.object({ inspectionId: id, resolution: z.string().trim().min(1).max(300) })),
   action('dispatch.quickStart', z.object({ employeeId: id, vehicleId: id, purpose: TripPurposeSchema })),
-  action('dispatch.return', z.object({ reservationId: id, parkingZone: z.string().trim().min(1).max(80), keyReturnedToBox: z.boolean() })),
+  action('dispatch.return', z.object({
+    reservationId: id,
+    parkingZone: z.string().trim().min(1).max(80),
+    keyReturnedToBox: z.boolean(),
+    inspection: InspectionAnswersSchema.optional(),
+  })),
   action('dispatch.autoReturn', z.object({ vehicleId: id })),
   action('dispatch.lateReason', z.object({ vehicleId: id, purpose: TripPurposeSchema })),
   // Vehicles (admin)

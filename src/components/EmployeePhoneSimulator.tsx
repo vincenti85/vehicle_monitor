@@ -14,7 +14,7 @@ import {
   Smartphone,
   Zap,
 } from 'lucide-react';
-import { Employee, TripPurpose, Vehicle, VehicleReservation } from '@/types/fleet';
+import { Employee, SystemPolicyConfig, TripPurpose, Vehicle, VehicleInspection, VehicleReservation } from '@/types/fleet';
 import {
   RealDeviceTelemetrySnapshot,
   scanRealVehicleBluetooth,
@@ -25,6 +25,12 @@ import { DispatchResult } from '@/utils/dispatchRules';
 import type { TripReporter } from '@/hooks/useTripPositionReporter';
 import { driverHeaders, getEnrolledEmployeeId } from '@/lib/driverDevice';
 import { TripGpsStatus } from './TripGpsStatus';
+import { BookingWindowPicker } from './BookingWindowPicker';
+import { InspectionChecklist } from './InspectionChecklist';
+import { bookingPolicyOf } from '@/utils/bookingWindow';
+import { defaultSelection, evaluateSelection } from '@/utils/bookingSelection';
+import { DEFAULT_INSPECTION_TEMPLATE } from '@/data/inspectionTemplate';
+import { InspectionAnswers, InspectionSubmitPayload, hasPreTripInspection } from '@/domain/inspection';
 
 // Result of opening the app from a vehicle key-tag QR (?unit=NN)
 export interface QrScanResult {
@@ -42,7 +48,8 @@ interface EmployeePhoneSimulatorProps {
     vehicleId: string;
     purpose: TripPurpose;
     destination: string;
-    plannedTimeWindow: string;
+    plannedStartAt: string;
+    plannedEndAt: string;
     notes: string;
   }) => Promise<DispatchResult>;
   onApproveRequest: (reservationId: string) => Promise<DispatchResult>;
@@ -50,9 +57,14 @@ interface EmployeePhoneSimulatorProps {
   onReturnVehicle: (
     reservationId: string,
     parkingZone: string,
-    keyReturnedToBox: boolean
+    keyReturnedToBox: boolean,
+    inspection?: InspectionAnswers
   ) => Promise<DispatchResult>;
   onAuthorizedCheckout: (employeeId: string, vehicleId: string, purpose: TripPurpose) => Promise<DispatchResult>;
+  /** Booking limits and inspection settings (the server re-checks everything). */
+  policyConfig?: Partial<SystemPolicyConfig>;
+  inspections?: VehicleInspection[];
+  onSubmitInspection?: (payload: InspectionSubmitPayload) => Promise<DispatchResult>;
   onUnauthorizedKeyTheft: (
     employeeId: string,
     vehicleId: string,
@@ -84,6 +96,9 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   onStartUsingVehicle,
   onReturnVehicle,
   onAuthorizedCheckout,
+  policyConfig = {},
+  inspections = [],
+  onSubmitInspection,
   onUnauthorizedKeyTheft,
   onLateReasonSubmit,
   onSimulateCrashOrDrop,
@@ -106,7 +121,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   const [selectedVehId, setSelectedVehId] = useState<string>('veh-2');
   const [selectedPurpose, setSelectedPurpose] = useState<TripPurpose>('거래처방문');
   const [destination, setDestination] = useState<string>('HMMA Montgomery Plant');
-  const [plannedWindow, setPlannedWindow] = useState<string>('21:00 ~ 23:00');
+  const [booking, setBooking] = useState(() => defaultSelection(new Date()));
   const [returnLot, setReturnLot] = useState<string>('Northpark Lot A');
   const [coPassengerId, setCoPassengerId] = useState<string>('emp-01');
   const [includeCoPassenger, setIncludeCoPassenger] = useState<boolean>(true);
@@ -222,6 +237,12 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
   const currentVeh = vehicles.find((v) => v.id === selectedVehId) || vehicles[0];
   const isDrivingThisCar = currentVeh.status !== 'IDLE';
   const myReservations = reservations.filter((r) => r.employeeId === selectedEmpId);
+  const evaluatedBooking = evaluateSelection(booking, vehicles.find((v) => v.id === selectedVehId), reservations, new Date(), policyConfig);
+  const checklist = policyConfig.inspectionTemplate ?? DEFAULT_INSPECTION_TEMPLATE;
+  const needsPreTrip = (res: VehicleReservation) =>
+    policyConfig.requirePreTripInspection !== false && !hasPreTripInspection({ inspections }, res.id);
+  const needsPostTrip = policyConfig.requirePostTripInspection !== false;
+  const lockedUnit = (res: VehicleReservation) => vehicles.find((v) => v.id === res.vehicleId)?.isLockedByAdmin === true;
   const qrVeh = qrScan?.vehicleId ? vehicles.find((v) => v.id === qrScan.vehicleId) : undefined;
 
   return (
@@ -459,15 +480,18 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                     {isEng ? 'Approved Commute' : '출퇴근(승인)'}
                   </option>
                 </select>
-                <input
-                  type="text"
-                  value={plannedWindow}
-                  onChange={(e) => setPlannedWindow(e.target.value)}
-                  className="rounded-md bg-[#FAFAFA] px-2 py-1.5 text-xs text-[#0A0A0A]"
-                  style={{ boxShadow: 'rgba(0, 0, 0, 0.08) 0px 0px 0px 1px' }}
-                  placeholder={isEng ? 'Time Window' : '시간'}
-                />
               </div>
+              <BookingWindowPicker
+                value={booking}
+                onChange={setBooking}
+                vehicleId={selectedVehId}
+                reservations={reservations}
+                bufferMinutes={bookingPolicyOf(policyConfig).bookingBufferMinutes}
+                plannedStartAt={evaluatedBooking.plannedStartAt}
+                plannedEndAt={evaluatedBooking.plannedEndAt}
+                problem={evaluatedBooking.problem}
+                isEng={isEng}
+              />
 
               <div className="flex gap-1.5">
                 <input
@@ -481,16 +505,20 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                 <button
                   type="button"
                   onClick={() => {
+                    const { plannedStartAt, plannedEndAt } = evaluatedBooking;
+                    if (!plannedStartAt || !plannedEndAt) return;
                     void showDispatchResult(onCreateRequest({
                       employeeId: selectedEmpId,
                       vehicleId: selectedVehId,
                       purpose: selectedPurpose,
                       destination,
-                      plannedTimeWindow: plannedWindow,
+                      plannedStartAt,
+                      plannedEndAt,
                       notes: isEng ? 'Mobile Request' : '모바일 신청',
                     }));
                   }}
-                  className="px-3 py-1.5 rounded-md bg-[#0A72EF] hover:bg-[#0060DF] text-white text-xs font-medium shrink-0 transition"
+                  disabled={busy || evaluatedBooking.problem !== null}
+                  className="px-3 py-1.5 rounded-md bg-[#0A72EF] hover:bg-[#0060DF] text-white text-xs font-medium shrink-0 transition disabled:opacity-50"
                 >
                   {isEng ? 'Request' : '신청'}
                 </button>
@@ -563,7 +591,25 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                         </div>
                       )}
 
-                      {res.stage === 'APPROVED' && (
+                      {res.stage === 'APPROVED' && lockedUnit(res) && (
+                        <p role="alert" className="text-[11px] text-[#B91C1C]">
+                          {isEng ? `Unit #${res.fleetNumber} is locked (inspection). Contact the manager.` : `#${res.fleetNumber}호차가 잠겨 있습니다(점검). 관리자에게 연락하세요.`}
+                        </p>
+                      )}
+
+                      {res.stage === 'APPROVED' && !lockedUnit(res) && needsPreTrip(res) && onSubmitInspection && (
+                        <InspectionChecklist
+                          kind="PRE_TRIP"
+                          template={checklist}
+                          isEng={isEng}
+                          submitLabel={isEng ? 'Submit inspection' : '점검 제출'}
+                          onSubmit={(answers) =>
+                            showDispatchResult(onSubmitInspection({ ...answers, reservationId: res.id, employeeId: res.employeeId, kind: 'PRE_TRIP' }))
+                          }
+                        />
+                      )}
+
+                      {res.stage === 'APPROVED' && !lockedUnit(res) && !needsPreTrip(res) && (
                         <button
                           type="button"
                           onClick={() => {
@@ -591,6 +637,7 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                             <option value="Northpark Lot B">Lot B</option>
                             <option value="Northpark Lot C">Lot C</option>
                           </select>
+                          {!needsPostTrip && (
                           <button
                             type="button"
                             onClick={() => {
@@ -604,6 +651,23 @@ export const EmployeePhoneSimulator: React.FC<EmployeePhoneSimulatorProps> = ({
                             <RotateCcw className="w-3 h-3" />
                             {isEng ? 'Return Vehicle' : '반납 완료'}
                           </button>
+                          )}
+                        </div>
+                      )}
+
+                      {res.stage === 'IN_USE' && needsPostTrip && (
+                        <div className="pt-1">
+                          <InspectionChecklist
+                            kind="POST_TRIP"
+                            template={checklist}
+                            isEng={isEng}
+                            disabled={busy}
+                            submitLabel={isEng ? 'Submit inspection · Return' : '점검 제출 · 반납 완료'}
+                            onSubmit={(answers) => {
+                              const fullZone = `${returnLot} #${res.fleetNumber.toString().padStart(2, '0')}`;
+                              return showDispatchResult(onReturnVehicle(res.id, fullZone, true, answers));
+                            }}
+                          />
                         </div>
                       )}
                     </div>

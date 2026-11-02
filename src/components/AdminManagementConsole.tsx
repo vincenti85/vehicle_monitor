@@ -10,6 +10,7 @@ import {
   Car,
   CheckCircle2,
   ChevronDown,
+  ClipboardCheck,
   ChevronUp,
   Compass,
   Download,
@@ -37,9 +38,12 @@ import {
   IncidentEvent,
   SystemPolicyConfig,
   Vehicle,
+  VehicleInspection,
   VehicleReservation,
 } from '@/types/fleet';
 import { VehicleImportPanel } from '@/components/VehicleImportPanel';
+import { InspectionReviewPanel } from '@/components/InspectionReviewPanel';
+import { DEFAULT_INSPECTION_TEMPLATE } from '@/data/inspectionTemplate';
 import { VehicleFormPanel } from '@/components/VehicleFormPanel';
 import { buildVehicleDeepLink, createQrSvg, resolveAppBaseUrl } from '@/utils/vehicleQr';
 import type { EmployeeCsvRow } from '@/domain/admin';
@@ -74,6 +78,8 @@ interface AdminManagementConsoleProps {
   onBulkImportEmployees: (rows: EmployeeCsvRow[]) => void;
   onResolveIncident: (incidentId: string, resolutionNote: string, suspendDriver: boolean) => void;
   onUpdatePolicyConfig: (nextConfig: SystemPolicyConfig) => void;
+  inspections?: VehicleInspection[];
+  onResolveInspection?: (inspectionId: string, resolution: string) => Promise<DispatchResult>;
   onLockAdminConsole: () => void;
   onOpenManual: () => void;
 }
@@ -82,6 +88,7 @@ type AdminSection =
   | 'VEHICLE_MASTER'
   | 'EMPLOYEE_GOVERNANCE'
   | 'NO_DASHCAM_INCIDENTS'
+  | 'INSPECTIONS'
   | 'SYSTEM_POLICY';
 
 export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
@@ -103,6 +110,8 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   onBulkImportEmployees,
   onResolveIncident,
   onUpdatePolicyConfig,
+  inspections = [],
+  onResolveInspection,
   onLockAdminConsole,
   onOpenManual,
 }) => {
@@ -140,6 +149,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
     let nextCfg: SystemPolicyConfig;
     if (preset === 'AUTONOMOUS') {
       nextCfg = {
+        ...policyConfig, // presets leave booking/inspection settings as they are
         hqAddress: '4400 Northpark Dr, Opelika, AL 36801',
         garageGeofenceRadiusM: 150,
         keyboxBleRadiusM: 3,
@@ -152,6 +162,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
       };
     } else if (preset === 'STANDARD') {
       nextCfg = {
+        ...policyConfig, // presets leave booking/inspection settings as they are
         hqAddress: '4400 Northpark Dr, Opelika, AL 36801',
         garageGeofenceRadiusM: 150,
         keyboxBleRadiusM: 3,
@@ -164,6 +175,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
       };
     } else {
       nextCfg = {
+        ...policyConfig, // presets leave booking/inspection settings as they are
         hqAddress: '4400 Northpark Dr, Opelika, AL 36801',
         garageGeofenceRadiusM: 120,
         keyboxBleRadiusM: 2,
@@ -299,6 +311,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
   };
 
   const unresolvedCount = incidents.filter((inc) => !inc.resolved).length;
+  const openInspectionCount = inspections.filter((i) => i.failedItems > 0 && !i.resolvedAt).length;
 
   const filteredVehicles = vehicles.filter(
     (v) =>
@@ -360,7 +373,7 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
           <h2 className="text-lg font-semibold text-[#0A0A0A]">관리 설정</h2>
         </div>
 
-        {/* 4 Admin Sub-Navigation Buttons */}
+        {/* Admin Sub-Navigation Buttons */}
         <div className="flex flex-wrap gap-1.5 bg-[#FAFAFA] p-1.5 rounded-xl border border-black/10 shrink-0">
           {[
             {
@@ -377,6 +390,11 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
               id: 'NO_DASHCAM_INCIDENTS' as AdminSection,
               label: `사고 처분${unresolvedCount > 0 ? ` ${unresolvedCount}` : ''}`,
               icon: Smartphone,
+            },
+            {
+              id: 'INSPECTIONS' as AdminSection,
+              label: `점검${openInspectionCount > 0 ? ` ${openInspectionCount}` : ''}`,
+              icon: ClipboardCheck,
             },
             {
               id: 'SYSTEM_POLICY' as AdminSection,
@@ -944,6 +962,16 @@ export const AdminManagementConsole: React.FC<AdminManagementConsoleProps> = ({
       )}
 
       {/* SECTION 4: 1-Click Zero-Config Preset Mode + Collapsible Advanced Settings */}
+      {section === 'INSPECTIONS' && onResolveInspection && (
+        <InspectionReviewPanel
+          inspections={inspections}
+          vehicles={vehicles}
+          employees={employees}
+          template={policyConfig.inspectionTemplate ?? DEFAULT_INSPECTION_TEMPLATE}
+          onResolve={onResolveInspection}
+        />
+      )}
+
       {section === 'SYSTEM_POLICY' && (
         <div className="rounded-2xl bg-[#FFFFFF] p-5 border border-black/10 space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-black/10">

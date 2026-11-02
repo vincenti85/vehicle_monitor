@@ -1,6 +1,6 @@
 // Admin-only actions: vehicle registry, odometer audit, employee governance, incidents, policy.
 import type { FleetDatabaseSchema } from '@/lib/fleetDatabase';
-import { Employee, GhostTripCase, SystemPolicyConfig } from '@/types/fleet';
+import { Employee, GhostTripCase, SystemPolicyConfig, Vehicle } from '@/types/fleet';
 import { VehicleCsvRow, VehicleImportMode, planVehicleImport } from '@/utils/vehicleImport';
 import { localTime } from './clock';
 import { ActionContext, ActionOutcome, alert, newId, refuse, shortName, withAlerts } from './core';
@@ -65,9 +65,17 @@ export function updatePairing(
 export function toggleVehicleLock(db: FleetDatabaseSchema, p: { vehicleId: string }, _ctx: ActionContext): ActionOutcome {
   const veh = db.vehicles.find((v) => v.id === p.vehicleId);
   if (!veh) return refuse(db, '차량을 찾을 수 없습니다.');
+  // An inspection lock is cleared only by recording the fix (inspection.resolve), unless its record is gone
+  const holdsInspectionLock =
+    veh.isLockedByAdmin && veh.lockReason === 'INSPECTION_FAILED' && (db.inspections ?? []).some((i) => i.id === veh.lockInspectionId);
+  if (holdsInspectionLock) {
+    return refuse(db, `#${veh.fleetNumber}호차는 점검 불합격으로 잠겼습니다. [점검]에서 점검 조치 완료로 해제하세요.`);
+  }
   const locked = !veh.isLockedByAdmin;
+  const relock = ({ lockReason: _reason, lockInspectionId: _id, ...v }: Vehicle): Vehicle =>
+    locked ? { ...v, isLockedByAdmin: true, lockReason: 'ADMIN' } : { ...v, isLockedByAdmin: false };
   return {
-    db: { ...db, vehicles: db.vehicles.map((v) => (v.id === veh.id ? { ...v, isLockedByAdmin: locked } : v)) },
+    db: { ...db, vehicles: db.vehicles.map((v) => (v.id === veh.id ? relock(v) : v)) },
     result: { ok: true, message: `#${veh.fleetNumber}호차 ${locked ? '배차 잠금' : '잠금 해제'}` },
   };
 }
@@ -240,10 +248,12 @@ export function resolveIncident(
   return { db: { ...db, incidents, employees }, result: { ok: true, message: '사고 처리 완료' } };
 }
 
+/** Fields an older client does not know (booking/inspection) keep their stored values. */
 export function updatePolicy(
   db: FleetDatabaseSchema,
-  p: { policyConfig: SystemPolicyConfig },
+  p: { policyConfig: Partial<SystemPolicyConfig> },
   _ctx: ActionContext
 ): ActionOutcome {
-  return { db: { ...db, policyConfig: p.policyConfig }, result: { ok: true, message: '정책 저장 완료' } };
+  const defined = Object.fromEntries(Object.entries(p.policyConfig).filter(([, v]) => v !== undefined));
+  return { db: { ...db, policyConfig: { ...db.policyConfig, ...defined } }, result: { ok: true, message: '정책 저장 완료' } };
 }

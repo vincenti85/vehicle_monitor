@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSeedDatabase } from '@/lib/fleetDatabase';
+import { createSeedDatabase as createFullSeedDatabase } from '@/lib/fleetDatabase';
 import type { FleetDatabaseSchema } from '@/lib/fleetDatabase';
 import { localDate, localTime } from './clock';
 import { ActionContext } from './core';
@@ -12,6 +12,12 @@ import {
   returnVehicle,
   startDispatch,
 } from './dispatch';
+
+// Inspection gate off here: these tests cover other rules (the gate is tested in inspection.test.ts)
+const createSeedDatabase = (): FleetDatabaseSchema => {
+  const db = createFullSeedDatabase();
+  return { ...db, policyConfig: { ...db.policyConfig, requirePreTripInspection: false, requirePostTripInspection: false } };
+};
 
 const NOW = new Date('2026-10-25T21:12:22Z'); // 16:12:22 CDT in Opelika
 const ctx = (extra: Partial<ActionContext> = {}): ActionContext => ({ now: NOW, isAdmin: false, ...extra });

@@ -42,9 +42,11 @@ import {
   TaxLogEntry,
   TripPurpose,
   Vehicle,
+  VehicleInspection,
   VehicleReservation,
   VehicleStatus,
 } from '@/types/fleet';
+import type { InspectionAnswers, InspectionSubmitPayload } from '@/domain/inspection';
 import {
   INITIAL_EMPLOYEES,
   INITIAL_GEOFENCE_LOGS,
@@ -100,6 +102,7 @@ export default function FleetGuardCockpitPage() {
   const [taxLogs, setTaxLogs] = useState<TaxLogEntry[]>(INITIAL_TAX_LOGS);
   const [policyConfig, setPolicyConfig] =
     useState<SystemPolicyConfig>(INITIAL_POLICY_CONFIG);
+  const [inspections, setInspections] = useState<VehicleInspection[]>([]);
 
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('veh-3');
   const [activeTab, setActiveTab] = useState<CockpitTab>('DISPATCH_WORKFLOW');
@@ -233,6 +236,7 @@ export default function FleetGuardCockpitPage() {
     if (Array.isArray(db.ghostTrips)) setGhostTrips(db.ghostTrips);
     if (Array.isArray(db.taxLogs)) setTaxLogs(db.taxLogs);
     if (db.policyConfig) setPolicyConfig(db.policyConfig);
+    if (Array.isArray(db.inspections)) setInspections(db.inspections);
     if (Array.isArray(db.pushStream)) setPushStream(db.pushStream);
     setDataMode(db.dataMode === 'LIVE' ? 'LIVE' : 'DEMO');
     setDbLastUpdated(db.lastUpdatedAt ? new Date(db.lastUpdatedAt).toLocaleTimeString() : '방금 전');
@@ -369,7 +373,9 @@ export default function FleetGuardCockpitPage() {
     vehicleId: string;
     purpose: TripPurpose;
     destination: string;
-    plannedTimeWindow: string;
+    plannedTimeWindow?: string;
+    plannedStartAt?: string;
+    plannedEndAt?: string;
     notes: string;
   }): Promise<DispatchResult> => {
     const result = await runAction({ type: 'dispatch.request', payload });
@@ -398,11 +404,19 @@ export default function FleetGuardCockpitPage() {
     return result;
   };
 
-  const handleReturnVehicle = async (reservationId: string, parkingZone: string, keyReturnedToBox: boolean) => {
+  const handleReturnVehicle = async (
+    reservationId: string,
+    parkingZone: string,
+    keyReturnedToBox: boolean,
+    inspection?: InspectionAnswers
+  ) => {
     const tracked = tripReporter.reservationId === reservationId;
     // Final position before parking, without holding the return up for a slow GPS
     if (tracked) await Promise.race([tripReporter.sendNow(), new Promise((r) => setTimeout(r, 8_000))]);
-    const result = await runAction({ type: 'dispatch.return', payload: { reservationId, parkingZone, keyReturnedToBox } });
+    const result = await runAction({
+      type: 'dispatch.return',
+      payload: { reservationId, parkingZone, keyReturnedToBox, ...(inspection ? { inspection } : {}) },
+    });
     if (result.ok && tracked) tripReporter.stopTracking();
     return result;
   };
@@ -419,6 +433,12 @@ export default function FleetGuardCockpitPage() {
     }
     return result;
   };
+
+  const handleSubmitInspection = (payload: InspectionSubmitPayload) =>
+    runAction({ type: 'inspection.submit', payload });
+
+  const handleResolveInspection = (inspectionId: string, resolution: string) =>
+    runAction({ type: 'inspection.resolve', payload: { inspectionId, resolution } });
 
   const handleLateReasonSubmit = (vehicleId: string, purpose: TripPurpose) =>
     runAction({ type: 'dispatch.lateReason', payload: { vehicleId, purpose } });
@@ -810,6 +830,9 @@ export default function FleetGuardCockpitPage() {
                   onStartUsingVehicle={handlePhoneStartUsingVehicle}
                   onReturnVehicle={handleReturnVehicle}
                   onAuthorizedCheckout={handleAuthorizedCheckout}
+                  policyConfig={policyConfig}
+                  inspections={inspections}
+                  onSubmitInspection={handleSubmitInspection}
                   tripReporter={tripReporter}
                   onUnauthorizedKeyTheft={handleUnauthorizedKeyTheft}
                   onLateReasonSubmit={handleLateReasonSubmit}
@@ -844,6 +867,7 @@ export default function FleetGuardCockpitPage() {
                     vehicles={vehicles}
                     employees={employees}
                     autoApproveWhenManagerAway={policyConfig.autoApproveWhenManagerAway}
+                    policyConfig={policyConfig}
                     onToggleAutoApprove={() =>
                       void handleUpdatePolicy({
                         ...policyConfig,
@@ -984,6 +1008,8 @@ export default function FleetGuardCockpitPage() {
             onBulkImportEmployees={handleBulkImportEmployees}
             onResolveIncident={handleResolveIncident}
             onUpdatePolicyConfig={handleUpdatePolicy}
+            inspections={inspections}
+            onResolveInspection={handleResolveInspection}
             onLockAdminConsole={() => {
               setIsAdminUnlocked(false);
               setViewMode('EMPLOYEE_OPS');
@@ -1189,6 +1215,7 @@ export default function FleetGuardCockpitPage() {
                       vehicles={vehicles}
                       employees={employees}
                       autoApproveWhenManagerAway={policyConfig.autoApproveWhenManagerAway}
+                      policyConfig={policyConfig}
                       onToggleAutoApprove={() =>
                       void handleUpdatePolicy({
                         ...policyConfig,

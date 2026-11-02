@@ -47,7 +47,7 @@ function saveTarget(target: TrackingTarget | null) {
   }
 }
 
-function readFix(): Promise<GeolocationPosition> {
+export function readFix(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) {
       reject(new Error('UNSUPPORTED'));

@@ -39,6 +39,8 @@ export const VehicleSchema = z
     lng: z.number().min(-180).max(180),
     headingDeg: z.number(),
     isLockedByAdmin: z.boolean().optional(),
+    lockReason: z.enum(['ADMIN', 'INSPECTION_FAILED']).optional(),
+    lockInspectionId: z.string().max(100).optional(),
     lastOdometerAuditAt: z.string().optional(),
   })
   .passthrough();
@@ -72,6 +74,8 @@ export const ReservationSchema = z
     purpose: tripPurpose,
     destination: z.string(),
     plannedTimeWindow: z.string(),
+    plannedStartAt: z.string().datetime({ offset: true }).optional(),
+    plannedEndAt: z.string().datetime({ offset: true }).optional(),
     stage: reservationStage,
     requestedAt: z.string(),
     approvedAt: nullableStr,
@@ -169,6 +173,22 @@ export const TaxLogSchema = z
   })
   .passthrough();
 
+export const InspectionTemplateItemSchema = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]{1,40}$/, '항목 ID는 영문 소문자·숫자·하이픈 40자 이내입니다.'),
+    label: z.string().trim().min(1).max(40),
+    critical: z.boolean(),
+  })
+  .strict();
+
+export const InspectionTemplateSchema = z
+  .array(InspectionTemplateItemSchema)
+  .min(1)
+  .max(20)
+  .refine((items) => new Set(items.map((i) => i.id)).size === items.length, '점검 항목 ID가 중복됩니다.');
+
+// Booking/inspection fields are optional so an older client can still save the policy;
+// updatePolicy keeps the stored value of any field left out.
 export const PolicyConfigSchema = z.object({
   hqAddress: z.string().min(1),
   garageGeofenceRadiusM: z.number().min(10).max(5000),
@@ -179,6 +199,12 @@ export const PolicyConfigSchema = z.object({
   autoApproveWhenManagerAway: z.boolean(),
   blockDispatchWhenPermissionOff: z.boolean(),
   afterHoursAlertEnabled: z.boolean(),
+  maxAdvanceBookingDays: z.number().int().min(1).max(60).optional(),
+  bookingBufferMinutes: z.number().int().min(0).max(240).optional(),
+  earlyStartGraceMinutes: z.number().int().min(0).max(240).optional(),
+  inspectionTemplate: InspectionTemplateSchema.optional(),
+  requirePreTripInspection: z.boolean().optional(),
+  requirePostTripInspection: z.boolean().optional(),
 });
 
 export const PushAlertSchema = z.object({
