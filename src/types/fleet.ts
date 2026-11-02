@@ -48,7 +48,13 @@ export interface Vehicle {
   lastOdometerAuditAt?: string;
   lastFixAt?: string; // ISO time of the latest phone GPS fix on a trip
   lastFixAccuracyM?: number;
+  /** Why the vehicle is locked; missing on locks set before 1.3.0 (treated as ADMIN). */
+  lockReason?: VehicleLockReason;
+  /** Inspection that caused an INSPECTION_FAILED lock. */
+  lockInspectionId?: string;
 }
+
+export type VehicleLockReason = 'ADMIN' | 'INSPECTION_FAILED';
 
 export interface VehicleReservation {
   id: string;
@@ -61,7 +67,12 @@ export interface VehicleReservation {
   department: string;
   purpose: TripPurpose;
   destination: string;
+  /** Display text. Legacy rows hold free text; timed bookings derive it from the ISO times. */
   plannedTimeWindow: string;
+  /** Booking start (UTC ISO 8601). Missing on legacy rows, which keep the block-everything rule. */
+  plannedStartAt?: string;
+  /** Booking end (UTC ISO 8601), exclusive. */
+  plannedEndAt?: string;
   stage: ReservationStage;
   requestedAt: string;
   approvedAt: string | null;
@@ -185,4 +196,54 @@ export interface SystemPolicyConfig {
   autoApproveWhenManagerAway: boolean;
   blockDispatchWhenPermissionOff: boolean;
   afterHoursAlertEnabled: boolean;
+  /** Advance booking: latest start, in days from now. */
+  maxAdvanceBookingDays: number;
+  /** Gap kept free before and after every booking of the same vehicle. */
+  bookingBufferMinutes: number;
+  /** How early before the booked start a driver may leave. */
+  earlyStartGraceMinutes: number;
+  inspectionTemplate: InspectionTemplateItem[];
+  requirePreTripInspection: boolean;
+  requirePostTripInspection: boolean;
+}
+
+export type InspectionKind = 'PRE_TRIP' | 'POST_TRIP';
+
+export interface InspectionTemplateItem {
+  id: string;
+  label: string;
+  /** A failed critical item locks the vehicle. */
+  critical: boolean;
+}
+
+export interface InspectionItemResult {
+  itemId: string;
+  passed: boolean;
+  /** Required (<= 200 chars) when the item failed. */
+  note: string;
+}
+
+export interface VehicleInspection {
+  id: string;
+  kind: InspectionKind;
+  reservationId: string;
+  vehicleId: string;
+  employeeId: string;
+  items: InspectionItemResult[];
+  failedItems: number;
+  criticalFailed: boolean;
+  /** Client-reported ISO time the checklist was opened (informational). */
+  startedAt: string;
+  /** Server time (ISO) the checklist was saved: the evidence time. */
+  submittedAt: string;
+  startLat: number | null;
+  startLng: number | null;
+  submitLat: number | null;
+  submitLng: number | null;
+  accuracyM: number | null;
+  /** Location permission denied or no fix; never blocks the submission. */
+  gpsUnavailable: boolean;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolution?: string;
 }

@@ -8,6 +8,8 @@ import {
   Vehicle,
   VehicleReservation,
 } from '@/types/fleet';
+import { DEFAULT_BOOKING_POLICY } from '@/utils/bookingWindow';
+import { DEFAULT_INSPECTION_TEMPLATE } from './inspectionTemplate';
 
 // HQ Address: 4400 Northpark Dr, Opelika, AL 36801 (Lat: 32.6912, Lng: -85.3298)
 export const HQ_LOCATION = {
@@ -28,6 +30,10 @@ export const INITIAL_POLICY_CONFIG: SystemPolicyConfig = {
   autoApproveWhenManagerAway: false,
   blockDispatchWhenPermissionOff: true,
   afterHoursAlertEnabled: true,
+  ...DEFAULT_BOOKING_POLICY,
+  inspectionTemplate: [...DEFAULT_INSPECTION_TEMPLATE],
+  requirePreTripInspection: true,
+  requirePostTripInspection: true,
 };
 
 export const INITIAL_EMPLOYEES: Employee[] = [

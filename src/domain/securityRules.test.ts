@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSeedDatabase } from '@/lib/fleetDatabase';
+import { createSeedDatabase as createFullSeedDatabase } from '@/lib/fleetDatabase';
 import type { FleetDatabaseSchema } from '@/lib/fleetDatabase';
 import { createDriverToken } from '@/lib/driverToken';
 import { toClientView } from '@/lib/clientView';
@@ -8,6 +8,12 @@ import { issueDriverToken } from './admin';
 import { ActionContext } from './core';
 import { approveDispatch, quickStartDispatch, requestDispatch, startDispatch } from './dispatch';
 import { applyTelemetry } from './telemetry';
+
+// Inspection gate off here: these tests cover other rules (the gate is tested in inspection.test.ts)
+const createSeedDatabase = (): FleetDatabaseSchema => {
+  const db = createFullSeedDatabase();
+  return { ...db, policyConfig: { ...db.policyConfig, requirePreTripInspection: false, requirePostTripInspection: false } };
+};
 
 const NOW = new Date('2026-10-25T21:12:22Z');
 const ctx = (extra: Partial<ActionContext> = {}): ActionContext => ({ now: NOW, isAdmin: false, ...extra });

@@ -5,9 +5,12 @@ import { TaxLogEntry, TripPurpose, Vehicle, VehicleReservation } from '@/types/f
 import {
   CONFIRM_BLOCKING_STAGES,
   CREATE_BLOCKING_STAGES,
+  WindowCheck,
   findDispatchConflict,
 } from '@/utils/dispatchRules';
+import { bookingPolicyOf, formatWindowKo, toInterval, validateWindow, withinStartWindow } from '@/utils/bookingWindow';
 import { localDate, localTime } from './clock';
+import { InspectionAnswers, hasPreTripInspection, submitInspection } from './inspection';
 import { describeGpsTrack } from './trip';
 import {
   ActionContext,
@@ -27,7 +30,10 @@ export interface RequestPayload {
   vehicleId: string;
   purpose: TripPurpose;
   destination: string;
-  plannedTimeWindow: string;
+  /** Legacy free-text window; used only when plannedStartAt/EndAt are absent. */
+  plannedTimeWindow?: string;
+  plannedStartAt?: string;
+  plannedEndAt?: string;
   notes: string;
 }
 export interface ReservationRef {
@@ -42,6 +48,8 @@ export interface ReturnPayload {
   reservationId: string;
   parkingZone: string;
   keyReturnedToBox: boolean;
+  /** POST_TRIP checklist, saved atomically with the return. */
+  inspection?: InspectionAnswers;
 }
 export interface VehicleRef {
   vehicleId: string;
@@ -62,6 +70,34 @@ function drivingState(db: FleetDatabaseSchema, v: Vehicle, demoSpeed: number, sp
   return db.dataMode === 'LIVE'
     ? { speedKmh: 0, lat: v.lat, lng: v.lng, lastFixAt: undefined }
     : { speedKmh: demoSpeed, currentGForce: demoGForce, rssiDbm: -48, lastFixAt: undefined, ...demoPositionNearHq(spread) };
+}
+
+/** Overlap check for a timed booking; undefined keeps the legacy one-open-dispatch rule. */
+function windowCheck(
+  db: FleetDatabaseSchema,
+  res: Pick<VehicleReservation, 'plannedStartAt' | 'plannedEndAt'>,
+  now: Date
+): WindowCheck | undefined {
+  const window = toInterval(res);
+  return window ? { window, bufferMinutes: bookingPolicyOf(db.policyConfig).bookingBufferMinutes, now } : undefined;
+}
+
+type RequestedWindow =
+  | { error: string }
+  | { plannedTimeWindow: string; plannedStartAt?: string; plannedEndAt?: string };
+
+/** Normalizes the requested time: ISO window (validated, stored as UTC) or legacy free text. */
+function requestedWindow(db: FleetDatabaseSchema, p: RequestPayload, now: Date): RequestedWindow {
+  if (p.plannedStartAt && p.plannedEndAt) {
+    const error = validateWindow(p.plannedStartAt, p.plannedEndAt, now, bookingPolicyOf(db.policyConfig));
+    if (error) return { error };
+    const plannedStartAt = new Date(p.plannedStartAt).toISOString();
+    const plannedEndAt = new Date(p.plannedEndAt).toISOString();
+    return { plannedStartAt, plannedEndAt, plannedTimeWindow: formatWindowKo(plannedStartAt, plannedEndAt) };
+  }
+  if (p.plannedStartAt || p.plannedEndAt) return { error: '시작·종료 시각을 함께 입력하세요.' };
+  if (!p.plannedTimeWindow?.trim()) return { error: '예약 시간(시작·종료)을 입력하세요.' };
+  return { plannedTimeWindow: p.plannedTimeWindow };
 }
 
 function parkedState(v: Vehicle, parkingZone: string, odometerKm?: number): Vehicle {
@@ -101,7 +137,9 @@ export function requestDispatch(db: FleetDatabaseSchema, p: RequestPayload, ctx:
       `#${veh.fleetNumber}호차는 관리자가 잠근 차량(점검)이라 신청할 수 없습니다.`
     );
   }
-  const conflict = findDispatchConflict(veh, db.reservations, CREATE_BLOCKING_STAGES);
+  const when = requestedWindow(db, p, ctx.now);
+  if ('error' in when) return refuse(db, when.error);
+  const conflict = findDispatchConflict(veh, db.reservations, CREATE_BLOCKING_STAGES, undefined, windowCheck(db, when, ctx.now));
   if (conflict) {
     return refuseWithNotice(db, ctx, 'DRIVER', `🚫 [중복 배차 신청 차단] ${shortName(emp.name)}님의 신청을 막았습니다. ${conflict}`, conflict);
   }
@@ -119,7 +157,7 @@ export function requestDispatch(db: FleetDatabaseSchema, p: RequestPayload, ctx:
     department: emp.department,
     purpose: p.purpose,
     destination: p.destination,
-    plannedTimeWindow: p.plannedTimeWindow,
+    ...when,
     stage: autoApprove ? 'APPROVED' : 'REQUESTED',
     requestedAt: time,
     approvedAt: autoApprove ? time : null,
@@ -140,9 +178,9 @@ export function requestDispatch(db: FleetDatabaseSchema, p: RequestPayload, ctx:
     db: withAlerts({ ...db, reservations: [reservation, ...db.reservations] }, notice),
     result: {
       ok: true,
-      message: autoApprove
+      message: (when.plannedStartAt ? `${when.plannedTimeWindow} 예약 · ` : '') + (autoApprove
         ? `#${veh.fleetNumber}호차 신청이 자동 승인되었습니다. 키를 수령해 운행을 시작하세요.`
-        : `#${veh.fleetNumber}호차 배차 신청 완료 — 관리자 승인을 기다리세요.`,
+        : `#${veh.fleetNumber}호차 배차 신청 완료 — 관리자 승인을 기다리세요.`),
     },
   };
 }
@@ -152,7 +190,9 @@ export function approveDispatch(db: FleetDatabaseSchema, p: ReservationRef, ctx:
   const veh = res && db.vehicles.find((v) => v.id === res.vehicleId);
   if (!res || !veh) return refuse(db, '배차 건 또는 차량을 찾을 수 없습니다.');
   if (res.stage !== 'REQUESTED') return refuse(db, '승인대기 상태의 건만 승인할 수 있습니다.');
-  const conflict = findDispatchConflict(veh, db.reservations, CONFIRM_BLOCKING_STAGES, res.id);
+  const booked = toInterval(res);
+  if (booked && ctx.now.getTime() >= booked.endMs) return refuse(db, '예약 시간이 지났습니다. 반려 후 다시 신청하도록 안내하세요.');
+  const conflict = findDispatchConflict(veh, db.reservations, CONFIRM_BLOCKING_STAGES, res.id, windowCheck(db, res, ctx.now));
   if (conflict) {
     return refuseWithNotice(db, ctx, 'MANAGER', `⚠️ [중복 배차 승인 차단] ${shortName(res.employeeName)}님 신청을 승인하지 않았습니다. ${conflict}`, conflict);
   }
@@ -203,7 +243,12 @@ export function startDispatch(db: FleetDatabaseSchema, p: ReservationRef, ctx: A
   if (veh.isLockedByAdmin) {
     return refuse(db, `#${veh.fleetNumber}호차는 관리자가 잠근 차량(점검)이라 출발할 수 없습니다.`);
   }
-  const conflict = findDispatchConflict(veh, db.reservations, CONFIRM_BLOCKING_STAGES, res.id);
+  const outsideWindow = withinStartWindow(res, ctx.now, bookingPolicyOf(db.policyConfig));
+  if (outsideWindow) return refuse(db, outsideWindow);
+  if (db.policyConfig.requirePreTripInspection !== false && !hasPreTripInspection(db, res.id)) {
+    return refuse(db, '운행 전 점검을 먼저 제출하세요. (휴대폰 앱 [운행 전 점검])');
+  }
+  const conflict = findDispatchConflict(veh, db.reservations, CONFIRM_BLOCKING_STAGES, res.id, windowCheck(db, res, ctx.now));
   if (conflict) {
     return refuseWithNotice(db, ctx, 'DRIVER', `🚫 [운행 시작 차단] ${shortName(res.employeeName)}님 운행 시작을 막았습니다. ${conflict}`, conflict);
   }
@@ -254,6 +299,10 @@ export function quickStartDispatch(db: FleetDatabaseSchema, p: QuickStartPayload
   // Without an approved booking, a 1-second start is only allowed while auto-approval is on
   if (!db.policyConfig.autoApproveWhenManagerAway) {
     return refuse(db, '지금은 관리자 승인이 필요합니다. 배차 신청 후 승인되면 출발하세요.');
+  }
+  // An unbooked start would skip the pre-trip checklist
+  if (db.policyConfig.requirePreTripInspection !== false) {
+    return refuse(db, '운행 전 점검이 필요해 바로 출발할 수 없습니다. 신청·승인 후 운행 전 점검을 제출하세요.');
   }
   const conflict = findDispatchConflict(veh, db.reservations, CREATE_BLOCKING_STAGES);
   if (conflict) {
@@ -318,7 +367,24 @@ function taxRow(
   };
 }
 
+/**
+ * Return with the POST_TRIP checklist as one change: the checklist is saved only if the return
+ * succeeds, and a required checklist cannot be skipped (policy requirePostTripInspection).
+ */
 export function returnVehicle(db: FleetDatabaseSchema, p: ReturnPayload, ctx: ActionContext): ActionOutcome {
+  const res = db.reservations.find((r) => r.id === p.reservationId);
+  if (res?.stage === 'IN_USE' && !p.inspection && db.policyConfig.requirePostTripInspection !== false) {
+    return refuse(db, '운행 후 점검을 작성한 뒤 반납하세요. (휴대폰 앱 반납 화면)');
+  }
+  if (!p.inspection || !res) return completeReturn(db, p, ctx);
+  const inspected = submitInspection(db, { ...p.inspection, reservationId: res.id, employeeId: res.employeeId, kind: 'POST_TRIP' }, ctx);
+  if (inspected.db === db) return inspected;
+  const returned = completeReturn(inspected.db, p, ctx);
+  if (!returned.result.ok) return refuse(db, returned.result.message);
+  return { db: returned.db, result: { ok: true, message: `${returned.result.message} · ${inspected.result.message}` } };
+}
+
+function completeReturn(db: FleetDatabaseSchema, p: ReturnPayload, ctx: ActionContext): ActionOutcome {
   const res = db.reservations.find((r) => r.id === p.reservationId);
   if (!res) return refuse(db, '배차 건을 찾을 수 없습니다.');
   if (res.stage !== 'IN_USE') return refuse(db, '운행중인 건만 반납할 수 있습니다.');
